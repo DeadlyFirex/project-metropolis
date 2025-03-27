@@ -1,2 +1,2 @@
 # project-metropolis
-Project for LU3 Avans
+Project for LU3 Avans Hogeschool
