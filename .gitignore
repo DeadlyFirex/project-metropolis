@@ -1,4 +1,5 @@
 /vendor/
+/node_modules
 node_modules/
 npm-debug.log
 yarn-error.log
@@ -28,3 +29,13 @@ Homestead.json
 .env.production
 .phpactor.json
 auth.json
+
+/.phpunit.cache
+.phpunit.cache
+.phpactor.json
+auth.json
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
