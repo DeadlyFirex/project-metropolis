@@ -1,0 +1,20 @@
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+            {{ __('Dashboard') }}
+        </h2>
+    </x-slot>
+
+    <div class="flex justify-center bg-gray-100">
+        <div class="w-full flex space-x-8 p-8 justify-center">
+            <div class="w-[600px] h-[400px] bg-white p-8 rounded-5x3 shadow-lg text-center text-xl">
+                Grid
+            </div>
+            <div class="w-[600px] h-[400px] bg-white 8 rounded-5x3 shadow-lg text-center text-xl">
+                Library
+            </div>
+        </div>
+    </div>
+
+
+</x-app-layout>
