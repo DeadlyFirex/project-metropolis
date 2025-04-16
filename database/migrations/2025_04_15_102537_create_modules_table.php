@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('modules', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('description')
+                ->comment("A short description of the module");
 
             // TODO: We'd need an ENUM for this one;
             $table->string('category');
