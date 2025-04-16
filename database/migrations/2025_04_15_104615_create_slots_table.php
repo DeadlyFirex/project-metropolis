@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('slot', function (Blueprint $table) {
+        Schema::create('slots', function (Blueprint $table) {
             $table->id();
-            $table->integer("location")->unique();
+            $table->unsignedSmallInteger("row")->unique();
+            $table->unsignedSmallInteger("column")->unique();
             $table->foreignId('module_id')->nullable()->constrained()->onDelete('cascade');
             $table->timestamps();
         });
@@ -24,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('slot');
+        Schema::dropIfExists('slots');
     }
 };

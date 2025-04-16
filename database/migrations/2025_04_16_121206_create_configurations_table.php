@@ -11,17 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('modules', function (Blueprint $table) {
+        Schema::create('configurations', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-
-            // TODO: We'd need an ENUM for this one;
-            $table->string('category');
-
-            $table->string('image_path')
-                ->default('default-image.png');
+            $table->string('description')->nullable();
+            $table->json('modules')
+                ->comment('Modules that are enabled for this configuration');
             $table->json('factors')
-                ->comment("Depends on if a list of factors is given");
+                ->comment('Depends on if saving statically is required');
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->onDelete('cascade');
             $table->timestamps();
         });
     }
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('modules');
+        Schema::dropIfExists('configurations');
     }
 };
