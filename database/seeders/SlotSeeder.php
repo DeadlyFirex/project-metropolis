@@ -12,14 +12,11 @@ class SlotSeeder extends Seeder
     {
         // Create 12 slots with unique row and column combinations
         // TODO: Improve this to use a more efficient method
-        for ($row = 0; $row < 3; $row++) {
-            for ($col = 0; $col < 4; $col++) {
-                Slot::create([
-                    'row' => $row,
-                    'column' => $col,
-                    'module_id' => Module::factory()->create()->id,
-                ]);
-            }
+        for ($index = 0; $index < 12; $index++) {
+            Slot::create([
+                'index' => $index,
+                'module_id' => Module::factory()->create()->id,
+            ]);
         }
     }
 }

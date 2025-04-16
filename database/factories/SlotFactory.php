@@ -20,8 +20,7 @@ class SlotFactory extends Factory
          * TODO: Implement a mechanism to ensure that each slot has a unique row and column combination.
          */
         return [
-            'row' => $this->faker->numberBetween(0, 2),
-            'column' => $this->faker->numberBetween(0, 3),
+            'index' => $this->faker->numberBetween(0, 12),
             'module_id' => Module::factory(),
         ];
     }

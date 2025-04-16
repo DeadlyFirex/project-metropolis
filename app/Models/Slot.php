@@ -11,8 +11,7 @@ class Slot extends Model
 
     protected $table = 'slots';
     protected $fillable = [
-        'row',
-        'column',
+        'index',
         'module_id',
     ];
 

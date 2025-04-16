@@ -13,8 +13,7 @@ return new class extends Migration
     {
         Schema::create('slots', function (Blueprint $table) {
             $table->id();
-            $table->unsignedSmallInteger("row")->unique();
-            $table->unsignedSmallInteger("column")->unique();
+            $table->unsignedSmallInteger("index")->unique();
             $table->foreignId('module_id')->nullable()->constrained()->onDelete('cascade');
             $table->timestamps();
         });
