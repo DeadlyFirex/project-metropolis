@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('gridslot', function (Blueprint $table) {
+        Schema::create('slot', function (Blueprint $table) {
             $table->id();
-            $table->integer("location");
-            $table->foreignId('function_id')->nullable()->constrained()->onDelete('cascade');
+            $table->integer("location")->unique();
+            $table->foreignId('module_id')->nullable()->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }
@@ -24,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('gridslot');
+        Schema::dropIfExists('slot');
     }
 };
