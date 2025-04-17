@@ -12,6 +12,16 @@
             </div>
             <div class="w-[600px] h-[400px] bg-white 8 rounded-5x3 shadow-lg text-center text-xl">
                 Library
+                @foreach ($modules as $module )
+                    <div class="bg-gray-100 p-8 border border-gray-300 rounded-lg">
+                        {{$module->name}}<br>
+                        {{$module->description}}<br>
+                        {{$module->category}}<br>
+                        <div>
+                        {{$module->image_path}}
+                        </div>
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>
