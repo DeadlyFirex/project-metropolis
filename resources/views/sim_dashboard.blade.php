@@ -15,6 +15,16 @@
                     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                         <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg text-xl">
                             <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Module Library</h2>
+                            <form method="GET" action="{{ route('simulatiedashboard') }}">
+                                <select name="category" onchange="this.form.submit()">
+                                    <option value="">-- Alle categorieën --</option>
+                                    @foreach($categories as $cat)
+                                        <option value="{{ $cat }}" {{ request('category') == $cat ? 'selected' : '' }}>
+                                            {{ ucfirst($cat) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </form>
                             <div class="mt-4 space-y-4">
                                 @forelse($modules as $module)
                                     <div class="bg-gray-100 dark:bg-gray-700 p-6 border border-gray-300 dark:border-gray-600 rounded-lg">
