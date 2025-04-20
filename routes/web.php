@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SimulationController;
-use App\Http\Controllers\ModuleController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -19,7 +18,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/simdash', [SimulationController::class, 'index'])->name('simulatiedashboard');
-    Route::get('/modules', [ModuleController::class, 'index'])->name('modules');
 });
 
 require __DIR__.'/auth.php';
