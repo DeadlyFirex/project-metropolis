@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.city-slot.drag-over {
+    background-color: #cceeff;
+    border: 2px dashed #3b82f6;
+}

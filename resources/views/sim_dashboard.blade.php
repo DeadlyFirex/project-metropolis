@@ -7,9 +7,13 @@
 
     <div class="flex justify-center bg-gray-100">
         <div class="w-full flex space-x-8 p-8 justify-center">
-            <div class="w-[600px] h-[400px] bg-white p-8 rounded-5x3 shadow-lg text-center text-xl">
-                Grid
+
+            <div class="w-[600px] bg-white p-8 rounded-3xl shadow-lg text-center text-xl">
+                @include('components.city-grid', ['slots' => $slots])
             </div>
+            @include('components.library')
+             </div>
+          </div>
             <div class="w-[600px] h-[400px] bg-white 8 rounded-5x3 shadow-lg text-center text-xl">
                 <div class="py-8">
                     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -61,8 +65,5 @@
             </div>
         </div>
     </div>
-
-
-
 
 </x-app-layout>

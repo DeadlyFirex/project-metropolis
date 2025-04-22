@@ -19,6 +19,7 @@ class ModuleFactory extends Factory
             'description' => $this->faker->sentence,
             'category' => $this->faker->word,
             'image_path' => 'images/placeholder.jpg',
+
             'factors' => json_encode([
                 'factor1' => $this->faker->randomFloat(2, 0, 100),
                 'factor2' => $this->faker->randomFloat(2, 0, 100),
