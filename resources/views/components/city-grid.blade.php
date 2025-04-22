@@ -12,6 +12,7 @@
 
                             @if($slot->module_id != null && $slot->module && $slot->module->image_path)
                                 <img src="{{ asset($slot->module->image_path) }}" alt="{{ $slot->module->name }}" class="w-[60px] pointer-events-none">
+                                {{ $slot->module->name }}
                             @else
                                 <span class="text-xs text-gray-400">Empty</span>
                             @endif

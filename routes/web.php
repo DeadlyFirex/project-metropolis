@@ -18,6 +18,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/simdash', [SimulationController::class, 'index'])->name('simulatiedashboard');
+
+    Route::post('/simulatie/koppel-module', [SimulationController::class, 'koppelModule']);
 });
+
 
 require __DIR__.'/auth.php';

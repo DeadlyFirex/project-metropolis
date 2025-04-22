@@ -29,4 +29,19 @@ class SimulationController extends Controller
         }
         return Module::all();
     }
+
+    public function koppelModule(Request $request)
+{
+    $request->validate([
+        'module_id' => 'required|exists:modules,id',
+        'slot_id' => 'required|exists:slots,id',
+    ]);
+
+    $slot = Slot::findOrFail($request->slot_id);
+    $slot->module_id = $request->module_id;
+    $slot->save();
+
+    return response()->json(['success' => true]);
+}
+
 }
