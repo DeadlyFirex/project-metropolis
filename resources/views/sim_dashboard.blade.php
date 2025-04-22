@@ -33,9 +33,9 @@
                                         <p class="text-blue-500 mt-1">Category: {{ $module->category ?? 'N/A' }}</p>
                                         @if(isset($module->image_path))
                                             <div class="mt-4">
-                                                <img src="{{ $module->image_path }}"
+                                                <img src="{{ asset('storage/' . $module->image_path) }}"
                                                      alt="{{ $module->name ?? 'Module image' }}"
-                                                     class="w-32 h-32 object-cover rounded-md mx-auto">
+                                                     class="w-16 h-16 object-cover rounded-md mx-auto">
                                             </div>
                                         @endif
                                         @if(!empty($module->factors))
