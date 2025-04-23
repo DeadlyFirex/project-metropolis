@@ -15,10 +15,10 @@ class SimulationController extends Controller
         $modules = $this->getModules($category);
         $categories = Module::select('category')->distinct()->pluck('category');
         $slots = $this->getAllSlots();
-      
+
         return view("sim_dashboard", compact('modules', 'category', 'categories', 'slots'));
     }
-  
+
       private function getAllSlots() {
         return Slot::all();
       }
@@ -44,12 +44,10 @@ class SimulationController extends Controller
     return response()->json(['success' => true]);
 }
 
-public function removeModule(Slot $slot)
+    public function removeModule(Slot $slot)
 {
     $slot->update(['module_id' => null]);
 
-    return redirect()->back()->with('status', 'Module verwijderd uit slot.');
-}
-
-
+    return redirect()->back();
+    }
 }
