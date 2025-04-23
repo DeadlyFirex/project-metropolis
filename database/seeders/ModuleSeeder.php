@@ -12,9 +12,9 @@ class ModuleSeeder extends Seeder
     {
         $modules = [
             [
-                'name' => 'Ziekenhuis',
+                'name' => 'Hospital',
                 'description' => 'Een instelling voor medische zorg, behandeling en operaties.',
-                'category' => 'zorg',
+                'category' => 'Care',
                 'image' => 'ziekenhuis.jpg',
                 'factors' => [
                     'gezondheid' => 0.95,
@@ -24,9 +24,9 @@ class ModuleSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'Woonhuis',
+                'name' => 'Home',
                 'description' => 'Een fijne plek om thuis te komen en tot rust te komen.',
-                'category' => 'residentieel',
+                'category' => 'Residential',
                 'image' => 'huis.jpg',
                 'factors' => [
                     'gezondheid' => 0.7,
@@ -36,9 +36,9 @@ class ModuleSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'Stadspark',
+                'name' => 'Park',
                 'description' => 'Een openbaar park voor ontspanning, natuurbeleving en beweging.',
-                'category' => 'openbaar',
+                'category' => 'Public Space',
                 'image' => 'park.jpg',
                 'factors' => [
                     'gezondheid' => 0.8,
@@ -48,9 +48,9 @@ class ModuleSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'Basisschool',
+                'name' => 'Preschool',
                 'description' => 'Een leeromgeving die ontwikkeling en sociale groei bevordert.',
-                'category' => 'onderwijs',
+                'category' => 'Education',
                 'image' => 'school.jpg',
                 'factors' => [
                     'gezondheid' => 0.6,

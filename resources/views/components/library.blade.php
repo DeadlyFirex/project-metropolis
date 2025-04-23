@@ -21,9 +21,6 @@
                             {{ $module->name ?? 'Untitled Module' }}
                         </h3>
 
-                        <p class="text-gray-600 dark:text-gray-300 mt-2">
-                            {{ $module->description ?? 'No description available' }}
-                        </p>
 
                         <p class="text-blue-500 mt-1">
                             Category: {{ $module->category ?? 'N/A' }}
@@ -48,11 +45,9 @@
 
                         @if(!empty($module->factors))
                             <div class="mt-4">
-                                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Includes:</h4>
+                                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-400 mb-2"></h4>
                                 <div class="flex flex-wrap gap-2">
                                     @foreach(json_decode($module->factors) as $factor)
-                                        <span class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded">
-                                            {{ $factor }}
                                         </span>
                                     @endforeach
                                 </div>
