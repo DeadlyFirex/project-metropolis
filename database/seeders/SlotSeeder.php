@@ -15,7 +15,7 @@ class SlotSeeder extends Seeder
         for ($index = 0; $index < 12; $index++) {
             Slot::create([
                 'index' => $index,
-                'module_id' => Module::factory()->create()->id,
+                'module_id' => null,
             ]);
         }
     }

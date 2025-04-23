@@ -18,6 +18,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/simdash', [SimulationController::class, 'index'])->name('simulatiedashboard');
+
+    Route::post('/simulatie/koppel-module', [SimulationController::class, 'koppelModule']);
+    Route::patch('/slots/{slot}/remove-module', [SimulationController::class, 'removeModule'])->name('slots.removeModule');
+
 });
+
 
 require __DIR__.'/auth.php';

@@ -7,14 +7,16 @@
 
     <div class="flex justify-center bg-gray-100">
         <div class="w-full flex space-x-8 p-8 justify-center">
-            <div class="w-[600px] h-[400px] bg-white p-8 rounded-5x3 shadow-lg text-center text-xl">
-                Grid
+
+            <div class="w-[600px] bg-white p-8 rounded-3xl shadow-lg text-center text-xl">
+                @include('components.city-grid', ['slots' => $slots])
             </div>
-            <div class="w-[600px] h-[400px] bg-white 8 rounded-5x3 shadow-lg text-center text-xl">
-                Library
+
+            <div class="w-[1000px] bg-white p-8 rounded-3xl shadow-lg text-center text-xl">
+                @include('components.library', ['modules' => $modules, 'categories' => $categories])
             </div>
+
         </div>
     </div>
-
 
 </x-app-layout>
