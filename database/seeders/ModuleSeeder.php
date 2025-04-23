@@ -48,7 +48,7 @@ class ModuleSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'Preschool',
+                'name' => 'Primary School',
                 'description' => 'Een leeromgeving die ontwikkeling en sociale groei bevordert.',
                 'category' => 'Education',
                 'image' => 'school.jpg',

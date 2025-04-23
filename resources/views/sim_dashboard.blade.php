@@ -12,9 +12,10 @@
                 @include('components.city-grid', ['slots' => $slots])
             </div>
 
-            <div class="w-[600px] h-[400px] bg-white 8 rounded-5x3 shadow-lg text-center text-xl">
+            <div class="w-[1000px] bg-white p-8 rounded-3xl shadow-lg text-center text-xl">
                 @include('components.library', ['modules' => $modules, 'categories' => $categories])
             </div>
+
         </div>
     </div>
 
