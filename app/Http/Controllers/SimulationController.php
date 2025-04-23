@@ -44,4 +44,12 @@ class SimulationController extends Controller
     return response()->json(['success' => true]);
 }
 
+public function removeModule(Slot $slot)
+{
+    $slot->update(['module_id' => null]);
+
+    return redirect()->back()->with('status', 'Module verwijderd uit slot.');
+}
+
+
 }

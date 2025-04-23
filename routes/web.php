@@ -20,6 +20,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/simdash', [SimulationController::class, 'index'])->name('simulatiedashboard');
 
     Route::post('/simulatie/koppel-module', [SimulationController::class, 'koppelModule']);
+    Route::patch('/slots/{slot}/remove-module', [SimulationController::class, 'removeModule'])->name('slots.removeModule');
+
 });
 
 
