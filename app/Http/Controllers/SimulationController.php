@@ -40,6 +40,26 @@ class SimulationController extends Controller
         $targetSlot = Slot::findOrFail($request->slot_id);
         $category   = $newModule->category;
 
+        $incompatible = [
+            'Care'         => ['Public Space'],
+            'Public Space' => ['Care'],
+            'Education'    => ['Residential'],
+            'Residential'  => ['Education'],
+        ];
+
+        if (isset($incompatible[$category])) {
+            $conflict = Slot::whereHas(
+                'module',
+                fn ($q) => $q->whereIn('category', $incompatible[$category])
+            )->exists();
+
+            if ($conflict) {
+                return response()->json([
+                    'message' => __('errors.category_incompatible'),
+                ], 422);
+            }
+        }
+
         $categoryLimits = [
             'Care'         => 1,
             'Residential'  => 3,
@@ -70,6 +90,7 @@ class SimulationController extends Controller
 
         $targetSlot->update(['module_id' => $newModule->id]);
 
+        return response()->noContent();
     }
 
     public function removeModule(Slot $slot)
