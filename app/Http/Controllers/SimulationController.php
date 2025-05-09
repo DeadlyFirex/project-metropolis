@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Module;
@@ -10,6 +9,9 @@ use App\Models\Slot;
 
 class SimulationController extends Controller
 {
+    private const GRID_WIDTH  = 3;
+    private const GRID_HEIGHT = 4;
+
     public function index(Request $request)
     {
         $category   = $request->input('category');
@@ -31,15 +33,14 @@ class SimulationController extends Controller
         );
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => $validator->errors()->first(),
-            ], 422);
+            return response()->json(['message' => $validator->errors()->first(), 'errors' => $validator->errors()->toArray()], 422);
         }
 
         $newModule  = Module::findOrFail($request->module_id);
         $targetSlot = Slot::findOrFail($request->slot_id);
         $category   = $newModule->category;
 
+        // Incompatibility Check
         $incompatible = [
             'Care'         => ['Public Space'],
             'Public Space' => ['Care'],
@@ -48,18 +49,46 @@ class SimulationController extends Controller
         ];
 
         if (isset($incompatible[$category])) {
-            $conflict = Slot::whereHas(
-                'module',
-                fn ($q) => $q->whereIn('category', $incompatible[$category])
-            )->exists();
+            $pos = $targetSlot->index;
 
-            if ($conflict) {
-                return response()->json([
-                    'message' => __('errors.category_incompatible'),
-                ], 422);
+            if ($pos === null) {
+                return response()->json(['message' => 'Fout: Slot index (positie) is niet ingesteld.'], 500);
+            }
+
+            $x   = $pos % self::GRID_WIDTH;
+            $y   = intdiv($pos, self::GRID_WIDTH);
+
+            $adjacentPositions = [];
+            foreach ([-1, 0, 1] as $dx) {
+                foreach ([-1, 0, 1] as $dy) {
+                    if ($dx === 0 && $dy === 0) continue;
+                    $nx = $x + $dx;
+                    $ny = $y + $dy;
+                    if ($nx < 0 || $nx >= self::GRID_WIDTH)  continue;
+                    if ($ny < 0 || $ny >= self::GRID_HEIGHT) continue;
+                    $adjacentPositions[] = $ny * self::GRID_WIDTH + $nx;
+                }
+            }
+
+            if (!empty($adjacentPositions)) {
+                // Query op 'index'
+                $adjacentSlotIds = Slot::whereIn('index', $adjacentPositions)->pluck('id');
+
+                if ($adjacentSlotIds->isNotEmpty()) {
+                    $conflict = Slot::whereIn('id', $adjacentSlotIds)
+                        ->whereHas('module', function ($q) use ($incompatible, $category) {
+                            $q->whereIn('category', $incompatible[$category]);
+                        })
+                        ->exists();
+
+                    if ($conflict) {
+                        return response()->json(['message' => __('errors.category_incompatible', ['category' => $category])], 422);
+                    }
+                }
             }
         }
 
+        // Category Limit Check
         $categoryLimits = [
             'Care'         => 1,
             'Residential'  => 3,
@@ -68,16 +97,14 @@ class SimulationController extends Controller
         ];
 
         if (isset($categoryLimits[$category])) {
-            $currentCount = Slot::whereHas(
-                'module',
-                fn ($q) => $q->where('category', $category)
-            )->count();
+            $currentCountQuery = Slot::whereHas('module', fn ($q) => $q->where('category', $category));
+            $isReplacingSameCategory = $targetSlot->module && $targetSlot->module->category === $category;
 
-            if (
-                !$targetSlot->module ||
-                $targetSlot->module->category !== $category
-            ) {
-                if ($currentCount >= $categoryLimits[$category]) {
+            if (!$isReplacingSameCategory) {
+                $countExcludingTarget = $currentCountQuery->where('id', '!=', $targetSlot->id)->count();
+                $prospectiveCount = $countExcludingTarget + 1;
+
+                if ($prospectiveCount > $categoryLimits[$category]) {
                     return response()->json([
                         'message' => __('errors.category_limit_reached', [
                             'limit'    => $categoryLimits[$category],
@@ -88,6 +115,7 @@ class SimulationController extends Controller
             }
         }
 
+        // Update Slot
         $targetSlot->update(['module_id' => $newModule->id]);
 
         return response()->noContent();
@@ -101,7 +129,7 @@ class SimulationController extends Controller
 
     private function getAllSlots()
     {
-        return Slot::all();
+        return Slot::with('module')->get();
     }
 
     private function getModules($category = null)
