@@ -14,7 +14,6 @@ class Configuration extends Model
         'name',
         'description',
         'modules',
-        'factors',
         'user_id',
     ];
 
