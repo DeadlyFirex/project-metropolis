@@ -23,8 +23,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/slots/{slot}/remove-module', [SimulationController::class, 'removeModule'])->name('slots.removeModule');
 
     Route::get('/module', [ModuleHandlerController::class, 'index'])->name('module.index');
+    Route::post('/modules', [ModuleHandlerController::class, 'store'])->name('modules.store');
     Route::delete('/modules/{module}', [ModuleHandlerController::class, 'destroy'])->name('modules.destroy');
 });
 
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
