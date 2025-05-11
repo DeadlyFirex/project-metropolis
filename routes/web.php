@@ -24,6 +24,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/module', [ModuleHandlerController::class, 'index'])->name('module.index');
     Route::post('/modules', [ModuleHandlerController::class, 'store'])->name('modules.store');
+    Route::put('/modules/{id}', [ModuleHandlerController::class, 'update'])->name('modules.update');
     Route::delete('/modules/{module}', [ModuleHandlerController::class, 'destroy'])->name('modules.destroy');
 });
 

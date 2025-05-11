@@ -54,4 +54,37 @@ class ModuleHandlerController extends Controller
         // Redirect of terug naar de lijst van modules
         return redirect()->route('module.index')->with('success', 'Module toegevoegd!');
     }
+    // app/Http/Controllers/ModuleController.php
+
+public function update(Request $request, $id)
+{
+    // Vind de module op basis van het ID
+    $module = Module::findOrFail($id);
+
+    // Valideer de gegevens
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'description' => 'required|string',
+        'category' => 'required|string',
+        'image' => 'nullable|image|max:1024', // je kunt de validatie aanpassen op basis van je vereisten
+    ]);
+
+    // Werk de module bij
+    $module->name = $validated['name'];
+    $module->description = $validated['description'];
+    $module->category = $validated['category'];
+
+    // Als er een nieuwe afbeelding is, upload deze dan
+    if ($request->hasFile('image')) {
+        $imagePath = $request->file('image')->store('modules', 'public');
+        $module->image_path = $imagePath;
+    }
+
+    // Sla de wijzigingen op
+    $module->save();
+
+    // Redirect naar de lijst met modules of waar je naartoe wilt gaan
+    return redirect()->route('module.index')->with('success', 'Module bijgewerkt');
+}
+
 }
