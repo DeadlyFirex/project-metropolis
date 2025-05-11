@@ -22,7 +22,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/simulatie/koppel-module', [SimulationController::class, 'koppelModule']);
     Route::patch('/slots/{slot}/remove-module', [SimulationController::class, 'removeModule'])->name('slots.removeModule');
 
-    Route::get('/module', [ModuleHandlerController::class, 'index'])->name('module');
+    Route::get('/module', [ModuleHandlerController::class, 'index'])->name('module.index');
+    Route::delete('/modules/{module}', [ModuleHandlerController::class, 'destroy'])->name('modules.destroy');
 });
 
 
