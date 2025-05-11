@@ -110,7 +110,7 @@ class SimulationController extends Controller
                             'limit'    => $categoryLimits[$category],
                             'category' => $category,
                         ]),
-                    ], 422);
+                    ], 409);
                 }
             }
         }
