@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (response.ok) {
                         location.reload();
                     } else {
-                        alert("Koppelen mislukt.");
+                        alert("Wat je nu doet is niet toegestaan.");
                     }
                 })
                 .catch(() => {
