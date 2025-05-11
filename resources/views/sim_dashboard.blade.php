@@ -16,6 +16,12 @@
                 @include('components.library', ['modules' => $modules, 'categories' => $categories])
             </div>
 
+
+            <div class="w-[1000px] bg-white p-8 rounded-3xl shadow-lg text-center text-xl">
+                @include('components.effect-control', ['categories' => $categories,
+                'effects' => \App\Models\Effect::all()])
+            </div>
+            
         </div>
     </div>
 

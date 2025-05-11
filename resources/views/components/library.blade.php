@@ -1,7 +1,7 @@
 <div class="py-8">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Module Library</h2>
+        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Module Bibliotheek</h2>
 
         <form method="GET" action="{{ route('simulatiedashboard') }}">
             <select name="category" onchange="this.form.submit()" class="border px-2 py-1 rounded">

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 
 use App\Models\Module;
 use App\Models\Slot;
+use App\Models\Effect;
 
 class SimulationController extends Controller
 {
@@ -50,4 +51,25 @@ class SimulationController extends Controller
 
     return redirect()->back();
     }
-}
+    
+    public function updateEffect(Request $request, $moduleId, $type)
+    {
+        $validTypes = ['safety', 'recreation', 'climate', 'facilities', 'infrastructure'];
+    
+        if (!in_array($type, $validTypes)) {
+            abort(400, 'Invalid effect type');
+        }
+    
+        $validated = $request->validate([
+            'value' => 'required|integer|min:-5|max:5'
+        ]);
+    
+        $effect = Effect::updateOrCreate(
+            ['module_id' => $moduleId, 'type' => $type],
+            ['value' => $validated['value']]
+        );
+    
+        return back();
+    }
+    
+}    
