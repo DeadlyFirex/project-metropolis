@@ -1,7 +1,7 @@
 <div class="py-8">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Module Library</h2>
+        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Module Bibliotheek</h2>
 
         <form method="GET" action="{{ route('simulatiedashboard') }}">
             <select name="category" onchange="this.form.submit()" class="border px-2 py-1 rounded">
@@ -44,7 +44,7 @@
             </div>
             @empty
             <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow text-center">
-                <p class="text-gray-500 dark:text-gray-400">No modules available at this time.</p>
+                <p class="text-gray-500 dark:text-gray-400">Er zijn geen modules beschikbaar.</p>
             </div>
             @endforelse
         </div>
