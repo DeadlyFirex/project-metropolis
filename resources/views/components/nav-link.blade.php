@@ -17,4 +17,8 @@
         Simulation Dashboard
     </a>
 
+    <a href="{{ route('module.index') }}" {{ $attributes->merge(['class' => $classes]) }}>
+        Module Dashboard
+    </a>
+
 @endauth

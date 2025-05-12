@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             ModuleSeeder::class,
             ConfigurationSeeder::class,
             SlotSeeder::class,
+            EffectSeeder::class,
         ]);
     }
 }

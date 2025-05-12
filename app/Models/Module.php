@@ -25,5 +25,10 @@ class Module extends Model
     {
         return $this->hasOne(Slot::class);
     }
+
+    public function effects()
+    {
+        return $this->hasMany(Effect::class);
+    }
 }
 

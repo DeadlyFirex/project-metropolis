@@ -1,3 +1,8 @@
+ <div class="py-8">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+ 
+ <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Metropolis Grid</h2>
+
 <table class="table-auto border-collapse border border-gray-300 w-full text-center">
     <tbody>
         @foreach($slots->chunk(3) as $row)
@@ -36,3 +41,6 @@
         @endforeach
     </tbody>
 </table>
+
+    </div>
+</div>
