@@ -40,13 +40,14 @@ class SimulationController extends Controller
         $targetSlot = Slot::findOrFail($request->slot_id);
         $category   = $newModule->category;
 
-        // Incompatibility Check
         $incompatible = [
-            'Care'         => ['Public Space'],
-            'Public Space' => ['Care'],
-            'Education'    => ['Residential'],
-            'Residential'  => ['Education'],
+            'Safety'                => ['Recreation', 'Mobility'],
+            'Recreation'            => ['Safety', 'Facilities'],
+            'Environmental Quality' => ['Mobility'],
+            'Facilities'            => ['Recreation', 'Mobility'],
+            'Mobility'              => ['Safety', 'Environmental Quality', 'Facilities'],
         ];
+
 
         if (isset($incompatible[$category])) {
             $pos = $targetSlot->index;
@@ -90,11 +91,13 @@ class SimulationController extends Controller
 
         // Category Limit Check
         $categoryLimits = [
-            'Care'         => 1,
-            'Residential'  => 3,
-            'Public Space' => 2,
-            'Education'    => 1,
+            'Safety'                => 4,
+            'Recreation'            => 2,
+            'Environmental Quality' => 3,
+            'Facilities'            => 5,
+            'Mobility'              => 4,
         ];
+
 
         if (isset($categoryLimits[$category])) {
             $currentCountQuery = Slot::whereHas('module', fn ($q) => $q->where('category', $category));

@@ -14,7 +14,7 @@ class ModuleSeeder extends Seeder
             [
                 'name' => 'Hospital',
                 'description' => 'Een instelling voor medische zorg, behandeling en operaties.',
-                'category' => 'Care',
+                'category' => 'Facilities',
                 'image' => 'ziekenhuis.jpg',
                 'factors' => [
                     'gezondheid' => 0.95,
@@ -26,7 +26,7 @@ class ModuleSeeder extends Seeder
             [
                 'name' => 'Home',
                 'description' => 'Een fijne plek om thuis te komen en tot rust te komen.',
-                'category' => 'Residential',
+                'category' => 'Facilities',
                 'image' => 'huis.jpg',
                 'factors' => [
                     'gezondheid' => 0.7,
@@ -38,7 +38,7 @@ class ModuleSeeder extends Seeder
             [
                 'name' => 'Park',
                 'description' => 'Een openbaar park voor ontspanning, natuurbeleving en beweging.',
-                'category' => 'Public Space',
+                'category' => 'Recreation',
                 'image' => 'park.jpg',
                 'factors' => [
                     'gezondheid' => 0.8,
@@ -50,7 +50,7 @@ class ModuleSeeder extends Seeder
             [
                 'name' => 'Primary School',
                 'description' => 'Een leeromgeving die ontwikkeling en sociale groei bevordert.',
-                'category' => 'Education',
+                'category' => 'Facilities',
                 'image' => 'school.jpg',
                 'factors' => [
                     'gezondheid' => 0.6,
