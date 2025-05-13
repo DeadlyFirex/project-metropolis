@@ -24,21 +24,33 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 body: JSON.stringify({ value: newValue })
             })
-            .then(res => {
-                if (!res.ok) throw new Error('Update mislukt');
+                .then(res => {
+                    if (!res.ok) throw new Error('Update mislukt');
 
-                valueEl.textContent = newValue > 0 ? `+${newValue}` : newValue;
-                valueEl.className = `effect-value font-semibold text-xs ${getEffectColorClass(newValue)}`;
+                    valueEl.textContent = newValue > 0 ? `+${newValue}` : newValue;
+                    valueEl.className = `effect-value font-semibold text-xs ${getEffectColorClass(newValue)}`;
+                    //effect controlflash 
+                    const flashClass = delta > 0 ? 'effect-flash-up' : 'effect-flash-down';
+                    valueEl.classList.add(flashClass);
+                    setTimeout(() => valueEl.classList.remove(flashClass), 400);
+                    // grid flash
+                    document.querySelectorAll(`td[data-slot-id] div[data-module-id="${moduleId}"]`).forEach(el => {
+                        const gridCell = el.closest('td');
+                        if (gridCell) {
+                            gridCell.classList.add(flashClass);
+                            setTimeout(() => {
+                                gridCell.classList.remove('effect-flash-up', 'effect-flash-down');
+                            }, 400);
+                        }
+                    });
 
-                const flashClass = delta > 0 ? 'effect-flash-up' : 'effect-flash-down';
-                valueEl.classList.add(flashClass);
-                setTimeout(() => valueEl.classList.remove(flashClass), 400);
 
-                updateCalculatedEffectsDisplay(moduleId, type, newValue);
-            })
-            .catch(err => {
-                alert("Effect kon niet worden aangepast: " + err.message);
-            });
+
+                    updateCalculatedEffectsDisplay(moduleId, type, newValue);
+                })
+                .catch(err => {
+                    alert("Effect kon niet worden aangepast: " + err.message);
+                });
         });
     });
 });
@@ -132,6 +144,6 @@ function getEffectColorClass(value) {
     return value > 0
         ? 'text-green-600'
         : value < 0
-        ? 'text-red-600'
-        : 'text-gray-700';
+            ? 'text-red-600'
+            : 'text-gray-700';
 }
