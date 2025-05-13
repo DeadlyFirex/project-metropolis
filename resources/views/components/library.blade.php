@@ -44,7 +44,7 @@
             </div>
             @empty
             <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow text-center">
-                <p class="text-gray-500 dark:text-gray-400">No modules available at this time.</p>
+                <p class="text-gray-500 dark:text-gray-400">Er zijn geen modules beschikbaar.</p>
             </div>
             @endforelse
         </div>
