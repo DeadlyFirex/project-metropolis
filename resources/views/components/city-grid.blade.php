@@ -5,14 +5,14 @@
 
 <table class="table-auto border-collapse border border-gray-300 w-full text-center">
     <tbody>
-        @foreach($slots->chunk(3) as $row)
+        @foreach($slots->chunk(4) as $row)
         <tr>
             @foreach($row as $slot)
             <td class="border border-gray-300 p-4 w-[200px] h-[150px] bg-gray-100 align-middle text-center">
                 <div
                     class="city-slot flex flex-col items-center justify-center h-full"
                     data-slot-id="{{ $slot->id }}">
-                    <div class="text-sm text-gray-500 mb-1">position: {{ $slot->index }}</div>
+                    <div class="text-sm text-gray-500 mb-1"></div>
 
                     @if($slot->module_id != null && $slot->module && $slot->module->image_path)
                     <div class="relative flex flex-col items-center">
@@ -31,7 +31,7 @@
                         </form>
                     </div>
                     @else
-                    <span class="text-xs text-gray-400">Empty</span>
+                    <span class="text-xs text-gray-400">Leeg</span>
                     @endif
 
                 </div>

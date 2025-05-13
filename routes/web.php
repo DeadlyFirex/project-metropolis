@@ -23,7 +23,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/slots/{slot}/remove-module', [SimulationController::class, 'removeModule'])->name('slots.removeModule');
     Route::post('/effects/module/{module}/{type}', [SimulationController::class, 'updateEffect'])->name('effects.update');
 
-
 });
+
 
 require __DIR__.'/auth.php'; 

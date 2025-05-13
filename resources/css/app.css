@@ -17,3 +17,47 @@
     transition: background-color 0.4s ease;
 }
 
+.effect-flash {
+    background-color: #fef9c3;
+    transition: background-color 0.4s ease;
+}
+
+
+.effect-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+    border: 1px solid #d1d5db; 
+}
+
+.effect-table th,
+.effect-table td {
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+}
+
+.effect-table thead {
+    background-color: #f3f4f6; 
+    color: #1f2937; 
+}
+
+.effect-table tfoot {
+    background-color: #e5e7eb; 
+}
+
+.effect-cell.text-green-600 {
+    color: #16a34a;
+    font-weight: 600;
+}
+
+.effect-cell.text-red-600 {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.effect-cell.text-gray-700,
+.effect-cell.text-gray-800 {
+    font-weight: 600;
+}
+
+
