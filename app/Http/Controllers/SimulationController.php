@@ -69,4 +69,3 @@ class SimulationController extends Controller
         return response()->json(['success' => true, 'effect' => $effect]);
     }
 }
-n

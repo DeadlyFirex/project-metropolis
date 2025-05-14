@@ -39,6 +39,7 @@
                                      'infrastructure' => 'Mobiliteit',
                                      ];
                                      @endphp
+
                                      @foreach ($slot->module->effects as $effect)
                                      @if ($effect->value !== 0)
                                      <div data-type="{{ $effect->type }}" class="{{ $effect->value > 0 ? 'text-green-600' : 'text-red-600' }}">
