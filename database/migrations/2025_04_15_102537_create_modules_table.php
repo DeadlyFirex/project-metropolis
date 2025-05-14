@@ -22,8 +22,6 @@ return new class extends Migration
 
             $table->string('image_path')
                 ->default('default-image.png');
-            $table->json('factors')
-                ->comment("Depends on if a list of factors is given");
             $table->timestamps();
         });
     }

@@ -1,38 +1,75 @@
-<table class="table-auto border-collapse border border-gray-300 w-full text-center">
-    <tbody>
-        @foreach($slots->chunk(3) as $row)
-        <tr>
-            @foreach($row as $slot)
-            <td class="border border-gray-300 p-4 w-[200px] h-[150px] bg-gray-100 align-middle text-center">
-                <div
-                    class="city-slot flex flex-col items-center justify-center h-full"
-                    data-slot-id="{{ $slot->id }}">
-                    <div class="text-sm text-gray-500 mb-1">position: {{ $slot->index }}</div>
+ <div class="py-8">
+     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-                    @if($slot->module_id != null && $slot->module && $slot->module->image_path)
-                    <div class="relative flex flex-col items-center">
-                        <img src="{{ asset('storage/' . $slot->module->image_path) }}"
-                            alt="{{ $slot->module->name }}"
-                            class="w-[60px] pointer-events-none">
+         <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Metropolis Grid</h2>
 
-                        <span class="text-xs text-gray-700">{{ $slot->module->name }}</span>
+         <table class="table-auto border-collapse border border-gray-300 w-full text-center">
+             <tbody>
+                 @foreach($slots->chunk(4) as $row)
+                 <tr>
+                     @foreach($row as $slot)
+                     <td class="border border-gray-300 p-4 w-[200px] h-[150px] bg-gray-100 align-middle text-center"
+                         data-slot-id="{{ $slot->id }}">
 
-                        <form method="POST" action="{{ route('slots.removeModule', $slot->id) }}" class="absolute top-0 right-0">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" class="bg-red-500 text-white rounded-full w-5 h-5 text-xs leading-none">
-                                ×
-                            </button>
-                        </form>
-                    </div>
-                    @else
-                    <span class="text-xs text-gray-400">Empty</span>
-                    @endif
+                         <div
+                             class="city-slot flex flex-col items-center justify-center h-full"
+                             data-slot-id="{{ $slot->id }}"
+                             @if($slot->module_id)
+                             data-module-id="{{ $slot->module_id }}"
+                             @endif>
 
-                </div>
-            </td>
-            @endforeach
-        </tr>
-        @endforeach
-    </tbody>
-</table>
+                             <div class="text-sm text-gray-500 mb-1"></div>
+
+                             @if($slot->module_id != null && $slot->module && $slot->module->image_path)
+                             <div class="relative flex flex-col items-center">
+                                 <img src="{{ asset('storage/' . $slot->module->image_path) }}"
+                                     alt="{{ $slot->module->name }}"
+                                     class="w-[80px] h-[80px] object-contain pointer-events-none">
+
+
+                                 <span class="text-xs text-gray-700">{{ $slot->module->name }}</span>
+
+                                 <div class="grid-effects text-[10px] mt-1 text-gray-600 text-center space-y-[1px]" data-grid-effects-for="{{ $slot->module->id }}">
+                                     @php
+                                     $typeMap = [
+                                     'safety' => 'Veiligheid',
+                                     'recreation' => 'Recreatie',
+                                     'climate' => 'Milieukwaliteit',
+                                     'facilities' => 'Voorzieningen',
+                                     'infrastructure' => 'Mobiliteit',
+                                     ];
+                                     @endphp
+
+                                     @foreach ($slot->module->effects as $effect)
+                                     @if ($effect->value !== 0)
+                                     <div data-type="{{ $effect->type }}" class="{{ $effect->value > 0 ? 'text-green-600' : 'text-red-600' }}">
+                                         {{ $effect->value > 0 ? '+' : '' }}{{ $effect->value }} {{ $typeMap[$effect->type] ?? $effect->type }}
+                                     </div>
+                                     @endif
+                                     @endforeach
+                                 </div>
+
+
+
+                                 <form method="POST" action="{{ route('slots.removeModule', $slot->id) }}" class="absolute top-0 right-0">
+                                     @csrf
+                                     @method('PATCH')
+                                     <button type="submit" class="bg-red-500 text-white rounded-full w-5 h-5 text-xs leading-none">
+                                         ×
+                                     </button>
+                                 </form>
+                             </div>
+                             @else
+                             <span class="text-xs text-gray-400">Leeg</span>
+                             @endif
+
+                         </div>
+                     </td>
+                     @endforeach
+                 </tr>
+                 @endforeach
+             </tbody>
+         </table>
+
+     </div>
+ </div>

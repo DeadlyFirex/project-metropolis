@@ -2,28 +2,39 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Module;
 use App\Models\Slot;
+use App\Models\Effect;
+use Illuminate\Http\Request;
 
 class SimulationController extends Controller
 {
+
     private const GRID_WIDTH  = 3;
     private const GRID_HEIGHT = 4;
-
+  
     public function index(Request $request)
     {
-        $category   = $request->input('category');
-        $modules    = $this->getModules($category);
+        $category = $request->input('category');
+        $modules = $this->getModules($category);
         $categories = Module::select('category')->distinct()->pluck('category');
-        $slots      = $this->getAllSlots();
-
+        $slots = Slot::with(['module.effects'])->get(); // preload relaties
+      
         return view('sim_dashboard', compact('modules', 'category', 'categories', 'slots'));
     }
 
-    public function koppelModule(Request $request)
+    private function getModules($category = null)
     {
+        $query = Module::with('effects'); // preload effecten
+        if ($category) {
+            $query->where('category', $category);
+        }
+        return $query->get();
+    }
+
+    public function koppelModule(Request $request)
+    {   
         $validator = Validator::make(
             $request->all(),
             [
@@ -121,7 +132,7 @@ class SimulationController extends Controller
 
         $targetSlot->update(['module_id' => $newModule->id]);
 
-        return response()->noContent();
+        return response()->json(['success' => true]);
     }
 
     public function removeModule(Slot $slot)
@@ -140,5 +151,26 @@ class SimulationController extends Controller
         return $category
             ? Module::where('category', $category)->get()
             : Module::all();
+        return redirect()->back();
+    }
+
+    public function updateEffect(Request $request, $moduleId, $type)
+    {
+        $validTypes = ['safety', 'recreation', 'climate', 'facilities', 'infrastructure'];
+
+        if (!in_array($type, $validTypes)) {
+            return response()->json(['error' => 'Invalid effect type'], 400);
+        }
+
+        $validated = $request->validate([
+            'value' => 'required|integer|min:-5|max:5',
+        ]);
+
+        $effect = Effect::updateOrCreate(
+            ['module_id' => $moduleId, 'type' => $type],
+            ['value' => $validated['value']]
+        );
+
+        return response()->json(['success' => true, 'effect' => $effect]);
     }
 }

@@ -23,12 +23,6 @@ class ConfigurationFactory extends Factory
                 [
                     Module::factory(), Module::factory(), Module::factory()
                 ], JSON_THROW_ON_ERROR),
-            'factors' => json_encode(
-                [
-                    'factor1' => $this->faker->randomFloat(2, 0, 100),
-                    'factor2' => $this->faker->randomFloat(2, 0, 100),
-                    'factor3' => $this->faker->randomFloat(2, 0, 100),
-                ], JSON_THROW_ON_ERROR),
         ];
     }
 }

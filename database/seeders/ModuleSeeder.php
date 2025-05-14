@@ -12,54 +12,85 @@ class ModuleSeeder extends Seeder
     {
         $modules = [
             [
-                'name' => 'Hospital',
-                'description' => 'Een instelling voor medische zorg, behandeling en operaties.',
-                'category' => 'Voorzieningen',
-                'image' => 'ziekenhuis.jpg',
-                'factors' => [
-                    'gezondheid' => 0.95,
-                    'happiness' => 0.4,
-                    'mentale_rust' => 0.3,
-                    'sociale_interactie' => 0.6,
-                ],
+                'name' => 'Politiebureau',
+                'description' => 'Een politiebureau waar veiligheid en wetshandhaving centraal staan.',
+                'category' => 'Veiligheid',
+                'image' => 'politiebureau.jpg',
             ],
             [
-                'name' => 'Home',
-                'description' => 'Een fijne plek om thuis te komen en tot rust te komen.',
-                'category' => 'Voorzieningen',
-                'image' => 'huis.jpg',
-                'factors' => [
-                    'gezondheid' => 0.7,
-                    'happiness' => 0.9,
-                    'mentale_rust' => 0.85,
-                    'sociale_interactie' => 0.6,
-                ],
+                'name' => 'Brandweerkazerne',
+                'description' => 'Een brandweerkazerne waar brandweerwagens en personeel zich voorbereiden op noodsituaties.',
+                'category' => 'Veiligheid',
+                'image' => 'brandweerkazerne.jpg',
             ],
             [
                 'name' => 'Park',
                 'description' => 'Een openbaar park voor ontspanning, natuurbeleving en beweging.',
                 'category' => 'Recreatie',
                 'image' => 'park.jpg',
-                'factors' => [
-                    'gezondheid' => 0.8,
-                    'happiness' => 0.95,
-                    'mentale_rust' => 0.9,
-                    'sociale_interactie' => 0.7,
-                ],
             ],
             [
-                'name' => 'Primary School',
+                'name' => 'Bioscoop',
+                'description' => 'Een bioscoop waar films en andere voorstellingen worden vertoond voor publiek.',
+                'category' => 'Recreatie',
+                'image' => 'bioscoop.jpg',
+            ],
+            [
+                'name' => 'Sportpark',
+                'description' => 'Een sportpark voor diverse sportactiviteiten en wedstrijden.',
+                'category' => 'Recreatie',
+                'image' => 'sportpark.jpg',
+            ],
+            [
+                'name' => 'Waterzuivering',
+                'description' => 'Een waterzuiveringsinstallatie die zorgt voor het schoonmaken van afvalwater.',
+                'category' => 'Milieukwaliteit',
+                'image' => 'waterzuivering.jpg',
+            ],
+            [
+                'name' => 'School',
                 'description' => 'Een leeromgeving die ontwikkeling en sociale groei bevordert.',
                 'category' => 'Voorzieningen',
                 'image' => 'school.jpg',
-                'factors' => [
-                    'gezondheid' => 0.6,
-                    'happiness' => 0.7,
-                    'mentale_rust' => 0.5,
-                    'sociale_interactie' => 0.95,
-                ],
+            ],
+            [
+                'name' => 'Winkel',
+                'description' => 'Een winkel waar consumenten producten kunnen kopen in verschillende categorieën.',
+                'category' => 'Voorzieningen',
+                'image' => 'winkel.jpg',
+            ],
+            [
+                'name' => 'Ziekenhuis',
+                'description' => 'Een instelling voor medische zorg, behandeling en operaties.',
+                'category' => 'Voorzieningen',
+                'image' => 'ziekenhuis.jpg',
+            ],
+            [
+                'name' => 'Station',
+                'description' => 'Een station voor treinen, waar mensen van en naar verschillende bestemmingen kunnen reizen.',
+                'category' => 'Mobiliteit',
+                'image' => 'station.jpg',
+            ],
+            [
+                'name' => 'Weg',
+                'description' => 'Een weg die automobilisten, fietsers en voetgangers in staat stelt zich tussen steden of gebieden te verplaatsen.',
+                'category' => 'Mobiliteit',
+                'image' => 'weg.jpg',
+            ],
+            [
+                'name' => 'Fietspad',
+                'description' => 'Een fietspad speciaal voor fietsers om veilig te kunnen rijden.',
+                'category' => 'Mobiliteit',
+                'image' => 'fietspad.jpg',
+            ],
+            [
+                'name' => 'Tankstation',
+                'description' => 'Een tankstation waar voertuigen brandstof kunnen tanken en andere autogerelateerde producten kunnen kopen.',
+                'category' => 'Mobiliteit',
+                'image' => 'tankstation.jpg',
             ],
         ];
+
 
         foreach ($modules as $mod) {
             $imagePath = 'modules/' . $mod['image'];
@@ -74,7 +105,6 @@ class ModuleSeeder extends Seeder
                 'description' => $mod['description'],
                 'category' => $mod['category'],
                 'image_path' => $imagePath,
-                'factors' => json_encode($mod['factors'], JSON_THROW_ON_ERROR),
             ]);
         }
     }

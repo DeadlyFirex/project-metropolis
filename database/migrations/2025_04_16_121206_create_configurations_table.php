@@ -17,8 +17,6 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->json('modules')
                 ->comment('Modules that are enabled for this configuration');
-            $table->json('factors')
-                ->comment('Depends on if saving statically is required');
             $table->foreignId('user_id')
                 ->constrained('users')
                 ->onDelete('cascade');
