@@ -9,3 +9,5 @@ Alpine.start();
 import './drag.js';
 import './effect-control.js';
 import './effect-flash.js';
+import './openModule.js';
+

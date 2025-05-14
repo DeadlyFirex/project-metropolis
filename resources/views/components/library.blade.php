@@ -47,4 +47,3 @@
             </div>
         @endforelse
     </div>
-</div>
