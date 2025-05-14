@@ -15,7 +15,7 @@
         <table id="calculated-effects-table" class="w-full text-xs text-center table-fixed border-collapse">
             <thead class="bg-gray-100 text-gray-800">
                 <tr>
-                    <th class="px-2 py-1 border border-gray-300 text-left w-32">Module naam</th>
+                    <th class="px-2 py-1 border border-gray-300 text-left w-32">Module</th>
                     @foreach($effectTypes as $label)
                         <th class="px-2 py-1 border border-gray-300 w-20 whitespace-nowrap">{{ $label }}</th>
                     @endforeach
