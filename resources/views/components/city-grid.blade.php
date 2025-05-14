@@ -30,14 +30,24 @@
                                  <span class="text-xs text-gray-700">{{ $slot->module->name }}</span>
 
                                  <div class="grid-effects text-[10px] mt-1 text-gray-600 text-center space-y-[1px]" data-grid-effects-for="{{ $slot->module->id }}">
+                                     @php
+                                     $typeMap = [
+                                     'safety' => 'Veiligheid',
+                                     'recreation' => 'Recreatie',
+                                     'climate' => 'Milieukwaliteit',
+                                     'facilities' => 'Voorzieningen',
+                                     'infrastructure' => 'Mobiliteit',
+                                     ];
+                                     @endphp
                                      @foreach ($slot->module->effects as $effect)
                                      @if ($effect->value !== 0)
                                      <div data-type="{{ $effect->type }}" class="{{ $effect->value > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                         {{ $effect->value > 0 ? '+' : '' }}{{ $effect->value }} {{ $effect->type }}
+                                         {{ $effect->value > 0 ? '+' : '' }}{{ $effect->value }} {{ $typeMap[$effect->type] ?? $effect->type }}
                                      </div>
                                      @endif
                                      @endforeach
                                  </div>
+
 
 
                                  <form method="POST" action="{{ route('slots.removeModule', $slot->id) }}" class="absolute top-0 right-0">
