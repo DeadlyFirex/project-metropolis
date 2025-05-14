@@ -55,17 +55,22 @@ document.addEventListener("DOMContentLoaded", () => {
                         slot_id: slotId
                     })
                 })
-                .then(response => {
-                    if (response.ok) {
-                        location.reload();
-                    } else {
-                        alert("Koppelen mislukt.");
-                    }
-                })
-                .catch(() => {
-                    alert("Er is iets misgegaan bij het koppelen.");
-                });
+                    .then(response => {
+                        if (response.status === 422) {
+                            alert("Je mag deze categorieën niet naast elkaar hebben.");
+                        } else if (response.status === 409) {
+                            alert("Je mag niet meer van deze categorie neerzetten.");
+                        } else if (response.ok) {
+                            location.reload();
+                        } else {
+                            alert("Er is iets misgegaan bij het koppelen.");
+                        }
+                    })
+                    .catch(() => {
+                        alert("Er is iets misgegaan bij het koppelen.");
+                    });
             }
+
         });
     });
 });
