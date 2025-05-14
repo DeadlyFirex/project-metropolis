@@ -55,8 +55,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         slot_id: slotId
                     })
                 })
-                .then(() => {
-                    location.reload();
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert("Koppelen mislukt.");
+                    }
                 })
                 .catch(() => {
                     alert("Er is iets misgegaan bij het koppelen.");
