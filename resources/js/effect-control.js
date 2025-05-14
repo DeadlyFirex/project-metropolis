@@ -47,6 +47,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                     updateCalculatedEffectsDisplay(moduleId, type, newValue);
+                    updateGridModuleEffects(moduleId);
+
                 })
                 .catch(err => {
                     alert("Effect kon niet worden aangepast: " + err.message);
@@ -146,4 +148,23 @@ function getEffectColorClass(value) {
         : value < 0
             ? 'text-red-600'
             : 'text-gray-700';
+}
+
+function updateGridModuleEffects(moduleId) {
+    fetch(`/api/modules/${moduleId}/effects`)
+        .then(res => res.json())
+        .then(data => {
+            document.querySelectorAll(`[data-grid-effects-for="${moduleId}"]`).forEach(container => {
+                container.innerHTML = '';
+                data.effects.forEach(effect => {
+                    if (effect.value !== 0) {
+                        const div = document.createElement('div');
+                        div.dataset.type = effect.type;
+                        div.textContent = `${effect.value > 0 ? '+' : ''}${effect.value} ${effect.type}`;
+                        div.className = `text-[10px] ${effect.value > 0 ? 'text-green-600' : 'text-red-600'}`;
+                        container.appendChild(div);
+                    }
+                });
+            });
+        });
 }

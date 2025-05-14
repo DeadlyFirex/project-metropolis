@@ -8,7 +8,7 @@ $types = [
 ];
 @endphp
 
-<h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 text-left">Effecten Beheersen</h2>
+<h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 text-left">Effecten Beheren</h2>
 
 
     <table class="w-full text-xs text-center table-fixed">

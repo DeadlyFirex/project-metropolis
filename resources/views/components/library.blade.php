@@ -1,4 +1,4 @@
-<div class="py-4 px-2">
+<div class="w-full bg-white dark:bg-gray-900 overflow-y-auto px-4 py-6">
     <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 text-left">Module Bibliotheek</h2>
 
     <form method="GET" action="{{ route('simulatiedashboard') }}" class="mb-4 text-left">
@@ -21,23 +21,23 @@
                 </h3>
 
                 <p class="text-sm text-blue-500 mt-1">
-                    Category: {{ $module->category ?? 'N/A' }}
+                    Categorie: {{ $module->category ?? 'N/A' }}
                 </p>
 
                 @if(isset($module->image_path))
                 <div class="mt-2">
                     <img src="{{ asset('storage/' . $module->image_path) }}"
-                        alt="{{ $module->name ?? 'Module image' }}"
-                        class="w-14 h-14 object-contain rounded-md"
-                        draggable="true"
-                        data-module-id="{{ $module->id }}"
-                        data-name="{{ $module->name }}"
-                        ondragstart="
+                         alt="{{ $module->name ?? 'Module image' }}"
+                         class="w-14 h-14 object-contain rounded-md"
+                         draggable="true"
+                         data-module-id="{{ $module->id }}"
+                         data-name="{{ $module->name }}"
+                         ondragstart="
                             event.dataTransfer.setData('type', 'module');
                             event.dataTransfer.setData('module_id', this.dataset.moduleId);
                             event.dataTransfer.setData('name', this.dataset.name);
                             event.dataTransfer.setData('img', this.src);
-                        ">
+                         ">
                 </div>
                 @endif
             </div>

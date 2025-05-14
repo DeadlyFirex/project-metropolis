@@ -24,9 +24,21 @@
                              <div class="relative flex flex-col items-center">
                                  <img src="{{ asset('storage/' . $slot->module->image_path) }}"
                                      alt="{{ $slot->module->name }}"
-                                     class="w-[60px] pointer-events-none">
+                                     class="w-[80px] h-[80px] object-contain pointer-events-none">
+
 
                                  <span class="text-xs text-gray-700">{{ $slot->module->name }}</span>
+
+                                 <div class="grid-effects text-[10px] mt-1 text-gray-600 text-center space-y-[1px]" data-grid-effects-for="{{ $slot->module->id }}">
+                                     @foreach ($slot->module->effects as $effect)
+                                     @if ($effect->value !== 0)
+                                     <div data-type="{{ $effect->type }}" class="{{ $effect->value > 0 ? 'text-green-600' : 'text-red-600' }}">
+                                         {{ $effect->value > 0 ? '+' : '' }}{{ $effect->value }} {{ $effect->type }}
+                                     </div>
+                                     @endif
+                                     @endforeach
+                                 </div>
+
 
                                  <form method="POST" action="{{ route('slots.removeModule', $slot->id) }}" class="absolute top-0 right-0">
                                      @csrf
