@@ -17,11 +17,12 @@ class SimulationController extends Controller
     public function index(Request $request)
     {
         $category = $request->input('category');
+        $all_modules = $this->getModules();
         $modules = $this->getModules($category);
         $categories = Module::select('category')->distinct()->pluck('category');
         $slots = Slot::with(['module.effects'])->get(); // preload relaties
 
-        return view('sim_dashboard', compact('modules', 'category', 'categories', 'slots'));
+        return view('sim_dashboard', compact('modules', 'category', 'categories', 'slots', 'all_modules'));
     }
 
     private function getModules($category = null)

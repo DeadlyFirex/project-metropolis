@@ -21,7 +21,7 @@ $types = [
             </tr>
         </thead>
         <tbody>
-            @foreach($modules as $module)
+            @foreach($all_modules as $module)
                 <tr class="hover:bg-gray-50">
                     <td class="px-2 py-1 border text-left font-medium text-gray-700">{{ $module->name }}</td>
                     @foreach($types as $key => $label)
