@@ -4,7 +4,7 @@
     <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 text-left">Module Bibliotheek</h2>
     <div class="mb-4">
         <button onclick="window.location.href='{{ route('module.index') }}';"
-                class="bg-blue-500 text-white px-4 py-2 rounded w-full">
+                class="bg-blue-500 text-white px-4 py-2 rounded w-auto">
             Module Dashboard
         </button>
     </div>
@@ -22,9 +22,10 @@
         </select>
     </form>
 
-    <div class="flex-1 overflow-y-auto flex flex-col gap-4 pr-1">
+    {{-- Module Grid --}}
+    <div class="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pr-1">
         @forelse($modules as $module)
-            <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg shadow-sm flex flex-col items-center text-center">
+            <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg shadow-sm flex flex-col items-center text-center max-w-xs w-full max-h-[175px]">
                 <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200">
                     {{ $module->name ?? 'Untitled Module' }}
                 </h3>
@@ -51,7 +52,7 @@
                 @endif
             </div>
         @empty
-            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow text-center">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow text-center col-span-full">
                 <p class="text-gray-500 dark:text-gray-400">Er zijn geen modules beschikbaar.</p>
             </div>
         @endforelse

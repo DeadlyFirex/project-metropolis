@@ -5,29 +5,32 @@
         </h2>
     </x-slot>
 
-    {{-- Volledige breedtecontainer buiten max-w beperkingen --}}
     <div class="w-full bg-gray-100 min-h-screen">
-        <div class="flex flex-row items-start gap-6 px-6 pt-6">
+        <div class="flex flex-col gap-6 px-6 pt-6">
 
-            {{-- Sidebar: Modulebibliotheek --}}
-            <aside class="w-[280px] sticky top-[5rem] h-[calc(100vh-5rem)] overflow-y-auto bg-white dark:bg-gray-900 border-r px-4 py-6 shrink-0 rounded-2xl shadow">
-                @include('components.library', ['modules' => $modules, 'categories' => $categories])
-            </aside>
+            {{-- Rij 1: Sidebar + City Grid --}}
+            <div class="flex flex-row items-start gap-6">
 
-            {{-- Midden: City Grid --}}
-            <main class="flex-1 bg-white p-6 rounded-2xl shadow overflow-auto min-h-[600px]">
-                @include('components.city-grid', ['slots' => $slots])
-            </main>
+                {{-- Sidebar (breder + scrollable) --}}
+                <aside class="w-[760px] h-[675px] top-[5rem] min-h-[600px] overflow-y-auto bg-white dark:bg-gray-900 border-r px-4 py-6 shrink-0 rounded-2xl shadow">
+                    @include('components.library', ['modules' => $modules, 'categories' => $categories])
+                </aside>
 
-            {{-- Rechterkolom: Effecten --}}
-            <aside class="w-[600px] flex flex-col gap-6 shrink-0">
-                <div class="bg-white p-6 rounded-2xl shadow">
+                {{-- City Grid (beperkte breedte, niet volledige flex-1) --}}
+                <main class="flex-1 max-w-[1000px] h-[675px] bg-white p-6 rounded-2xl shadow min-h-[600px]">
+                    @include('components.city-grid', ['slots' => $slots])
+                </main>
+            </div>
+
+            {{-- Rij 2: Effecten --}}
+            <div class="flex flex-col lg:flex-row gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow w-full lg:w-1/2">
                     @include('components.calculated-effects', ['slots' => $slots])
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow">
+                <div class="bg-white p-6 rounded-2xl shadow w-full lg:w-1/2">
                     @include('components.effect-control', ['modules' => $modules])
                 </div>
-            </aside>
+            </div>
 
         </div>
     </div>

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('slots', function (Blueprint $table) {
             $table->id();
             $table->unsignedSmallInteger("index")->unique();
-            $table->foreignId('module_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('module_id')->nullable()->constrained()->onDelete('SET NULL');
             $table->timestamps();
         });
     }
