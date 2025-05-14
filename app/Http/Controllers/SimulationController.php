@@ -33,7 +33,10 @@ class SimulationController extends Controller
         );
 
         if ($validator->fails()) {
-            return response()->json(['message' => $validator->errors()->first(), 'errors' => $validator->errors()->toArray()], 422);
+            return response()->json([
+                'message' => $validator->errors()->first(),
+                'errors'  => $validator->errors()->toArray()
+            ], 422);
         }
 
         $newModule  = Module::findOrFail($request->module_id);
@@ -41,13 +44,12 @@ class SimulationController extends Controller
         $category   = $newModule->category;
 
         $incompatible = [
-            'Safety'                => ['Recreation', 'Mobility'],
-            'Recreation'            => ['Safety', 'Facilities'],
-            'Environmental Quality' => ['Mobility'],
-            'Facilities'            => ['Recreation', 'Mobility'],
-            'Mobility'              => ['Safety', 'Environmental Quality', 'Facilities'],
+            'Veiligheid'      => ['Recreatie', 'Mobiliteit'],
+            'Recreatie'       => ['Veiligheid', 'Voorzieningen'],
+            'Milieukwaliteit' => ['Mobiliteit'],
+            'Voorzieningen'   => ['Recreatie', 'Mobiliteit'],
+            'Mobiliteit'      => ['Veiligheid', 'Milieukwaliteit', 'Voorzieningen'],
         ];
-
 
         if (isset($incompatible[$category])) {
             $pos = $targetSlot->index;
@@ -56,8 +58,8 @@ class SimulationController extends Controller
                 return response()->json(['message' => 'Fout: Slot index (positie) is niet ingesteld.'], 500);
             }
 
-            $x   = $pos % self::GRID_WIDTH;
-            $y   = intdiv($pos, self::GRID_WIDTH);
+            $x = $pos % self::GRID_WIDTH;
+            $y = intdiv($pos, self::GRID_WIDTH);
 
             $adjacentPositions = [];
             foreach ([-1, 0, 1] as $dx) {
@@ -72,7 +74,6 @@ class SimulationController extends Controller
             }
 
             if (!empty($adjacentPositions)) {
-                // Query op 'index'
                 $adjacentSlotIds = Slot::whereIn('index', $adjacentPositions)->pluck('id');
 
                 if ($adjacentSlotIds->isNotEmpty()) {
@@ -83,29 +84,29 @@ class SimulationController extends Controller
                         ->exists();
 
                     if ($conflict) {
-                        return response()->json(['message' => __('errors.category_incompatible', ['category' => $category])], 422);
+                        return response()->json([
+                            'message' => __('errors.category_incompatible', ['category' => $category])
+                        ], 422);
                     }
                 }
             }
         }
 
-        // Category Limit Check
         $categoryLimits = [
-            'Safety'                => 4,
-            'Recreation'            => 2,
-            'Environmental Quality' => 3,
-            'Facilities'            => 5,
-            'Mobility'              => 4,
+            'Veiligheid'      => 4,
+            'Recreatie'       => 2,
+            'Milieukwaliteit' => 3,
+            'Voorzieningen'   => 5,
+            'Mobiliteit'      => 4,
         ];
 
-
         if (isset($categoryLimits[$category])) {
-            $currentCountQuery = Slot::whereHas('module', fn ($q) => $q->where('category', $category));
+            $currentCountQuery       = Slot::whereHas('module', fn ($q) => $q->where('category', $category));
             $isReplacingSameCategory = $targetSlot->module && $targetSlot->module->category === $category;
 
             if (!$isReplacingSameCategory) {
                 $countExcludingTarget = $currentCountQuery->where('id', '!=', $targetSlot->id)->count();
-                $prospectiveCount = $countExcludingTarget + 1;
+                $prospectiveCount     = $countExcludingTarget + 1;
 
                 if ($prospectiveCount > $categoryLimits[$category]) {
                     return response()->json([
@@ -118,7 +119,6 @@ class SimulationController extends Controller
             }
         }
 
-        // Update Slot
         $targetSlot->update(['module_id' => $newModule->id]);
 
         return response()->noContent();
