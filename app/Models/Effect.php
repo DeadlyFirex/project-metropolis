@@ -11,6 +11,7 @@ class Effect extends Model
 
     protected $table = 'effects';
     protected $fillable = [
+        'module_id',
         'type',
         'value',
     ];

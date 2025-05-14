@@ -21,7 +21,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/simdash', [SimulationController::class, 'index'])->name('simulatiedashboard');
     Route::post('/simulatie/koppel-module', [SimulationController::class, 'koppelModule']);
     Route::patch('/slots/{slot}/remove-module', [SimulationController::class, 'removeModule'])->name('slots.removeModule');
-    Route::post('/effects/module/{module}/{type}', [SimulationController::class, 'updateEffect'])->name('effects.update');
+    Route::post('/effects/module/{moduleId}/{type}', [SimulationController::class, 'updateEffect'])->name('effects.update');
     Route::get('/api/modules/{module}/effects', function (\App\Models\Module $module) {
     return response()->json([
         'effects' => $module->effects->map(fn($e) => [
