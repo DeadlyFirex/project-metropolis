@@ -13,14 +13,14 @@ class SimulationController extends Controller
 
     private const GRID_WIDTH  = 3;
     private const GRID_HEIGHT = 4;
-  
+
     public function index(Request $request)
     {
         $category = $request->input('category');
         $modules = $this->getModules($category);
         $categories = Module::select('category')->distinct()->pluck('category');
         $slots = Slot::with(['module.effects'])->get(); // preload relaties
-      
+
         return view('sim_dashboard', compact('modules', 'category', 'categories', 'slots'));
     }
 
@@ -34,7 +34,7 @@ class SimulationController extends Controller
     }
 
     public function koppelModule(Request $request)
-    {   
+    {
         $validator = Validator::make(
             $request->all(),
             [
@@ -144,14 +144,6 @@ class SimulationController extends Controller
     private function getAllSlots()
     {
         return Slot::with('module')->get();
-    }
-
-    private function getModules($category = null)
-    {
-        return $category
-            ? Module::where('category', $category)->get()
-            : Module::all();
-        return redirect()->back();
     }
 
     public function updateEffect(Request $request, $moduleId, $type)
