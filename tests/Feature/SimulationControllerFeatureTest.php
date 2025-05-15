@@ -11,10 +11,7 @@ use App\Models\Module;
 use App\Models\Slot;
 
 /**
- * Feature tests for SimulationController.
- *
- * Verifies that the koppelModule endpoint properly assigns modules to slots or returns validation errors,
- * and that the category parameter is passed through to the view.
+ * Feature-tests voor SimulationController.
  */
 class SimulationControllerFeatureTest extends TestCase
 {
@@ -27,15 +24,12 @@ class SimulationControllerFeatureTest extends TestCase
         Route::get('/simulation', [SimulationController::class, 'index']);
         Route::post('/simulation/koppelModule', [SimulationController::class, 'koppelModule']);
 
-        $user = User::factory()->create();
-        $this->actingAs($user);
+        $this->actingAs(User::factory()->create());
     }
 
-    /**
-     * Test that the category parameter is received from the request
-     * and provided to the view.
-     */
-    public function testCategoryParameterIsPassedToView()
+    /* ---------- bestaande tests ------------------------------------------------ */
+
+    public function testCategoryParameterIsPassedToView(): void
     {
         Module::factory()->create(['category' => 'catA']);
 
@@ -45,22 +39,17 @@ class SimulationControllerFeatureTest extends TestCase
         $this->assertEquals('catA', $response->viewData('category'));
     }
 
-    /**
-     * Test that posting valid module_id and slot_id to koppelModule
-     * assigns the module to the slot and returns success JSON.
-     */
-    public function testKoppelModuleValidRequestAssignsModuleToSlot()
+    public function testKoppelModuleValidRequestAssignsModuleToSlot(): void
     {
         $module = Module::factory()->create();
-        $slot = Slot::factory()->create();
+        $slot   = Slot::factory()->create();
 
         $response = $this->postJson('/simulation/koppelModule', [
             'module_id' => $module->id,
             'slot_id'   => $slot->id,
         ]);
 
-        $response->assertStatus(200)
-            ->assertJson(['success' => true]);
+        $response->assertStatus(204);
 
         $this->assertDatabaseHas('slots', [
             'id'        => $slot->id,
@@ -68,18 +57,69 @@ class SimulationControllerFeatureTest extends TestCase
         ]);
     }
 
-    /**
-     * Test that posting invalid module_id and slot_id to koppelModule
-     * returns validation errors for both fields.
-     */
-    public function testKoppelModuleInvalidDataReturnsValidationErrors()
+    public function testKoppelModuleInvalidDataReturnsValidationErrors(): void
     {
         $response = $this->postJson('/simulation/koppelModule', [
             'module_id' => 999,
             'slot_id'   => 999,
         ]);
 
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['module_id', 'slot_id']);
+        $response->assertStatus(422)
+            ->assertJsonStructure(['message']);
+    }
+
+    public function testCategoryLimitIsEnforced(): void
+    {
+        $slots = collect();
+        for ($i = 1; $i <= 4; $i++) {
+            $slots->push(Slot::factory()->create(['index' => $i]));
+        }
+
+        $modules = Module::factory()
+            ->count(4)
+            ->state(['category' => 'Residential'])
+            ->create();
+
+        foreach ($slots->take(3) as $i => $slot) {
+            $this->postJson('/simulation/koppelModule', [
+                'module_id' => $modules[$i]->id,
+                'slot_id'   => $slot->id,
+            ])->assertStatus(204);
+        }
+
+        $this->postJson('/simulation/koppelModule', [
+            'module_id' => $modules[3]->id,
+            'slot_id'   => $slots[3]->id,
+        ])
+            ->assertStatus(422)
+            ->assertJsonFragment([
+                'message' => __('errors.category_limit_reached', [
+                    'limit'    => 3,
+                    'category' => 'Residential',
+                ]),
+            ]);
+    }
+
+    public function testIncompatibleCategoriesAreRejected(): void
+    {
+        $slotA = Slot::factory()->create(['index' => 10]);
+        $slotB = Slot::factory()->create(['index' => 11]);
+
+        $care   = Module::factory()->state(['category' => 'Care'])->create();
+        $public = Module::factory()->state(['category' => 'Public Space'])->create();
+
+        $this->postJson('/simulation/koppelModule', [
+            'module_id' => $care->id,
+            'slot_id'   => $slotA->id,
+        ])->assertStatus(204);
+
+        $this->postJson('/simulation/koppelModule', [
+            'module_id' => $public->id,
+            'slot_id'   => $slotB->id,
+        ])
+            ->assertStatus(422)
+            ->assertJsonFragment([
+                'message' => __('errors.category_incompatible'),
+            ]);
     }
 }

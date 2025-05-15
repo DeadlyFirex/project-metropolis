@@ -3,7 +3,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const modules = document.querySelectorAll('img[draggable="true"][data-module-id]');
     const slots = document.querySelectorAll('.city-slot');
 
-    // Functies drag-start
     functions.forEach(func => {
         func.addEventListener('dragstart', (e) => {
             e.dataTransfer.setData('type', 'function');
@@ -11,7 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Modules drag-start
     modules.forEach(mod => {
         mod.addEventListener('dragstart', (e) => {
             e.dataTransfer.setData('type', 'module');
@@ -19,7 +17,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Drag & drop gedrag voor slots
     slots.forEach(slot => {
         slot.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -58,17 +55,22 @@ document.addEventListener("DOMContentLoaded", () => {
                         slot_id: slotId
                     })
                 })
-                .then(response => {
-                    if (response.ok) {
-                        location.reload();
-                    } else {
-                        alert("Koppelen mislukt.");
-                    }
-                })
-                .catch(() => {
-                    alert("Er is iets misgegaan bij het koppelen.");
-                });
+                    .then(response => {
+                        if (response.status === 422) {
+                            alert("Je mag deze categorieën niet naast elkaar hebben.");
+                        } else if (response.status === 409) {
+                            alert("Je mag niet meer van deze categorie neerzetten.");
+                        } else if (response.ok) {
+                            location.reload();
+                        } else {
+                            alert("Er is iets misgegaan bij het koppelen.");
+                        }
+                    })
+                    .catch(() => {
+                        alert("Er is iets misgegaan bij het koppelen.");
+                    });
             }
+
         });
     });
 });
