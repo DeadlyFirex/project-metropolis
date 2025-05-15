@@ -11,6 +11,22 @@
             </ul>
         </div>
     @endif
+    @if (session('success'))
+        <div
+            class="mb-4 flex items-start justify-between rounded-lg border border-green-300 bg-green-100 px-6 py-4 text-green-800 shadow-md">
+            <div class="flex items-center gap-2">
+                <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" stroke-width="2"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="font-medium">{{ session('success') }}</span>
+            </div>
+            <button onclick="this.parentElement.remove()"
+                class="text-green-600 hover:text-green-800 text-xl font-bold leading-none">
+                &times;
+            </button>
+        </div>
+    @endif
 
     <button onclick="window.location.href='{{ route('simulatiedashboard') }}';"
         class="bg-green-700 hover:bg-green-900 text-white px-4 py-2 rounded mt-6 mb-0 ml-8 mr-2">
