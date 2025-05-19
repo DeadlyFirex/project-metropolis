@@ -133,6 +133,5 @@
     @endif
 
     <!-- De modals voor toevoegen en wijzigen zoals je die al hebt -->
-
-    @vite('resources/js/openModule.js') <!-- Zorg ervoor dat dit bestand geladen wordt -->
+    <script src="{{ asset('js/openModule.js') }}"></script>
 </x-app-layout>
