@@ -21,6 +21,11 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/simdash', [SimulationController::class, 'index'])->name('simulatiedashboard');
     Route::get('/conditions', [ConditionsController::class, 'index'])->name('conditions');
+    Route::resource('conditions', ConditionsController::class)
+        ->except(['show', 'create', 'edit'])
+        ->names([
+            'index' => 'conditions',
+        ]);
     Route::post('/simulatie/koppel-module', [SimulationController::class, 'koppelModule']);
     Route::patch('/slots/{slot}/remove-module', [SimulationController::class, 'removeModule'])->name('slots.removeModule');
     Route::post('/effects/module/{moduleId}/{type}', [SimulationController::class, 'updateEffect'])->name('effects.update');
