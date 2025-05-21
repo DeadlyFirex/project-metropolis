@@ -20,7 +20,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/simdash', [SimulationController::class, 'index'])->name('simulatiedashboard');
-    Route::get('/conditions', [ConditionsController::class, 'index'])->name('conditions');
     Route::resource('conditions', ConditionsController::class)
         ->except(['show', 'create', 'edit'])
         ->names([
