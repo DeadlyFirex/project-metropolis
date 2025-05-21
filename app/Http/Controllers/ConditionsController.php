@@ -99,54 +99,51 @@ class ConditionsController extends Controller
 
     public function violatesAdjacencyRule(Module $newModule, Slot $targetSlot): bool
     {
-        $conditionRecord = Condition::where('category', $newModule->category)->first();
-        if (!$conditionRecord) {
-            return false;
-        }
+        $condition = Condition::where('category', $newModule->category)->first();
+        if (!$condition) return false;
 
-        $blocked = $conditionRecord->incompatible;
+        $blocked = is_string($condition->incompatible)
+            ? (json_decode($condition->incompatible, true) ?: [])
+            : ($condition->incompatible ?? []);
 
-        if (is_string($blocked)) {
-            $blocked = json_decode($blocked, true) ?: [];
-        }
+        if (empty($blocked)) return false;
 
-        if (empty($blocked)) {
-            return false;
-        }
+        $index = $targetSlot->index;
+        if ($index === null) return false;
 
-        $pos = $targetSlot->index;
-        if ($pos === null) {
-            return false;
-        }
+        $adjacent = $this->neighbourIndexes($index);
 
-        $x = $pos % self::GRID_WIDTH;
-        $y = intdiv($pos, self::GRID_WIDTH);
+        $adjacentCats = Slot::whereIn('index', $adjacent)
+            ->whereNotNull('module_id')
+            ->with('module:id,category')
+            ->get()
+            ->pluck('module.category')
+            ->unique()
+            ->all();
 
-        $adjacentIdx = [];
+        return !empty(array_intersect($adjacentCats, $blocked));
+    }
+
+    private function neighbourIndexes(int $index): array
+    {
+        $x = intdiv($index, self::GRID_HEIGHT);
+        $y = $index % self::GRID_HEIGHT;
+
+        $idx = [];
         foreach ([-1, 0, 1] as $dx) {
             foreach ([-1, 0, 1] as $dy) {
                 if ($dx === 0 && $dy === 0) continue;
+
                 $nx = $x + $dx;
                 $ny = $y + $dy;
+
                 if ($nx < 0 || $nx >= self::GRID_WIDTH) continue;
                 if ($ny < 0 || $ny >= self::GRID_HEIGHT) continue;
-                $adjacentIdx[] = $ny * self::GRID_WIDTH + $nx;
+
+                $idx[] = $nx * self::GRID_HEIGHT + $ny;
             }
         }
-
-        $adjacentSlots = Slot::whereIn('index', $adjacentIdx)
-            ->whereHas('module')
-            ->with('module:id,category')
-            ->get();
-
-        $adjacentCats = $adjacentSlots->pluck('module.category')->unique()->values()->all();
-
-        $conflicts = array_intersect($adjacentCats, $blocked);
-
-        if (!empty($conflicts)) {
-            return true;
-        }
-
-        return false;
+        return $idx;
     }
 }
+
