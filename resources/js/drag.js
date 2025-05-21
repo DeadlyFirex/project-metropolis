@@ -1,19 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const functions = document.querySelectorAll('.function');
-    const modules = document.querySelectorAll('img[draggable="true"][data-module-id]');
+    const moduleCards = document.querySelectorAll('.module-card[draggable="true"]');
     const slots = document.querySelectorAll('.city-slot');
 
-    functions.forEach(func => {
-        func.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('type', 'function');
-            e.dataTransfer.setData('function', func.dataset.function);
-        });
-    });
-
-    modules.forEach(mod => {
-        mod.addEventListener('dragstart', (e) => {
+    moduleCards.forEach(card => {
+        card.addEventListener('dragstart', (e) => {
             e.dataTransfer.setData('type', 'module');
-            e.dataTransfer.setData('module_id', mod.dataset.moduleId);
+            e.dataTransfer.setData('module_id', card.dataset.moduleId);
+            e.dataTransfer.setData('name', card.dataset.name);
+            e.dataTransfer.setData('img', card.dataset.img);
         });
     });
 
@@ -34,13 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const type = e.dataTransfer.getData('type');
             const slotId = slot.dataset.slotId;
 
-            if (type === 'function') {
-                const func = e.dataTransfer.getData('function');
-                slot.innerHTML = `<img src="/images/${func}.png" alt="${func}" class="assigned w-[60px]">`;
-                slot.classList.remove('bg-gray-100');
-                slot.classList.add('bg-red-200');
-            }
-
             if (type === 'module') {
                 const moduleId = e.dataTransfer.getData('module_id');
 
@@ -55,22 +42,21 @@ document.addEventListener("DOMContentLoaded", () => {
                         slot_id: slotId
                     })
                 })
-                    .then(response => {
-                        if (response.status === 422) {
-                            alert("Je mag deze categorieën niet naast elkaar hebben.");
-                        } else if (response.status === 409) {
-                            alert("Je mag niet meer van deze categorie neerzetten.");
-                        } else if (response.ok) {
-                            location.reload();
-                        } else {
-                            alert("Er is iets misgegaan bij het koppelen.");
-                        }
-                    })
-                    .catch(() => {
+                .then(response => {
+                    if (response.status === 422) {
+                        alert("Je mag deze categorieën niet naast elkaar hebben.");
+                    } else if (response.status === 409) {
+                        alert("Je mag niet meer van deze categorie neerzetten.");
+                    } else if (response.ok) {
+                        location.reload();
+                    } else {
                         alert("Er is iets misgegaan bij het koppelen.");
-                    });
+                    }
+                })
+                .catch(() => {
+                    alert("Er is iets misgegaan bij het koppelen.");
+                });
             }
-
         });
     });
 });
