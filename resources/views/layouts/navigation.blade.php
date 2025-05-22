@@ -3,6 +3,7 @@
         <div class="flex justify-between h-16">
             <!-- Linkerkant: Logo + Navigatie -->
             <div class="flex items-center space-x-4">
+                <button  class="bg-blue-500 text-white px-4 py-2 rounded w-auto" id="increaseFontBtn">Increase Font Size</button>
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
