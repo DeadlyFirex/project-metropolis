@@ -7,7 +7,7 @@
 
     @php
         $catIds  = $conditions->pluck('id', 'category');
-        $allCats = ['Categorie selecteren','Veiligheid','Recreatie','Milieukwaliteit','Voorzieningen','Mobiliteit'];
+        $allCats = ['Veiligheid','Recreatie','Milieukwaliteit','Voorzieningen','Mobiliteit'];
         $errorMax = $errors->has('max');
         $errorInc = !$errorMax && $errors->any();
         $oldCat   = old('category', $allCats[0]);
@@ -71,24 +71,56 @@
                 <h2 class="font-semibold text-lg mb-2">Regel toevoegen of bijwerken</h2>
 
                 <div x-data="{
-                        selected: @js($oldCat),
+                        selected: '{{ old('category', '') }}',
                         openMax: @json($errorMax),
                         openInc: @json($errorInc),
                         cats: @js($allCats),
                         ids:  @js($catIds),
+                        showError: false,
+                        errorMessage: '',
+
+                        checkCategorySelection(action) {
+                            if (!this.selected || this.selected === '') {
+                                this.errorMessage = `Selecteer eerst een categorie voordat je ${action} wijzigt.`;
+                                this.showError = true;
+                                setTimeout(() => {
+                                    this.showError = false;
+                                }, 3000);
+                                return false;
+                            }
+                            return true;
+                        },
+
+                        openMaxModal() {
+                            if (this.checkCategorySelection('max')) {
+                                this.openMax = true;
+                            }
+                        },
+
+                        openIncModal() {
+                            if (this.checkCategorySelection('mag niet naast')) {
+                                this.openInc = true;
+                            }
+                        }
                     }" class="space-y-4">
+
+                    <!-- Error Message -->
+                    <div x-show="showError" x-cloak class="p-4 bg-red-100 border border-red-400 text-red-700 rounded mb-4">
+                        <p x-text="errorMessage"></p>
+                    </div>
 
                     <div class="flex flex-wrap items-end gap-4">
                         <div>
-                            <label class="block text-sm text-gray-700 mb-1">Categorie</label>
                             <select x-model="selected" class="border rounded px-3 py-2">
+                                <option value="" disabled selected>Selecteer categorie</option>
                                 <template x-for="cat in cats" :key="cat">
                                     <option :value="cat" x-text="cat"></option>
                                 </template>
                             </select>
                         </div>
-                        <button type="button" @click="openMax=true" class="px-4 py-2 bg-blue-600 text-white rounded h-10">Wijzig&nbsp;max</button>
-                        <button type="button" @click="openInc=true" class="px-4 py-2 bg-blue-600 text-white rounded h-10">Wijzig&nbsp;mag&nbsp;niet&nbsp;naast</button>
+
+                        <button type="button" @click="openMaxModal()" class="px-4 py-2 bg-blue-600 text-white rounded h-10">Wijzig&nbsp;max</button>
+                        <button type="button" @click="openIncModal()" class="px-4 py-2 bg-blue-600 text-white rounded h-10">Wijzig&nbsp;mag&nbsp;niet&nbsp;naast</button>
                     </div>
 
                     {{-- Modal Max --}}
