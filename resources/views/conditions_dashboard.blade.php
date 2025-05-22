@@ -7,7 +7,7 @@
 
     @php
         $catIds  = $conditions->pluck('id', 'category');
-        $allCats = ['Veiligheid','Recreatie','Milieukwaliteit','Voorzieningen','Mobiliteit'];
+        $allCats = ['Categorie selecteren','Veiligheid','Recreatie','Milieukwaliteit','Voorzieningen','Mobiliteit'];
         $errorMax = $errors->has('max');
         $errorInc = !$errorMax && $errors->any();
         $oldCat   = old('category', $allCats[0]);
