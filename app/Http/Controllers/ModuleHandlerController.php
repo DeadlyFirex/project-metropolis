@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ModuleAangemaaktMail;
+use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Module;
@@ -49,7 +51,9 @@ class ModuleHandlerController extends Controller
 
         $module->save();
 
-        
+        //email doesn't matter get send to mailstrap anyway, change for prod
+        Mail::to('test@voorbeeld.nl')->send(new ModuleAangemaaktMail($module));
+
         $types = ['safety', 'recreation', 'climate', 'facilities', 'infrastructure'];
         foreach ($types as $type) {
             $module->effects()->create([
