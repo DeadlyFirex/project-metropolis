@@ -14,6 +14,8 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <script src="/recources/js/font-size-control.js"></script>
+
     </head>
     <body class="font-sans antialiased overflow-x-hidden">
         <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
