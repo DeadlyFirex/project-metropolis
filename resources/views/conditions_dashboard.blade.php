@@ -111,7 +111,7 @@
 
                     <div class="flex flex-wrap items-end gap-4">
                         <div>
-                            <select x-model="selected" class="border rounded px-3 py-2">
+                            <select x-model="selected" class="border rounded px-3 py-2 pr-8">
                                 <option value="" disabled selected>Selecteer categorie</option>
                                 <template x-for="cat in cats" :key="cat">
                                     <option :value="cat" x-text="cat"></option>
