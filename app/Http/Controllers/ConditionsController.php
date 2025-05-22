@@ -137,7 +137,7 @@ class ConditionsController extends Controller
 
     /* ───────── Helpers ───────── */
 
-    private function neighbourIndexes(int $index): array
+    protected function neighbourIndexes(int $index): array
     {
         $x = intdiv($index, self::GRID_HEIGHT);
         $y =  $index % self::GRID_HEIGHT;
