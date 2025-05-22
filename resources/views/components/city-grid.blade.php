@@ -1,75 +1,175 @@
- <div class="py-8">
-     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+<div class="py-8">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-         <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Metropolis Grid</h2>
+        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Metropolis Grid</h2>
 
-         <table class="table-auto border-collapse border border-gray-300 w-full text-center">
-             <tbody>
-                 @foreach($slots->chunk(4) as $row)
-                 <tr>
-                     @foreach($row as $slot)
-                     <td class="border border-gray-300 p-4 w-[200px] h-[150px] bg-gray-100 align-middle text-center"
-                         data-slot-id="{{ $slot->id }}">
+        <table class="table-auto border-collapse border border-gray-300 w-full text-center">
+            <tbody>
+                @foreach ($slots->chunk(4) as $row)
+                    <tr>
+                        @foreach ($row as $slot)
+                            <td class="border border-gray-300 p-4 w-[200px] h-[150px] bg-gray-100 align-middle text-center city-cell"
+                                data-slot-id="{{ $slot->id }}" data-row="{{ $loop->parent->index }}"
+                                {{-- rij index --}} data-col="{{ $loop->index }}"> {{-- kolom index --}}
 
-                         <div
-                             class="city-slot flex flex-col items-center justify-center h-full"
-                             data-slot-id="{{ $slot->id }}"
-                             @if($slot->module_id)
-                             data-module-id="{{ $slot->module_id }}"
-                             @endif>
+                                <div class="city-slot flex flex-col items-center justify-center h-full relative"
+                                    data-slot-id="{{ $slot->id }}"
+                                    @if ($slot->module_id) data-module-id="{{ $slot->module_id }}" @endif>
 
-                             <div class="text-sm text-gray-500 mb-1"></div>
+                                    @if ($slot->module_id != null && $slot->module && $slot->module->image_path)
+                                        <div class="relative flex flex-col items-center">
+                                            <img src="{{ asset('storage/' . $slot->module->image_path) }}"
+                                                alt="{{ $slot->module->name }}"
+                                                class="w-[80px] h-[80px] object-contain pointer-events-none">
 
-                             @if($slot->module_id != null && $slot->module && $slot->module->image_path)
-                             <div class="relative flex flex-col items-center">
-                                 <img src="{{ asset('storage/' . $slot->module->image_path) }}"
-                                     alt="{{ $slot->module->name }}"
-                                     class="w-[80px] h-[80px] object-contain pointer-events-none">
+                                            <span class="text-xs text-gray-700">{{ $slot->module->name }}</span>
+
+                                            <div
+                                                class="grid-effects hidden text-[10px] mt-1 text-gray-600 text-center space-y-[1px]">
+                                                @php
+                                                    $typeMap = [
+                                                        'safety' => 'Veiligheid',
+                                                        'recreation' => 'Recreatie',
+                                                        'climate' => 'Milieukwaliteit',
+                                                        'facilities' => 'Voorzieningen',
+                                                        'infrastructure' => 'Mobiliteit',
+                                                    ];
+                                                @endphp
+
+                                                @foreach ($slot->module->effects as $effect)
+                                                    @if ($effect->value !== 0)
+                                                        <div class="effect" data-type="{{ $effect->type }}"
+                                                            data-value="{{ $effect->value }}">
+                                                            {{ $effect->value > 0 ? '+' : '' }}{{ $effect->value }}
+                                                            {{ $typeMap[$effect->type] ?? $effect->type }}
+                                                        </div>
+                                                    @endif
+                                                @endforeach
+                                            </div>
+
+                                            <!-- Overlay voor gecombineerde effecten -->
+                                            <div
+                                                class="combined-effects hidden absolute top-full mt-2 bg-white border text-[10px] text-gray-800 p-2 rounded shadow z-10">
+                                            </div>
+
+                                            <!-- Verwijderknop -->
+                                            <form method="POST" action="{{ route('slots.removeModule', $slot->id) }}"
+                                                class="absolute top-0 right-0">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit"
+                                                    class="bg-red-500 text-white rounded-full w-5 h-5 text-xs leading-none">
+                                                    ×
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @else
+                                        <span class="text-xs text-gray-400">Leeg</span>
+                                    @endif
+
+                                </div>
+                            </td>
+                        @endforeach
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+    </div>
+</div>
+<script>
+    const cols = 4;
+
+    function getCell(row, col) {
+        return document.querySelector(`td.city-cell[data-row="${row}"][data-col="${col}"]`);
+    }
+
+    document.querySelectorAll('.city-slot').forEach(slot => {
+        slot.addEventListener('mouseenter', () => {
+            if (!slot.dataset.moduleId) return; // STOP als geen module
+
+            const parentTd = slot.closest('td.city-cell');
+            const row = parseInt(parentTd.dataset.row, 10);
+            const col = parseInt(parentTd.dataset.col, 10);
 
 
-                                 <span class="text-xs text-gray-700">{{ $slot->module->name }}</span>
+            const adjacentPositions = [];
+            for (let r = row - 1; r <= row + 1; r++) {
+                for (let c = col - 1; c <= col + 1; c++) {
+                    if (r < 0 || c < 0 || c >= cols) continue;
+                    adjacentPositions.push([r, c]);
+                }
+            }
 
-                                 <div class="grid-effects text-[10px] mt-1 text-gray-600 text-center space-y-[1px]" data-grid-effects-for="{{ $slot->module->id }}">
-                                     @php
-                                     $typeMap = [
-                                     'safety' => 'Veiligheid',
-                                     'recreation' => 'Recreatie',
-                                     'climate' => 'Milieukwaliteit',
-                                     'facilities' => 'Voorzieningen',
-                                     'infrastructure' => 'Mobiliteit',
-                                     ];
-                                     @endphp
+            const hasNeighborModule = adjacentPositions.some(([r, c]) => {
+                if (r === row && c === col) return false;
+                const cell = getCell(r, c);
+                return cell && cell.querySelector('.city-slot[data-module-id]');
+            });
 
-                                     @foreach ($slot->module->effects as $effect)
-                                     @if ($effect->value !== 0)
-                                     <div data-type="{{ $effect->type }}" class="{{ $effect->value > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                         {{ $effect->value > 0 ? '+' : '' }}{{ $effect->value }} {{ $typeMap[$effect->type] ?? $effect->type }}
-                                     </div>
-                                     @endif
-                                     @endforeach
-                                 </div>
+            let positionsToHighlight;
+            if (hasNeighborModule) {
+                positionsToHighlight = adjacentPositions;
+            } else {
+                positionsToHighlight = [
+                    [row, col]
+                ];
+            }
 
+            const allEffects = {};
 
+            positionsToHighlight.forEach(([r, c]) => {
+                const cell = getCell(r, c);
+                if (!cell) return;
 
-                                 <form method="POST" action="{{ route('slots.removeModule', $slot->id) }}" class="absolute top-0 right-0">
-                                     @csrf
-                                     @method('PATCH')
-                                     <button type="submit" class="bg-red-500 text-white rounded-full w-5 h-5 text-xs leading-none">
-                                         ×
-                                     </button>
-                                 </form>
-                             </div>
-                             @else
-                             <span class="text-xs text-gray-400">Leeg</span>
-                             @endif
+                cell.classList.add('bg-green-200');
 
-                         </div>
-                     </td>
-                     @endforeach
-                 </tr>
-                 @endforeach
-             </tbody>
-         </table>
+                const moduleSlot = cell.querySelector('.city-slot[data-module-id]');
+                if (!moduleSlot) return;
 
-     </div>
- </div>
+                const effects = cell.querySelectorAll('.effect');
+                effects.forEach(effect => {
+                    const type = effect.dataset.type;
+                    const value = parseInt(effect.dataset.value, 10);
+                    allEffects[type] = (allEffects[type] || 0) + value;
+                });
+            });
+
+            const qol = Object.values(allEffects).reduce((sum, val) => sum + val, 0);
+
+            const typeMap = {
+                safety: 'Veiligheid',
+                recreation: 'Recreatie',
+                climate: 'Milieukwaliteit',
+                facilities: 'Voorzieningen',
+                infrastructure: 'Mobiliteit'
+            };
+
+            let html = '';
+            for (const type in allEffects) {
+                const val = allEffects[type];
+                const label = typeMap[type] || type;
+                const color = val > 0 ? 'text-green-600' : (val < 0 ? 'text-red-600' : 'text-gray-600');
+                html += `<div class="${color}">${val > 0 ? '+' : ''}${val} ${label}</div>`;
+            }
+            html += `<div class="mt-1 font-bold ${qol > 0 ? 'text-green-600' : (qol < 0 ? 'text-red-600' : 'text-gray-600')}">
+                        Kwaliteit van Leven: ${qol > 0 ? '+' : ''}${qol}
+                    </div>`;
+
+            const overlay = slot.querySelector('.combined-effects');
+            if (overlay) {
+                overlay.innerHTML = html;
+                overlay.classList.remove('hidden');
+            }
+        });
+
+        slot.addEventListener('mouseleave', () => {
+            document.querySelectorAll('td.city-cell.bg-green-200').forEach(cell => {
+                cell.classList.remove('bg-green-200');
+            });
+
+            const overlay = slot.querySelector('.combined-effects');
+            if (overlay) overlay.classList.add('hidden');
+        });
+    });
+</script>
