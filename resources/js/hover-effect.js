@@ -20,24 +20,9 @@ document.querySelectorAll('.city-slot').forEach(slot => {
             }
         }
 
-        const hasNeighborModule = adjacentPositions.some(([r, c]) => {
-            if (r === row && c === col) return false;
-            const cell = getCell(r, c);
-            return cell && cell.querySelector('.city-slot[data-module-id]');
-        });
-
-        let positionsToHighlight;
-        if (hasNeighborModule) {
-            positionsToHighlight = adjacentPositions;
-        } else {
-            positionsToHighlight = [
-                [row, col]
-            ];
-        }
-
         const allEffects = {};
 
-        positionsToHighlight.forEach(([r, c]) => {
+        adjacentPositions.forEach(([r, c]) => {
             const cell = getCell(r, c);
             if (!cell) return;
 
