@@ -1,6 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        Module Dashboard
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+            Module Dashboard
+        </h2>
+        <button class="bg-blue-500 text-white px-6 py-3 text-xl rounded w-auto" id="increaseFontBtn">
+            Increase Font Size
+        </button>
     </x-slot>
     @if ($errors->any())
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">

@@ -1,45 +1,45 @@
-function setFontSize(fontSize) {
-    localStorage.setItem('fontSize', fontSize);
-    applyFontSizeToTextElements(fontSize);
-}
+function applyFontScale(multiplier) {
+    const elements = document.querySelectorAll('body *');
 
-function applyFontSizeToTextElements(fontSize) {
-    const allTextElements = document.querySelectorAll('body *');
-
-    allTextElements.forEach(el => {
+    elements.forEach((el, i) => {
         if (el.children.length === 0 && el.textContent.trim() !== '') {
-            el.style.fontSize = fontSize + 'em';
+            let originalSize = el.getAttribute('data-original-font-size');
+
+            // If not yet stored, save it
+            if (!originalSize) {
+                const computedSize = window.getComputedStyle(el).fontSize;
+                el.setAttribute('data-original-font-size', computedSize);
+                originalSize = computedSize;
+            }
+
+            const baseSize = parseFloat(originalSize);
+            const newSize = baseSize * multiplier;
+
+            el.style.fontSize = newSize + 'px';
         }
     });
+
+    localStorage.setItem('fontScale', multiplier);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const increaseBtn = document.getElementById('increaseFontBtn');
-    if (!increaseBtn) return;
+    const button = document.getElementById('increaseFontBtn');
+    if (!button) return;
 
-    let normalSize = 1;
-    let increasedSize = 1.7; // Change this to whatever step you prefer
+    const normalScale = 1;
+    const increasedScale = 1.7;
+    let currentScale = parseFloat(localStorage.getItem('fontScale')) || normalScale;
 
-    // Get stored font size or default
-    let currentFontSize = parseFloat(localStorage.getItem('fontSize')) || normalSize;
-    applyFontSizeToTextElements(currentFontSize);
+    // Apply scale to elements using stored or default multiplier
+    applyFontScale(currentScale);
 
-    // Update button text based on current size
-    if (currentFontSize > normalSize) {
-        increaseBtn.textContent = 'Decrease Font Size';
-    } else {
-        increaseBtn.textContent = 'Increase Font Size';
-    }
+    // Update button label
+    button.textContent = currentScale > normalScale ? 'Decrease Font Size' : 'Increase Font Size';
 
-    increaseBtn.addEventListener('click', () => {
-        if (currentFontSize === normalSize) {
-            currentFontSize = increasedSize;
-            increaseBtn.textContent = 'Decrease Font Size';
-        } else {
-            currentFontSize = normalSize;
-            increaseBtn.textContent = 'Increase Font Size';
-        }
+    button.addEventListener('click', () => {
+        currentScale = currentScale === normalScale ? increasedScale : normalScale;
+        button.textContent = currentScale === normalScale ? 'Increase Font Size' : 'Decrease Font Size';
 
-        setFontSize(currentFontSize);
+        applyFontScale(currentScale);
     });
 });
