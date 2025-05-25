@@ -15,7 +15,7 @@
             <div class="flex flex-col lg:flex-row gap-6 items-start">
 
                 {{-- City Grid links --}}
-                <main class="w-[1000px] bg-white p-6 rounded-2xl shadow">
+                <main class="w-full max-w-full lg:max-w-[1000px] bg-white p-6 rounded-2xl shadow">
                     @include('components.city-grid', ['slots' => $slots])
                 </main>
 
