@@ -34,11 +34,11 @@ document.addEventListener('DOMContentLoaded', () => {
     applyFontScale(currentScale);
 
     // Update button label
-    button.textContent = currentScale > normalScale ? 'Decrease Font Size' : 'Increase Font Size';
+    button.textContent = currentScale > normalScale ? 'Tekstgrootte Verkleinen' : 'Tekstgrootte Vergroten';
 
     button.addEventListener('click', () => {
         currentScale = currentScale === normalScale ? increasedScale : normalScale;
-        button.textContent = currentScale === normalScale ? 'Increase Font Size' : 'Decrease Font Size';
+        button.textContent = currentScale === normalScale ? 'Tekstgrootte Vergroten' : 'Tekstgrootte Verkleinen';
 
         applyFontScale(currentScale);
     });

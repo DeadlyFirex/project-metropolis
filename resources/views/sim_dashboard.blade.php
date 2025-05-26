@@ -1,10 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
             {{ __('Simulatie Dashboard') }}
         </h2>
-        <button class="bg-blue-500 text-white px-6 py-3 text-xl rounded w-auto" id="increaseFontBtn">
-            Increase Font Size
+        <button class="bg-blue-500 text-white px-4 py-2 text-sm sm:text-base rounded" id="increaseFontBtn">
+            Tekstgrootte Vergroten
         </button>
     </x-slot>
 

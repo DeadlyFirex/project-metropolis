@@ -5,7 +5,7 @@
                 Module Dashboard
             </h2>
             <button class="bg-blue-500 text-white px-4 py-2 text-sm sm:text-base rounded" id="increaseFontBtn">
-                Increase Font Size
+                Tekstgrootte Vergroten
             </button>
         </div>
     </x-slot>
