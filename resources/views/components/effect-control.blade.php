@@ -10,6 +10,13 @@ $types = [
 
 <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4 text-left">Effecten Beheren</h2>
 
+<div class="mb-4 text-left">
+    <button
+        id="back-to-calculated-effects"
+        class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1 rounded">
+        ← Terug naar overzicht
+    </button>
+</div>
 
     <table class="w-full text-xs text-center table-fixed">
         <thead class="bg-gray-100 text-gray-800">
@@ -64,3 +71,17 @@ $types = [
 
 <script src="{{ asset('js/effect-control.js') }}"></script>
 
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const backBtn = document.getElementById("back-to-calculated-effects");
+        const effectView = document.getElementById("effect-view");
+        const controlView = document.getElementById("effect-control-view");
+
+        if (backBtn && effectView && controlView) {
+            backBtn.addEventListener("click", () => {
+                controlView.classList.add("hidden");
+                effectView.classList.remove("hidden");
+            });
+        }
+    });
+</script>

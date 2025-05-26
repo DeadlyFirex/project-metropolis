@@ -3,34 +3,46 @@
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
             {{ __('Simulatie Dashboard') }}
         </h2>
+        <button class="bg-blue-500 text-white px-6 py-3 text-xl rounded w-auto" id="increaseFontBtn">
+            Increase Font Size
+        </button>
     </x-slot>
 
     <div class="w-full bg-gray-100 min-h-screen">
         <div class="flex flex-col gap-6 px-6 pt-6">
 
-            {{-- Rij 1: Sidebar + City Grid --}}
-            <div class="flex flex-row items-start gap-6">
+            {{-- Rij 1: City Grid (links) + rechterkolom met Library en Effects --}}
+            <div class="flex flex-col lg:flex-row gap-6 items-start">
 
-                {{-- Sidebar (breder + scrollable) --}}
-                <aside class="w-[760px] h-[675px] top-[5rem] min-h-[600px] overflow-y-auto bg-white dark:bg-gray-900 border-r px-4 py-6 shrink-0 rounded-2xl shadow">
-                    @include('components.library', ['modules' => $modules, 'categories' => $categories])
-                </aside>
-
-                {{-- City Grid (beperkte breedte, niet volledige flex-1) --}}
-                <main class="flex-1 max-w-[1000px] h-[675px] bg-white p-6 rounded-2xl shadow min-h-[600px]">
+                {{-- City Grid links --}}
+                <main class="w-full max-w-full lg:max-w-[1000px] bg-white p-6 rounded-2xl shadow">
                     @include('components.city-grid', ['slots' => $slots])
                 </main>
+
+                {{-- Rechterkant: Bibliotheek + Calculated Effects --}}
+                <div class="flex-1 flex flex-col gap-6">
+
+                    {{-- Module Bibliotheek (boven) --}}
+                    <section class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full h-[400px] overflow-y-auto">
+                        @include('components.library', ['modules' => $modules, 'categories' => $categories])
+                    </section>
+
+                    {{-- Calculated Effects (zichtbaar) --}}
+                    <section id="effect-view" class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full">
+                        @include('components.calculated-effects', ['slots' => $slots])
+                    </section>
+
+                    {{-- Effect Control (verborgen) --}}
+                    <section id="effect-control-view" class="hidden bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full">
+                        @include('components.effect-control', ['modules' => $modules])
+                    </section>
+
+
+                </div>
+
             </div>
 
-            {{-- Rij 2: Effecten --}}
-            <div class="flex flex-col lg:flex-row gap-6">
-                <div class="bg-white p-6 rounded-2xl shadow w-full lg:w-1/2">
-                    @include('components.calculated-effects', ['slots' => $slots])
-                </div>
-                <div class="bg-white p-6 rounded-2xl shadow w-full lg:w-1/2">
-                    @include('components.effect-control', ['modules' => $modules])
-                </div>
-            </div>
+
 
         </div>
     </div>
