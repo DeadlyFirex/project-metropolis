@@ -16,13 +16,18 @@
                 </x-nav-link>
 
                 @auth
-                <x-nav-link :href="route('simulatiedashboard')" :active="request()->routeIs('simulatiedashboard')">
-                    Simulatie Dashboard
-                </x-nav-link>
+                    <x-nav-link :href="route('simulatiedashboard')" :active="request()->routeIs('simulatiedashboard')">
+                        Simulatie Dashboard
+                    </x-nav-link>
 
-                <x-nav-link :href="route('module.index')" :active="request()->routeIs('module.index')">
-                    Module Dashboard
-                </x-nav-link>
+                    <x-nav-link :href="route('module.index')" :active="request()->routeIs('module.index')">
+                        Module Dashboard
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('conditions')" :active="request()->routeIs('conditions')">
+                        Conditions Dasbhoard
+                    </x-nav-link>
+
                 @endauth
             </div>
 
