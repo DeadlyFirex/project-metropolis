@@ -69,7 +69,7 @@ $types = [
     </table>
 </div>
 
-<script src="{{ asset('js/effect-control.js') }}"></script>
+{{--<script src="{{ asset('js/effect-control.js') }}"></script>--}}
 
 <script>
     document.addEventListener("DOMContentLoaded", () => {

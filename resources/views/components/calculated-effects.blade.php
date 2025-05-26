@@ -7,17 +7,16 @@
         'infrastructure' => 'Mobiliteit',
     ];
 @endphp
-{{--TODO: Check if this is necessary--}}
-{{--<div class="py-2 px-2" id="effect-view">--}}
-{{--    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2 text-left">Effecten op de grid</h2>--}}
 
-{{--    <div class="mt-2 mb-4">--}}
-{{--        <button--}}
-{{--            id="swap-to-effect-control"--}}
-{{--            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">--}}
-{{--            Effecten beheren--}}
-{{--        </button>--}}
-{{--    </div>--}}
+<div class="py-2 px-2" id="effect-view">
+    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2 text-left">Effecten op de grid</h2>
+    <div class="mt-2 mb-4">
+        <button
+            id="swap-to-effect-control"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+            Effecten beheren
+        </button>
+    </div>
 
     <div class=" border-gray-200 overflow-x-auto">
         <table id="calculated-effects-table" class="text-xs text-center min-w-max border-collapse">
@@ -92,7 +91,7 @@
     </div>
 </div>
 
-<script src="{{ asset('js/effect-flash.js') }}"></script>
+{{--<script src="{{ asset('js/effect-flash.js') }}"></script> --}}
 {{-- TODO: Check if this is necessary--}}
 <script>
     document.addEventListener("DOMContentLoaded", () => {
