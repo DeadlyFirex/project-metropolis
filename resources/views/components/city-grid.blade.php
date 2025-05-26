@@ -78,38 +78,29 @@
     </div>
 </div>
 <script>
-    console.log("City-grid hover script geladen ✅");
-
     const cityCells = document.querySelectorAll('td.city-cell');
     // Hardcoded rows & cols - pas aan naar jouw data als nodig
     const rows = 3;
     const cols = 4;
-    console.log(`Grid dimensions: rows=${rows}, cols=${cols}`);
 
     function getCell(row, col) {
         const cell = document.querySelector(`.city-cell[data-row="${row}"][data-col="${col}"]`);
-        if (!cell) {
-            console.warn(`⚠️ Cel niet gevonden voor row=${row}, col=${col}`);
-        }
         return cell;
     }
 
     document.querySelector('tbody').addEventListener('mouseover', (event) => {
         const slot = event.target.closest('.city-slot');
         if (!slot || !slot.dataset.moduleId) {
-            // console.log('Geen module in hover slot');
             return;
         }
 
         const parentTd = slot.closest('td.city-cell');
         if (!parentTd) {
-            console.log('Geen parent TD gevonden');
             return;
         }
 
         const row = parseInt(parentTd.dataset.row, 10);
         const col = parseInt(parentTd.dataset.col, 10);
-        console.log(`Hover over slot met moduleId=${slot.dataset.moduleId} op rij=${row}, kolom=${col}`);
 
         const adjacentPositions = [];
         for (let r = row - 1; r <= row + 1; r++) {
@@ -118,23 +109,19 @@
                 adjacentPositions.push([r, c]);
             }
         }
-        console.log('Adjacent cell positions:', adjacentPositions);
 
         const allEffects = {};
 
         adjacentPositions.forEach(([r, c]) => {
             const cell = getCell(r, c);
             if (!cell) {
-                console.log(`Overslaan: geen cel op rij=${r}, kolom=${c}`);
                 return;
             }
 
             cell.classList.add('bg-green-200');
-            console.log(`Cell gehighlight: rij=${r}, kolom=${c}`);
 
             const moduleSlot = cell.querySelector('.city-slot[data-module-id]');
             if (!moduleSlot) {
-                console.log(`Geen module in cel op rij=${r}, kolom=${c}`);
                 return;
             }
 
@@ -142,12 +129,9 @@
             effects.forEach(effect => {
                 const type = effect.dataset.type;
                 const value = parseInt(effect.dataset.value, 10);
-                console.log(`Effect gevonden: type=${type}, value=${value}`);
                 allEffects[type] = (allEffects[type] || 0) + value;
             });
         });
-
-        console.log('Gecombineerde effecten:', allEffects);
 
         const qol = Object.values(allEffects).reduce((sum, val) => sum + val, 0);
 
@@ -185,8 +169,6 @@ if (window.applyFontScaleTo && window.currentFontScale) {
     document.querySelector('tbody').addEventListener('mouseout', (event) => {
         const slot = event.target.closest('.city-slot');
         if (!slot) return;
-
-        console.log("⛔ Mouse out, reset highlights en overlay");
 
         document.querySelectorAll('td.city-cell.bg-green-200').forEach(cell => {
             cell.classList.remove('bg-green-200');
