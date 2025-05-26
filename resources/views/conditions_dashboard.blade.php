@@ -1,6 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
         <h1 class="font-semibold text-xl text-gray-800 leading-tight">Conditions&nbsp;Dashboard</h1>
+        <button class="bg-blue-500 text-white px-6 py-3 text-xl rounded w-auto" id="increaseFontBtn">
+            Increase Font Size
+        </button>
     </x-slot>
 
     <style>[x-cloak]{display:none!important;}</style>
