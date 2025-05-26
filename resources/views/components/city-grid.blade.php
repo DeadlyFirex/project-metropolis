@@ -173,6 +173,11 @@
         const overlay = slot.querySelector('.combined-effects');
         if (overlay) {
             overlay.innerHTML = html;
+if (window.applyFontScaleTo && window.currentFontScale) {
+    window.applyFontScaleTo(overlay, window.currentFontScale);
+}
+
+
             overlay.classList.remove('hidden');
         }
     });
