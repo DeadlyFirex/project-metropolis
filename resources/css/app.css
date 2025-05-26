@@ -73,3 +73,7 @@
     background-color: #dbeafe;
     transition: all 0.3s ease;
 }
+
+body[data-font-scale="1.7"] .font-sensitive-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+}

@@ -1,11 +1,10 @@
 function applyFontScale(multiplier) {
     const elements = document.querySelectorAll('body *');
 
-    elements.forEach((el, i) => {
+    elements.forEach((el) => {
         if (el.children.length === 0 && el.textContent.trim() !== '') {
             let originalSize = el.getAttribute('data-original-font-size');
 
-            // If not yet stored, save it
             if (!originalSize) {
                 const computedSize = window.getComputedStyle(el).fontSize;
                 el.setAttribute('data-original-font-size', computedSize);
@@ -19,6 +18,8 @@ function applyFontScale(multiplier) {
         }
     });
 
+    // ⬇️ Nieuw: zet attribuut op body
+    document.body.setAttribute('data-font-scale', multiplier);
     localStorage.setItem('fontScale', multiplier);
 }
 

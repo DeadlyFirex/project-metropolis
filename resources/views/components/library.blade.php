@@ -24,7 +24,7 @@
 
     {{-- Scrollbare modulekaartjes --}}
     <div class="flex-1 overflow-y-auto">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pr-1 pb-4">
+        <div class="grid font-sensitive-grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pr-1 pb-4">
             @forelse($modules as $module)
             <div class="module-card bg-gray-50 dark:bg-gray-700 p-3 rounded-md transition ring-offset-2 ring-offset-gray-100 dark:ring-offset-gray-900 shadow-sm flex flex-col items-center text-center w-full"
                 draggable="true"
