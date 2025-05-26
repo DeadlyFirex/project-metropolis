@@ -1,34 +1,33 @@
 @php
-$effectTypes = [
-'safety' => 'Veiligheid',
-'recreation' => 'Recreatie',
-'climate' => 'Milieukwaliteit',
-'facilities' => 'Voorzieningen',
-'infrastructure' => 'Mobiliteit',
-];
+    $effectTypes = [
+        'safety' => 'Veiligheid',
+        'recreation' => 'Recreatie',
+        'climate' => 'Milieukwaliteit',
+        'facilities' => 'Voorzieningen',
+        'infrastructure' => 'Mobiliteit',
+    ];
 @endphp
+{{--TODO: Check if this is necessary--}}
+{{--<div class="py-2 px-2" id="effect-view">--}}
+{{--    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2 text-left">Effecten op de grid</h2>--}}
 
-<div class="py-2 px-2" id="effect-view">
-    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2 text-left">Effecten op de grid</h2>
+{{--    <div class="mt-2 mb-4">--}}
+{{--        <button--}}
+{{--            id="swap-to-effect-control"--}}
+{{--            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">--}}
+{{--            Effecten beheren--}}
+{{--        </button>--}}
+{{--    </div>--}}
 
-    <div class="mt-2 mb-4">
-        <button
-            id="swap-to-effect-control"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
-            Effecten beheren
-        </button>
-    </div>
-
-
-
-    <div class="border-gray-200 overflow-x-auto">
-        <table id="calculated-effects-table" class="w-full text-xs text-center table-fixed border-collapse">
+    <div class=" border-gray-200 overflow-x-auto">
+        <table id="calculated-effects-table" class="text-xs text-center min-w-max border-collapse">
             <thead class="bg-gray-100 text-gray-800">
                 <tr>
-                    <th class="px-2 py-1 border border-gray-300 text-left w-32">Module</th>
-                    @foreach($effectTypes as $label)
-                    <th class="px-2 py-1 border border-gray-300 w-20 whitespace-nowrap">{{ $label }}</th>
+                    <th class="px-1 py-1 border border-gray-300 text-left w-32">Module</th>
+                    @foreach ($effectTypes as $label)
+                        <th class="px-1 py-1 border border-gray-300 w-20 whitespace-nowrap">{{ $label }}</th>
                     @endforeach
+                    <th class="px-1 py-1 border border-gray-300 w-20 whitespace-nowrap">Kwaliteit van Leven</th>
                 </tr>
             </thead>
 
@@ -54,6 +53,15 @@ $effectTypes = [
                         </span>
                     </td>
                     @endforeach
+{{--                    TODO: Check if this is necessary--}}
+                    @php
+                        $qol = $slot->module->effects->sum('value');
+                    @endphp
+                    <td
+                        class="px-1 py-1 border border-gray-300 font-semibold {{ $qol < 0 ? 'text-red-600' : ($qol > 0 ? 'text-green-600' : 'text-gray-700') }}">
+                        {{ $qol > 0 ? '+' . $qol : $qol }}
+                    </td>
+{{-- END --}}
                 </tr>
                 @endif
                 @endforeach
@@ -61,7 +69,7 @@ $effectTypes = [
 
             <tfoot>
                 <tr class="bg-gray-200 font-bold">
-                    <td class="px-2 py-1 border border-gray-300 text-left">Totaal:</td>
+                    <td class="px-1 py-1 border border-gray-300 text-left">Totaal:</td>
                     @foreach ($effectTypes as $type => $label)
                     @php $total = $totals[$type]; @endphp
                     <td class="px-2 py-1 border border-gray-300" data-value="{{ $total }}">
@@ -71,16 +79,21 @@ $effectTypes = [
                         </span>
                     </td>
                     @endforeach
+                    @php
+                        $totalQol = array_sum($totals);
+                    @endphp
+                    <td
+                        class="px-1 py-1 border border-gray-300 font-semibold {{ $totalQol < 0 ? 'text-red-600' : ($totalQol > 0 ? 'text-green-600' : 'text-gray-800') }}">
+                        {{ $totalQol > 0 ? '+' . $totalQol : $totalQol }}
+                    </td>
                 </tr>
             </tfoot>
         </table>
     </div>
-
-
 </div>
 
 <script src="{{ asset('js/effect-flash.js') }}"></script>
-
+{{-- TODO: Check if this is necessary--}}
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const swapBtn = document.getElementById("swap-to-effect-control");
@@ -95,3 +108,4 @@ $effectTypes = [
         }
     });
 </script>
+{{-- END --}}

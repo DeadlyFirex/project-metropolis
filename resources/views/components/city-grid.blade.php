@@ -1,72 +1,83 @@
 <div class="py-8">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+
         <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Metropolis Grid</h2>
 
-        <table class="table-fixed w-full border-collapse border border-gray-300 text-center">
+        <table class="table-auto border-collapse border border-gray-300 w-full text-center">
             <tbody>
-                @foreach($slots->chunk(4) as $row)
-                <tr>
-                    @foreach($row as $slot)
-                    <td class="border border-gray-300 p-2 sm:p-4 w-1/4 h-[25vw] sm:h-[150px] bg-gray-100 align-middle text-center"
-                        data-slot-id="{{ $slot->id }}">
-                        
-                        <div class="city-slot flex flex-col items-center justify-center h-full"
-                            data-slot-id="{{ $slot->id }}"
-                            @if($slot->module_id)
-                                data-module-id="{{ $slot->module_id }}"
-                            @endif>
+                @foreach ($slots->chunk(4) as $row)
+                    <tr>
+                        @foreach ($row as $slot)
+                            <td class="border border-gray-300 p-4 w-[200px] h-[150px] bg-gray-100 align-middle text-center city-cell"
+                                data-slot-id="{{ $slot->id }}" data-row="{{ $loop->parent->index }}"
+                                {{-- rij index --}} data-col="{{ $loop->index }}"> {{-- kolom index --}}
 
-                            @if($slot->module_id != null && $slot->module && $slot->module->image_path)
-                            <div class="relative flex flex-col items-center">
+                                <div class="city-slot flex flex-col items-center justify-center h-full relative"
+                                    data-slot-id="{{ $slot->id }}"
+                                    @if ($slot->module_id) data-module-id="{{ $slot->module_id }}" @endif>
 
-                                <img src="{{ asset('storage/' . $slot->module->image_path) }}"
-                                     alt="{{ $slot->module->name }}"
-                                     class="w-[50%] max-w-[80px] h-auto object-contain pointer-events-none">
+                                    @if ($slot->module_id != null && $slot->module && $slot->module->image_path)
+                                        <div class="relative flex flex-col items-center">
+                                            <img src="{{ asset('storage/' . $slot->module->image_path) }}"
+                                                alt="{{ $slot->module->name }}"
+                                                class="w-[80px] h-[80px] object-contain pointer-events-none">
 
-                                <span class="text-[10px] sm:text-xs text-gray-700">{{ $slot->module->name }}</span>
+                                            <span class="text-xs text-gray-700">{{ $slot->module->name }}</span>
 
-                                <div class="grid-effects text-[9px] sm:text-[10px] mt-1 text-gray-600 text-center space-y-[1px]"
-                                     data-grid-effects-for="{{ $slot->module->id }}">
-                                    @php
-                                        $typeMap = [
-                                            'safety' => 'Veiligheid',
-                                            'recreation' => 'Recreatie',
-                                            'climate' => 'Milieukwaliteit',
-                                            'facilities' => 'Voorzieningen',
-                                            'infrastructure' => 'Mobiliteit',
-                                        ];
-                                    @endphp
+                                            <div
+                                                class="grid-effects hidden text-[10px] mt-1 text-gray-600 text-center space-y-[1px]">
+                                                @php
+                                                    $typeMap = [
+                                                        'safety' => 'Veiligheid',
+                                                        'recreation' => 'Recreatie',
+                                                        'climate' => 'Milieukwaliteit',
+                                                        'facilities' => 'Voorzieningen',
+                                                        'infrastructure' => 'Mobiliteit',
+                                                    ];
+                                                @endphp
 
-                                    @foreach ($slot->module->effects as $effect)
-                                        @if ($effect->value !== 0)
-                                        <div data-type="{{ $effect->type }}"
-                                             class="{{ $effect->value > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                            {{ $effect->value > 0 ? '+' : '' }}{{ $effect->value }}
-                                            {{ $typeMap[$effect->type] ?? $effect->type }}
+                                                @foreach ($slot->module->effects as $effect)
+                                                    @if ($effect->value !== 0)
+                                                        <div class="effect" data-type="{{ $effect->type }}"
+                                                            data-value="{{ $effect->value }}">
+                                                            {{ $effect->value > 0 ? '+' : '' }}{{ $effect->value }}
+                                                            {{ $typeMap[$effect->type] ?? $effect->type }}
+                                                        </div>
+                                                    @endif
+                                                @endforeach
+                                            </div>
+
+                                            <!-- Overlay voor gecombineerde effecten -->
+                                            <div
+                                                class="combined-effects hidden absolute top-full mt-2 bg-white border text-[10px] text-gray-800 p-2 rounded shadow z-10">
+                                            </div>
+
+                                            <!-- Verwijderknop -->
+                                            <form method="POST" action="{{ route('slots.removeModule', $slot->id) }}"
+                                                class="absolute top-0 right-0">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit"
+                                                    class="bg-red-500 text-white rounded-full w-5 h-5 text-xs leading-none">
+                                                    ×
+                                                </button>
+                                            </form>
                                         </div>
-                                        @endif
-                                    @endforeach
-                                </div>
+                                    @else
+                                        <span class="text-xs text-gray-400">Leeg</span>
+                                    @endif
 
-                                <form method="POST" action="{{ route('slots.removeModule', $slot->id) }}"
-                                      class="absolute top-0 right-0">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit"
-                                            class="bg-red-500 text-white rounded-full w-5 h-5 text-xs leading-none">
-                                        ×
-                                    </button>
-                                </form>
-                            </div>
-                            @else
-                            <span class="text-xs text-gray-400">Leeg</span>
-                            @endif
-                        </div>
-                    </td>
-                    @endforeach
-                </tr>
+                                </div>
+                            </td>
+                        @endforeach
+                    </tr>
                 @endforeach
             </tbody>
         </table>
+
     </div>
 </div>
+<script>
+
+</script>
+@vite('resources/js/hover-effect.js')

@@ -29,7 +29,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     valueEl.textContent = newValue > 0 ? `+${newValue}` : newValue;
                     valueEl.className = `effect-value font-semibold text-xs ${getEffectColorClass(newValue)}`;
-                    //effect controlflash 
+
+                    document.querySelectorAll(`td[data-slot-id] .city-slot[data-module-id="${moduleId}"] .effect[data-type="${type}"]`).forEach(effectEl => {
+                        effectEl.dataset.value = newValue;
+                        effectEl.textContent = (newValue > 0 ? '+' : '') + newValue + ' ' + type;
+                        effectEl.className = `effect ${getEffectColorClass(newValue)}`;
+                    });
+
+                    //effect controlflash
                     const flashClass = delta > 0 ? 'effect-flash-up' : 'effect-flash-down';
                     valueEl.classList.add(flashClass);
                     setTimeout(() => valueEl.classList.remove(flashClass), 400);
@@ -43,8 +50,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             }, 400);
                         }
                     });
-
-
 
                     updateCalculatedEffectsDisplay(moduleId, type, newValue);
                     updateGridModuleEffects(moduleId);
