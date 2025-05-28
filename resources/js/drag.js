@@ -1,21 +1,23 @@
 document.addEventListener("DOMContentLoaded", () => {
     let selectedModuleId = null;
-    let currentMode = null; // 'mobile' of 'desktop'
+    let currentMode = null;
 
-    const getElements = () => {
+    function getElements() {
         return {
-            moduleCards: document.querySelectorAll('.module-card[draggable="true"]'),
+            moduleCards: document.querySelectorAll('.module-card'),
             slots: document.querySelectorAll('.city-slot')
         };
-    };
+    }
 
     function enableDesktopMode() {
-        const { moduleCards, slots } = getElements();
         currentMode = 'desktop';
+        const { moduleCards, slots } = getElements();
 
         moduleCards.forEach(card => {
+            card.setAttribute('draggable', 'true');
+            card.classList.remove('selected');
+
             card.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('type', 'module');
                 e.dataTransfer.setData('module_id', card.dataset.moduleId);
                 e.dataTransfer.setData('name', card.dataset.name);
                 const img = card.querySelector('img');
@@ -38,19 +40,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 slot.classList.remove('drag-over');
 
                 const moduleId = e.dataTransfer.getData('module_id');
-                const slotId = slot.dataset.slotId;
                 if (moduleId) {
-                    attachModule(moduleId, slotId);
+                    attachModule(moduleId, slot.dataset.slotId);
                 }
             });
         });
     }
 
     function enableMobileMode() {
-        const { moduleCards, slots } = getElements();
         currentMode = 'mobile';
+        const { moduleCards, slots } = getElements();
 
         moduleCards.forEach(card => {
+            card.removeAttribute('draggable');
+            card.classList.remove('selected');
+
             card.addEventListener('click', () => {
                 moduleCards.forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
@@ -65,9 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 slots.forEach(s => s.classList.remove('selected'));
                 slot.classList.add('selected');
 
-                setTimeout(() => {
-                    slot.classList.remove('selected');
-                }, 500);
+                setTimeout(() => slot.classList.remove('selected'), 500);
 
                 attachModule(selectedModuleId, slot.dataset.slotId);
                 selectedModuleId = null;
@@ -77,41 +79,41 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function clearAllListeners() {
-        const { moduleCards, slots } = getElements();
-
-        moduleCards.forEach(card => {
+        document.querySelectorAll('.module-card').forEach(card => {
             const clone = card.cloneNode(true);
             card.replaceWith(clone);
         });
 
-        slots.forEach(slot => {
+        document.querySelectorAll('.city-slot').forEach(slot => {
             const clone = slot.cloneNode(true);
             slot.replaceWith(clone);
         });
     }
 
     function handleResizeMode() {
-        const isMobileNow = window.innerWidth <= 600;
-        const newMode = isMobileNow ? 'mobile' : 'desktop';
+        const isMobile = window.innerWidth <= 605; // iets ruimer
+        const newMode = isMobile ? 'mobile' : 'desktop';
 
         if (newMode !== currentMode) {
             clearAllListeners();
 
-            if (newMode === 'mobile') {
-                enableMobileMode();
-            } else {
-                enableDesktopMode();
-            }
+            // Wacht even tot DOM is geüpdatet
+            setTimeout(() => {
+                if (isMobile) {
+                    enableMobileMode();
+                } else {
+                    enableDesktopMode();
+                }
+            }, 50);
         }
     }
+
+    handleResizeMode();
 
     window.addEventListener('resize', () => {
         clearTimeout(window._resizeTimeout);
         window._resizeTimeout = setTimeout(handleResizeMode, 150);
     });
-
-    // Start initial mode
-    handleResizeMode();
 
     function attachModule(moduleId, slotId) {
         fetch('/simulatie/koppel-module', {

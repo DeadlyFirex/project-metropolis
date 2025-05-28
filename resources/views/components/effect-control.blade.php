@@ -13,15 +13,16 @@ $types = [
 <div class="mb-4 text-left">
     <button
         id="back-to-calculated-effects"
-        class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1 rounded">
+        class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1 rounded w-full sm:w-auto">
         ← Terug naar overzicht
     </button>
 </div>
 
-    <table class="w-full text-xs text-center table-fixed">
+<div class="overflow-x-auto">
+    <table class="w-full text-xs text-center table-fixed min-w-[600px]">
         <thead class="bg-gray-100 text-gray-800">
             <tr>
-                <th class="px-2 py-1 border text-left w-20">Module</th>
+                <th class="px-2 py-1 border text-left w-24">Module</th>
                 @foreach($types as $key => $label)
                     <th class="px-2 py-1 border w-20 whitespace-nowrap">{{ $label }}</th>
                 @endforeach
@@ -30,14 +31,15 @@ $types = [
         <tbody>
             @foreach($all_modules as $module)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-2 py-1 border text-left font-medium text-gray-700">{{ $module->name }}</td>
+                    <td class="px-2 py-1 border text-left font-medium text-gray-700 break-words">{{ $module->name }}</td>
                     @foreach($types as $key => $label)
                         @php
                             $effect = $module->effects->where('type', $key)->first();
                             $value = $effect?->value ?? 0;
                         @endphp
-                        <td class="px-2 py-1 border">
+                        <td class="px-1 py-1 border">
                             <div class="flex flex-col items-center justify-center gap-1">
+                                {{-- Buttons iets kleiner voor mobiel --}}
                                 <button
                                     type="button"
                                     class="text-green-600 font-bold text-sm leading-none"
