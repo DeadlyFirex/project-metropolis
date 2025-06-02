@@ -12,3 +12,7 @@ import './effect-control.js';
 import './effect-flash.js';
 import './openModule.js';
 
+import { initLibrarySearch } from './library-search.js';
+
+initLibrarySearch(); 
+
