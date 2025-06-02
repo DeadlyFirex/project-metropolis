@@ -1,9 +1,7 @@
 import './bootstrap';
 
 import Alpine from 'alpinejs';
-
 window.Alpine = Alpine;
-
 Alpine.start();
 
 import './drag.js';
@@ -14,5 +12,6 @@ import './openModule.js';
 
 import { initLibrarySearch } from './library-search.js';
 
-initLibrarySearch(); 
-
+document.addEventListener('DOMContentLoaded', () => {
+    initLibrarySearch();
+});

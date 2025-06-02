@@ -13,7 +13,8 @@ export function initLibrarySearch() {
         cards.forEach(card => {
             const name = (card.dataset.name || '').toLowerCase();
             const category = (card.dataset.category || '').toLowerCase();
-            const match = name.includes(query) || category.includes(query);
+            const match = name.startsWith(query) || category.startsWith(query);
+
 
             card.style.display = match ? 'flex' : 'none';
 
