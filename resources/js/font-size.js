@@ -60,8 +60,8 @@
 
         // Update button label
         button.textContent = currentScale > normalScale
-            ? 'Tekstgrootte Verkleinen'
-            : 'Tekstgrootte Vergroten';
+            ? 'Aa'
+            : 'aA';
 
         // Toggle on click
         button.addEventListener('click', () => {
@@ -70,7 +70,7 @@
             applyFontScale(currentScale);
 
             button.textContent = currentScale === normalScale
-                ? 'Tekstgrootte Vergroten'
-                : 'Tekstgrootte Verkleinen';
+                ? 'aA'
+                : 'Aa';
         });
     });
