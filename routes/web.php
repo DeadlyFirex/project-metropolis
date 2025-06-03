@@ -25,17 +25,18 @@ Route::middleware('auth')->group(function () {
         ->names([
             'index' => 'conditions',
         ]);
+    Route::post('/save-clock', [SimulationController::class, 'saveClock'])->name('save.clock');
     Route::post('/simulatie/koppel-module', [SimulationController::class, 'koppelModule']);
     Route::patch('/slots/{slot}/remove-module', [SimulationController::class, 'removeModule'])->name('slots.removeModule');
     Route::post('/effects/module/{moduleId}/{type}', [SimulationController::class, 'updateEffect'])->name('effects.update');
     Route::get('/api/modules/{module}/effects', function (\App\Models\Module $module) {
-    return response()->json([
-        'effects' => $module->effects->map(fn($e) => [
-            'type' => $e->type,
-            'value' => $e->value,
-        ])
-    ]);
-});
+        return response()->json([
+            'effects' => $module->effects->map(fn($e) => [
+                'type' => $e->type,
+                'value' => $e->value,
+            ])
+        ]);
+    });
 
     Route::get('/module', [ModuleHandlerController::class, 'index'])->name('module.index');
     Route::post('/modules', [ModuleHandlerController::class, 'store'])->name('modules.store');
@@ -43,5 +44,4 @@ Route::middleware('auth')->group(function () {
     Route::delete('/modules/{module}', [ModuleHandlerController::class, 'destroy'])->name('modules.destroy');
 });
 
-require __DIR__.'/auth.php';
-
+require __DIR__ . '/auth.php';

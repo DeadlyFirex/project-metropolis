@@ -1,6 +1,15 @@
 <div class="py-8">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
+        <div class="mb-6 flex items-center justify-between">
+            <div class="text-lg font-medium text-gray-800 dark:text-gray-200">
+                Digitale Klok: <span id="clock">{{ $clockTime ?: '00:00:00' }}</span>
+            </div>
+            <button onclick="toggleDayNight()" class="bg-blue-500 text-white px-4 py-1 rounded shadow text-sm">
+                Dag/Nacht
+            </button>
+        </div>
+
         <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Metropolis Grid</h2>
 
         <table class="table-auto border-collapse border border-gray-300 w-full text-center">
@@ -10,7 +19,7 @@
                         @foreach ($row as $slot)
                             <td class="border border-gray-300 p-4 w-[200px] h-[150px] bg-gray-100 align-middle text-center city-cell"
                                 data-slot-id="{{ $slot->id }}" data-row="{{ $loop->parent->index }}"
-                                {{-- rij index --}} data-col="{{ $loop->index }}"> {{-- kolom index --}}
+                                data-col="{{ $loop->index }}">
 
                                 <div class="city-slot flex flex-col items-center justify-center h-full relative"
                                     data-slot-id="{{ $slot->id }}"
@@ -77,27 +86,111 @@
 
     </div>
 </div>
+
 <script>
+    // Start met de kloktijd of fallback
+    let currentTime = '{{ $clockTime ?: '00:00:00' }}';
+
+    function pad(num) {
+        return String(num).padStart(2, '0');
+    }
+
+    function tickClock() {
+        let [h, m, s] = currentTime.split(':').map(Number);
+        s++;
+        if (s >= 60) {
+            s = 0;
+            m++;
+        }
+        if (m >= 60) {
+            m = 0;
+            h++;
+        }
+        if (h >= 24) {
+            h = 0;
+        }
+
+        currentTime = `${pad(h)}:${pad(m)}:${pad(s)}`;
+        document.getElementById('clock').innerText = currentTime;
+    }
+
+    // Elke seconde klok updaten
+    setInterval(() => {
+        tickClock();
+        maybeSaveTime();
+    }, 1000);
+
+    // Timer voor saven
+    let lastSave = 0;
+
+    function maybeSaveTime() {
+        if (Date.now() - lastSave >= 15000) { // elke 15 sec
+            saveTime();
+            lastSave = Date.now();
+        }
+    }
+
+    // CSRF token (uit meta tag)
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Save time via fetch POST
+    function saveTime() {
+        fetch('/save-clock', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            credentials: 'same-origin', // zorgt dat cookies meegestuurd worden
+            body: JSON.stringify({
+                time: currentTime
+            })
+        }).catch(e => {
+            // eventueel error handling/loggen
+            console.error('Tijd opslaan mislukt', e);
+        });
+    }
+
+    // Dag/Nacht toggle knop
+    function toggleDayNight() {
+        const hour = parseInt(currentTime.split(':')[0]);
+        // Als tijd tussen 6 en 18 (dag), zet op 00:00:00 (nacht)
+        // anders op 12:00:00 (dag)
+        if (hour >= 6 && hour < 18) {
+            currentTime = '00:00:00';
+        } else {
+            currentTime = '12:00:00';
+        }
+        document.getElementById('clock').innerText = currentTime;
+        saveTime();
+    }
+
+    // Save tijd ook bij verlaten pagina
+    window.addEventListener('beforeunload', function(event) {
+        // Gebruik navigator.sendBeacon voor betrouwbare versturing
+        const url = '/save-clock';
+        const data = new FormData();
+        data.append('time', currentTime);
+        data.append('_token', csrfToken);
+
+        navigator.sendBeacon(url, data);
+    });
+
+    // Rest van je city grid hover effect code blijft ongewijzigd
     const cityCells = document.querySelectorAll('td.city-cell');
-    // Hardcoded rows & cols - pas aan naar jouw data als nodig
     const rows = 3;
     const cols = 4;
 
     function getCell(row, col) {
-        const cell = document.querySelector(`.city-cell[data-row="${row}"][data-col="${col}"]`);
-        return cell;
+        return document.querySelector(`.city-cell[data-row="${row}"][data-col="${col}"]`);
     }
 
     document.querySelector('tbody').addEventListener('mouseover', (event) => {
         const slot = event.target.closest('.city-slot');
-        if (!slot || !slot.dataset.moduleId) {
-            return;
-        }
+        if (!slot || !slot.dataset.moduleId) return;
 
         const parentTd = slot.closest('td.city-cell');
-        if (!parentTd) {
-            return;
-        }
+        if (!parentTd) return;
 
         const row = parseInt(parentTd.dataset.row, 10);
         const col = parseInt(parentTd.dataset.col, 10);
@@ -114,16 +207,12 @@
 
         adjacentPositions.forEach(([r, c]) => {
             const cell = getCell(r, c);
-            if (!cell) {
-                return;
-            }
+            if (!cell) return;
 
             cell.classList.add('bg-green-200');
 
             const moduleSlot = cell.querySelector('.city-slot[data-module-id]');
-            if (!moduleSlot) {
-                return;
-            }
+            if (!moduleSlot) return;
 
             const effects = cell.querySelectorAll('.effect');
             effects.forEach(effect => {
@@ -157,11 +246,9 @@
         const overlay = slot.querySelector('.combined-effects');
         if (overlay) {
             overlay.innerHTML = html;
-if (window.applyFontScaleTo && window.currentFontScale) {
-    window.applyFontScaleTo(overlay, window.currentFontScale);
-}
-
-
+            if (window.applyFontScaleTo && window.currentFontScale) {
+                window.applyFontScaleTo(overlay, window.currentFontScale);
+            }
             overlay.classList.remove('hidden');
         }
     });
