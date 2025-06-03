@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [EventController::class, 'index'])->name('events');
         Route::post('/set', [EventController::class, 'setEvent'])->name('events.set');
         Route::post('/reset', [EventController::class, 'resetEvent'])->name('events.reset');
+        Route::get('/slot-events', [EventController::class, 'getSlotEvents'])->name('events.slot-events');
     });
     Route::resource('conditions', ConditionsController::class)
         ->except(['show', 'create', 'edit'])

@@ -16,74 +16,107 @@
                 </div>
             @endif
 
-            @if(session('active_event'))
+            {{-- Active Events Overview --}}
+            @if(!empty($activeEvents))
                 <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <strong>Actief Event:</strong> {{ $events[session('active_event.type')] ?? session('active_event.type') }}
-                            @if(session('active_event.duration'))
-                                <span class="ml-2">Duur: {{ session('active_event.duration') }} {{ session('active_event.duration_unit') }}</span>
-                            @endif
-                            @if(session('active_event.is_recurring'))
-                                <span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Terugkerend</span>
-                            @endif
+                    <h4 class="font-semibold mb-2">Actieve Events:</h4>
+                    @foreach($activeEvents as $slotId => $event)
+                        <div class="flex items-center justify-between mb-2 last:mb-0">
+                            <div>
+                                <strong>Vakje {{ $slotId }}:</strong> {{ $event['event_name'] }}
+                                <span class="ml-2 text-sm">Nog {{ $event['time_remaining'] }} resterend</span>
+                                @if($event['is_recurring'])
+                                    <span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Terugkerend</span>
+                                @endif
+                            </div>
+                            <form action="{{ route('events.reset') }}" method="POST" class="inline">
+                                @csrf
+                                <input type="hidden" name="slot_id" value="{{ $slotId }}">
+                                <button type="submit" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                                    Stop Event
+                                </button>
+                            </form>
                         </div>
-                        <form action="{{ route('events.reset') }}" method="POST" class="inline">
-                            @csrf
-                            <button type="submit" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
-                                Terug naar Normaal
-                            </button>
-                        </form>
-                    </div>
+                    @endforeach
                 </div>
             @endif
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6 lg:p-8">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Selecteer Event Omstandigheden</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">Selecteer Event voor Specifiek Vakje</h3>
 
                     <form action="{{ route('events.set') }}" method="POST" id="eventForm">
                         @csrf
 
-                        <div class="mb-6">
-                            <label for="event_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Event Type
-                            </label>
-                            <select name="event_type" id="event_type" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" required>
-                                <option value="">Selecteer een event...</option>
-                                @foreach($events as $key => $name)
-                                    <option value="{{ $key }}" {{ old('event_type') == $key ? 'selected' : '' }}>
-                                        {{ $name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('event_type')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label for="slot_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Selecteer Vakje <span class="text-red-500">*</span>
+                                </label>
+                                <select name="slot_id" id="slot_id" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" required>
+                                    <option value="">Kies een vakje...</option>
+                                    @foreach($slots as $slot)
+                                        <option value="{{ $slot->id }}" {{ old('slot_id') == $slot->id ? 'selected' : '' }}>
+                                            Vakje {{ $slot->id }}
+                                            @if($slot->module)
+                                                ({{ $slot->module->name }})
+                                            @else
+                                                (Leeg)
+                                            @endif
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('slot_id')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label for="event_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Event Type <span class="text-red-500">*</span>
+                                </label>
+                                <select name="event_type" id="event_type" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" required>
+                                    <option value="">Selecteer een event...</option>
+                                    @foreach($events as $key => $name)
+                                        <option value="{{ $key }}" {{ old('event_type') == $key ? 'selected' : '' }}>
+                                            {{ $name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('event_type')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
 
-                        <div id="durationSettings" class="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600" style="display: none;">
+                        <div class="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
                             <h4 class="text-md font-medium text-gray-800 dark:text-gray-200 mb-4">Duur Instellingen</h4>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label for="duration" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Duur
+                                        Duur <span class="text-red-500">*</span>
                                     </label>
-                                    <input type="number" name="duration" id="duration" min="1" value="{{ old('duration') }}"
+                                    <input type="number" name="duration" id="duration" min="1" value="{{ old('duration', 30) }}" required
                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100"
                                            placeholder="Voer duur in">
+                                    @error('duration')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
                                 </div>
 
                                 <div>
                                     <label for="duration_unit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Eenheid
+                                        Eenheid <span class="text-red-500">*</span>
                                     </label>
-                                    <select name="duration_unit" id="duration_unit" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100">
-                                        <option value="minutes" {{ old('duration_unit') == 'minutes' ? 'selected' : '' }}>Minuten</option>
+                                    <select name="duration_unit" id="duration_unit" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100">
+                                        <option value="minutes" {{ old('duration_unit', 'minutes') == 'minutes' ? 'selected' : '' }}>Minuten</option>
                                         <option value="hours" {{ old('duration_unit') == 'hours' ? 'selected' : '' }}>Uren</option>
                                         <option value="days" {{ old('duration_unit') == 'days' ? 'selected' : '' }}>Dagen</option>
                                     </select>
+                                    @error('duration_unit')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
                                 </div>
                             </div>
 
@@ -135,19 +168,8 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const eventSelect = document.getElementById('event_type');
-            const durationSettings = document.getElementById('durationSettings');
             const isRecurringCheckbox = document.getElementById('is_recurring');
             const recurringSettings = document.getElementById('recurringSettings');
-
-            // Show/hide duration settings based on event selection
-            eventSelect.addEventListener('change', function() {
-                if (this.value) { // Show if any event type is selected
-                    durationSettings.style.display = 'block';
-                } else {
-                    durationSettings.style.display = 'none';
-                }
-            });
 
             // Show/hide recurring settings based on checkbox
             isRecurringCheckbox.addEventListener('change', function() {
@@ -159,10 +181,6 @@
             });
 
             // Initialize on page load
-            if (eventSelect.value) { // Show if any event type is pre-selected
-                durationSettings.style.display = 'block';
-            }
-
             if (isRecurringCheckbox.checked) {
                 recurringSettings.style.display = 'grid';
             }
