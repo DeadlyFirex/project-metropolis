@@ -76,14 +76,14 @@ class EventController extends Controller
         $allSessionData = session()->all();
 
         foreach ($allSessionData as $key => $data) {
-            if (strpos($key, 'slot_event_') === 0 && is_array($data)) {
+            if (str_starts_with($key, 'slot_event_') && is_array($data)) {
                 $slotId = $data['slot_id'] ?? null;
                 if ($slotId) {
                     $endTime = Carbon::parse($data['ends_at']);
                     $now = now();
 
                     if ($endTime->isFuture()) {
-                        $timeRemaining = $this->getTimeRemaining($now, $endTime);
+                        $timeRemaining = $this->getRemainingTime($now, $endTime);
                         $activeEvents[$slotId] = array_merge($data, [
                             'time_remaining' => $timeRemaining,
                             'event_name' => $this->getAvailableEvents()[$data['type']] ?? $data['type']
@@ -103,29 +103,25 @@ class EventController extends Controller
     {
         // $duration is already cast to int in setEvent, but adding a defensive cast here
         // for robustness in case this method is called from elsewhere without validation
-        switch ($unit) {
-            case 'minutes':
-                return $startTime->copy()->addMinutes((int)$duration);
-            case 'hours':
-                return $startTime->copy()->addHours((int)$duration);
-            case 'days':
-                return $startTime->copy()->addDays((int)$duration);
-            default:
-                return $startTime->copy()->addMinutes((int)$duration);
-        }
+        return match ($unit) {
+            'hours' => $startTime->copy()->addHours((int)$duration),
+            'days' => $startTime->copy()->addDays((int)$duration),
+            default => $startTime->copy()->addMinutes((int)$duration),
+        };
     }
 
-    private function getTimeRemaining($now, $endTime)
+    private function getRemainingTime($now, $endTime)
     {
         $diff = $now->diff($endTime);
 
         if ($diff->days > 0) {
             return $diff->days . ' dag(en), ' . $diff->h . ' uur';
-        } elseif ($diff->h > 0) {
-            return $diff->h . ' uur, ' . $diff->i . ' min';
-        } else {
-            return $diff->i . ' minuten';
         }
+        if ($diff->h > 0) {
+            return $diff->h . ' uur, ' . $diff->i . ' min';
+        }
+
+        return $diff->i . ' minuten';
     }
 
     private function getAvailableEvents()
