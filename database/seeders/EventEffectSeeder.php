@@ -13,27 +13,12 @@ class EventEffectSeeder extends Seeder
             // Festival
             [
                 'type' => 'safety',
-                'value' => -3,
+                'value' => -1,
                 'event_type_id' => 1,
             ],
             [
                 'type' => 'recreation',
-                'value' => 3,
-                'event_type_id' => 1,
-            ],
-            [
-                'type' => 'climate',
-                'value' => -1,
-                'event_type_id' => 1,
-            ],
-            [
-                'type' => 'facilities',
-                'value' => 1,
-                'event_type_id' => 1,
-            ],
-            [
-                'type' => 'infrastructure',
-                'value' => -1,
+                'value' => 10,
                 'event_type_id' => 1,
             ],
 
@@ -45,7 +30,7 @@ class EventEffectSeeder extends Seeder
             ],
             [
                 'type' => 'recreation',
-                'value' => 4,
+                'value' => 10,
                 'event_type_id' => 2,
             ],
             [
