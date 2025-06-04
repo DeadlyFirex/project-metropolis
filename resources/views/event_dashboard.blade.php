@@ -87,11 +87,6 @@
                             </div>
 
                             <div>
-                                <label for="event_image" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Selecteer Bestand <span class="text-red-500">*</span>
-                                </label>
-                                <input type="file" name="event_image" id="event_image" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
-
                                 <label for="event_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Event Type <span class="text-red-500">*</span>
                                 </label>
