@@ -2,53 +2,83 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Event;
+use App\Models\EventType;
 use Illuminate\Http\Request;
 use App\Models\Slot;
 use Carbon\Carbon;
+use function Laravel\Prompts\error;
 
 class EventController extends Controller
 {
     public function index()
     {
-        $events = $this->getAvailableEvents();
+        $event_types = $this->getAvailableEvents();
         $slots = Slot::all();
         $activeEvents = $this->getActiveSlotEvents();
 
-        return view('event_dashboard', compact('events', 'slots', 'activeEvents'));
+        return view('event_dashboard', compact('event_types', 'slots', 'activeEvents'));
     }
 
     public function setEvent(Request $request)
     {
         $request->validate([
+            'event_name' => 'required|string|max:255',
+            'event_description' => 'nullable|string|max:1000',
+            'event_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'event_type' => 'required|string',
             'slot_id' => 'required|exists:slots,id',
             'duration' => 'required|integer|min:1',
             'duration_unit' => 'required|string|in:minutes,hours,days',
-            'is_recurring' => 'boolean',
+            'is_recurring' => 'nullable|boolean|default:false',
             'recurring_interval' => 'nullable|integer|min:1',
             'recurring_unit' => 'nullable|string|in:minutes,hours,days'
         ]);
 
-        // Calculate end time
-        $startTime = now();
-        // Cast duration to int
-        $endTime = $this->calculateEndTime($startTime, (int)$request->duration, $request->duration_unit);
+        // TODO: Handle if validation fails, e.g., return error response
 
-        // Store event data in session with slot-specific key
-        $eventKey = 'slot_event_' . $request->slot_id;
-        session([
-            $eventKey => [
-                'slot_id' => $request->slot_id,
-                'type' => $request->event_type,
-                'duration' => (int)$request->duration, // Cast to int
-                'duration_unit' => $request->duration_unit,
-                'is_recurring' => $request->boolean('is_recurring'),
-                'recurring_interval' => $request->recurring_interval ? (int)$request->recurring_interval : null, // Cast to int if present
-                'recurring_unit' => $request->recurring_unit,
-                'started_at' => $startTime->toDateTimeString(),
-                'ends_at' => $endTime->toDateTimeString()
-            ]
+        // Calculate start and end times
+        $startTime = now();
+        $endTime = $this->calculateEndTime($startTime, (int)$request->duration, $request->duration_unit);
+        $recurringTime = now();
+        $recurringNext = null;
+
+        // Handle recurring events, turn to seconds, int
+        if ($request->boolean('is_recurring') && $request->recurring_interval) {
+            $recurringInterval = (int)$request->recurring_interval;
+            $recurringUnit = $request->recurring_unit;
+
+            // Calculate the next start time based on the recurring interval
+            $recurringTime = match ($recurringUnit) {
+                'hours' => $recurringTime->addHours($recurringInterval),
+                'days' => $recurringTime->addDays($recurringInterval),
+                default => $recurringTime->addMinutes($recurringInterval),
+            };
+            // Recalculate end time for the recurring event
+            $recurringNext = $this->calculateEndTime($recurringTime, (int)$request->duration, $request->duration_unit);
+        }
+
+        // TODO: Handle recurring events logic if needed, e.g., store next occurrence in session or database
+
+        // Create or update the event in the database
+        $new_event = new Event([
+            'name' => $request->event_name,
+            'slot_id' => $request->slot_id,
+            'description' => $request->event_description,
+            'image_path' => $request->event_image ? $request->file('image')->store('events', 'public') : 'placeholder.png',
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+            'is_recurring' => $request->boolean('is_recurring'),
+            'recurring_interval' => $request->recurring_interval ? (int) $request->recurring_interval : null, // Cast to int if present
+            'event_type_id' => EventType::where('name', $request->event_type)->first()->id,
         ]);
+
+        $new_event->save();
+
+        // Assign to slot
+        $slot = Slot::find($request->slot_id);
+        $slot->event_id = $new_event->id;
+        $slot->save();
 
         return redirect()->back()->with('success', 'Event is succesvol ingesteld voor vakje ' . $request->slot_id . '!');
     }
@@ -56,11 +86,22 @@ class EventController extends Controller
     public function resetEvent(Request $request)
     {
         $request->validate([
-            'slot_id' => 'required|exists:slots,id'
+            'slot_id' => 'required|exists:slots,id',
         ]);
 
-        $eventKey = 'slot_event_' . $request->slot_id;
-        session()->forget($eventKey);
+        // Check if the event exists in the database
+        $event = Event::where('id', $request->slot_id)->first();
+        if (!$event) {
+            return redirect()->back()->with('error', 'Er is geen event ingesteld voor vakje ' . $request->slot_id . '!');
+        }
+
+        // Reset the slot event in the database
+        $slot = Slot::find($request->slot_id);
+        $slot->event_id = null;
+        $slot->save();
+
+        // Delete the event from the database
+        $event->delete();
 
         return redirect()->back()->with('success', 'Event voor vakje ' . $request->slot_id . ' is teruggezet naar normaal!');
     }
@@ -73,26 +114,25 @@ class EventController extends Controller
     private function getActiveSlotEvents()
     {
         $activeEvents = [];
-        $allSessionData = session()->all();
+        $now = now();
 
-        foreach ($allSessionData as $key => $data) {
-            if (str_starts_with($key, 'slot_event_') && is_array($data)) {
-                $slotId = $data['slot_id'] ?? null;
-                if ($slotId) {
-                    $endTime = Carbon::parse($data['ends_at']);
-                    $now = now();
+        // Eager load the event relation for all slots
+        $slots = Slot::with('event')->get();
 
-                    if ($endTime->isFuture()) {
-                        $timeRemaining = $this->getRemainingTime($now, $endTime);
-                        $activeEvents[$slotId] = array_merge($data, [
-                            'time_remaining' => $timeRemaining,
-                            'event_name' => $this->getAvailableEvents()[$data['type']] ?? $data['type']
-                        ]);
-                    } else {
-                        // Event expired, remove it
-                        session()->forget($key);
-                    }
-                }
+        foreach ($slots as $slot) {
+            $event = $slot->event;
+            if ($event && $event->end_time && Carbon::parse($event->end_time)->isFuture()) {
+                $timeRemaining = $this->getRemainingTime($now, Carbon::parse($event->end_time));
+                $activeEvents[$slot->id] = [
+                    'slot_id' => $slot->id,
+                    'event_id' => $event->id,
+                    'event_name' => $event->name,
+                    'description' => $event->description,
+                    'start_time' => $event->start_time,
+                    'end_time' => $event->end_time,
+                    'recurring' => $event->recurring,
+                    'time_remaining' => $timeRemaining,
+                ];
             }
         }
 
@@ -126,12 +166,11 @@ class EventController extends Controller
 
     private function getAvailableEvents()
     {
-        return [
-            'festival' => 'Festival',
-            'rush_hour' => 'Spitsuur',
-            'construction' => 'Wegwerkzaamheden',
-            'market_day' => 'Marktdag',
-            'emergency' => 'Noodsituatie'
-        ];
+        $events = EventType::all();
+        $eventList = [];
+        foreach ($events as $event) {
+            $eventList[$event->name] = $event->description;
+        }
+        return $eventList;
     }
 }
