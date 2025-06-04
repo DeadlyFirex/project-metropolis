@@ -30,7 +30,7 @@
                             Conditions Dashboard
                         </x-nav-link>
                         <x-nav-link :href="route('events')" :active="request()->routeIs('events')">
-                            Events Dasbhoard
+                            Events Dashboard
                         </x-nav-link>
                     @endauth
                 </div>
