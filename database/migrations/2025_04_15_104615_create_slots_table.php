@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedSmallInteger("index")->unique();
             $table->foreignId('module_id')->nullable()->constrained()->onDelete('SET NULL');
+            $table->foreignId('event_id')->nullable()->constrained('events')->onDelete('SET NULL');
             $table->timestamps();
         });
     }
