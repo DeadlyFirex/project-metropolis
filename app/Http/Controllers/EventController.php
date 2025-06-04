@@ -7,7 +7,6 @@ use App\Models\EventType;
 use Illuminate\Http\Request;
 use App\Models\Slot;
 use Carbon\Carbon;
-use function Laravel\Prompts\error;
 
 class EventController extends Controller
 {
@@ -25,7 +24,6 @@ class EventController extends Controller
         $request->validate([
             'event_name' => 'required|string|max:255',
             'event_description' => 'nullable|string|max:1000',
-            'event_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'event_type' => 'required|string',
             'slot_id' => 'required|exists:slots,id',
             'duration' => 'required|integer|min:1',
@@ -65,7 +63,6 @@ class EventController extends Controller
             'name' => $request->event_name,
             'slot_id' => $request->slot_id,
             'description' => $request->event_description,
-            'image_path' => $request->event_image ? $request->file('image')->store('events', 'public') : 'placeholder.png',
             'start_time' => $startTime,
             'end_time' => $endTime,
             'is_recurring' => $request->boolean('is_recurring'),
