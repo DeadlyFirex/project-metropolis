@@ -14,7 +14,10 @@ class Event extends Model
         'name',
         'description',
         'image_path',
-        'duration',
+        'start_time',
+        'end_time',
+        'recurring',
+        'recurring_interval',
         'event_type_id',
     ];
 
