@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Event;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Module;
 use App\Models\Slot;
@@ -13,13 +14,14 @@ class SimulationController extends Controller
     public function index(Request $request)
     {
         $category     = $request->input('category');
-        $all_modules  = $this->getModules();          // naam gewijzigd
+        $all_modules  = $this->getModules();
         $modules      = $this->getModules($category);
         $categories   = Module::select('category')->distinct()->pluck('category');
         $slots        = Slot::with(['module.effects'])->get();
+        $events       = Event::all();
 
         return view('sim_dashboard', compact(
-            'modules', 'category', 'categories', 'slots', 'all_modules'
+            'modules', 'category', 'categories', 'slots', 'all_modules', 'events'
         ));
     }
 
