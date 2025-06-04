@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             EffectSeeder::class,
             EventTypeSeeder::class,
             EventEffectSeeder::class,
+            CategorySeeder::class,
         ]);
     }
 }
