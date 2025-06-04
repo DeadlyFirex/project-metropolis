@@ -20,6 +20,11 @@ return new class extends Migration
                 ->onDelete('cascade');
             $table->unsignedInteger('duration')
                 ->default(600);
+            $table->boolean('recurring')->default(false);
+            $table->unsignedInteger('recurring_interval')->nullable();
+            $table->DateTime('start_time')
+                ->default(now());
+            $table->DateTime('end_time');
             $table->timestamps();
         });
     }

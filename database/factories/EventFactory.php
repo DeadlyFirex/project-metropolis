@@ -19,7 +19,10 @@ class EventFactory extends Factory
             'description' => $this->faker->sentence,
             'image_path' => 'images/placeholder.jpg',
             'event_type_id' => EventType::factory(),
-            'duration' => $this->faker->numberBetween(600, 3600),
+            'start_time' => $this->faker->dateTimeBetween('-1 month', '+1 month'),
+            'end_time' => function (array $attributes) {
+                return (clone $attributes['start_time'])->addMinutes($this->faker->numberBetween(30, 120));
+            },
         ];
     }
 }
