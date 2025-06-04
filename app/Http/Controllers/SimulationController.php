@@ -20,7 +20,7 @@ class SimulationController extends Controller
         $slots        = Slot::with(['module.effects'])->get();
         $userId = Auth::id();
         $userClock = \App\Models\UserClock::where('user_id', $userId)->first();
-        $clockTime = $userClock ? $userClock->time : '00:00:00';
+        $clockTime = $userClock ? $userClock->clock_time : '00:00:00';
 
         return view('sim_dashboard', compact(
             'modules',
