@@ -12,9 +12,6 @@ return new class extends Migration
             $table->id();
             $table->string('name')->unique();
             $table->string('description')->nullable();
-            $table->string('image_path')
-                ->default('default-image.png')
-                ->comment("Path to the image representing the event type");
             // This indicates which module this event type is compatible with
             $table->foreignId('module_id')
                 ->constrained('modules')

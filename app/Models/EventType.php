@@ -13,7 +13,6 @@ class EventType extends Model
     protected $fillable = [
         'name',
         'description',
-        'image_path',
         'module_id',
         'min_duration',
         'max_duration',
