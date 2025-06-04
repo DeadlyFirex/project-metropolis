@@ -25,7 +25,7 @@
                             <div>
                                 <strong>Vakje {{ $slotId }}:</strong> {{ $event['event_name'] }}
                                 <span class="ml-2 text-sm">Nog {{ $event['time_remaining'] }} resterend</span>
-                                @if($event['is_recurring'])
+                                @if($event['recurring'])
                                     <span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Terugkerend</span>
                                 @endif
                             </div>
@@ -50,6 +50,20 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
+                                <label for="event_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Naam <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="event_name" id="event_name" value="{{ old('event_name') }}" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                                       placeholder="Voer event naam in">
+
+                                <label for="event_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Omschrijving <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="event_description" id="event_description" value="{{ old('event_description') }}" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                                       placeholder="Voer event omschrijving in">
+
                                 <label for="slot_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Selecteer Vakje <span class="text-red-500">*</span>
                                 </label>
@@ -66,20 +80,26 @@
                                         </option>
                                     @endforeach
                                 </select>
+
                                 @error('slot_id')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
                             <div>
+                                <label for="event_image" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Selecteer Bestand <span class="text-red-500">*</span>
+                                </label>
+                                <input type="file" name="event_image" id="event_image" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
+
                                 <label for="event_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Event Type <span class="text-red-500">*</span>
                                 </label>
                                 <select name="event_type" id="event_type" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" required>
                                     <option value="">Selecteer een event...</option>
-                                    @foreach($events as $key => $name)
+                                    @foreach($event_types as $key => $description)
                                         <option value="{{ $key }}" {{ old('event_type') == $key ? 'selected' : '' }}>
-                                            {{ $name }}
+                                            {{ $key }}
                                         </option>
                                     @endforeach
                                 </select>
