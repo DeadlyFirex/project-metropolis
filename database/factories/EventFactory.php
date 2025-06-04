@@ -17,7 +17,6 @@ class EventFactory extends Factory
         return [
             'name' => $this->faker->word,
             'description' => $this->faker->sentence,
-            'image_path' => 'images/placeholder.jpg',
             'event_type_id' => EventType::factory(),
             'start_time' => $this->faker->dateTimeBetween('-1 month', '+1 month'),
             'end_time' => function (array $attributes) {

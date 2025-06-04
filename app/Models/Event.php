@@ -13,7 +13,6 @@ class Event extends Model
     protected $fillable = [
         'name',
         'description',
-        'image_path',
         'start_time',
         'end_time',
         'recurring',

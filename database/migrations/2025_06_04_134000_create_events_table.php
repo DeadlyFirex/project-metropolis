@@ -12,9 +12,6 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('description')->nullable();
-            $table->string('image_path')
-                ->default('default-image.png')
-                ->comment("Path to the image representing the event");
             $table->foreignId('event_type_id')
                 ->constrained('event_types')
                 ->onDelete('cascade');
