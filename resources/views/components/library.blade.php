@@ -14,8 +14,8 @@
             <input type="text" id="search"
                 autocomplete="off"
                 placeholder="Zoek op naam of categorie..."
-                class="border px-2 py-1 rounded w-full"
-                oninput="filterModules()">
+                class="border px-2 py-1 rounded w-full">
+
             <ul id="search-suggestions"
                 class="absolute z-10 bg-white dark:bg-gray-800 border border-gray-300 rounded mt-1 w-full max-h-40 overflow-y-auto hidden">
             </ul>
@@ -28,9 +28,9 @@
         <select name="category" id="category" onchange="this.form.submit()" class="border px-2 py-1 rounded w-full">
             <option value="">Alle categorieën</option>
             @foreach($categories as $cat)
-                <option value="{{ $cat }}" {{ request('category') == $cat ? 'selected' : '' }}>
-                    {{ ucfirst($cat) }}
-                </option>
+            <option value="{{ $cat }}" {{ request('category') == $cat ? 'selected' : '' }}>
+                {{ ucfirst($cat) }}
+            </option>
             @endforeach
         </select>
     </form>
@@ -39,26 +39,26 @@
     <div class="flex-1 overflow-y-auto">
         <div class="grid font-sensitive-grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pr-1 pb-4">
             @forelse($modules as $module)
-                <div class="module-card bg-gray-50 dark:bg-gray-700 p-3 rounded-md transition ring-offset-2 ring-offset-gray-100 dark:ring-offset-gray-900 shadow-sm flex flex-col items-center text-center w-full"
-                    draggable="true"
-                    data-module-id="{{ $module->id }}"
-                    data-name="{{ $module->name }}"
-                    data-category="{{ $module->category }}">
-                    <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200">{{ $module->name }}</h3>
-                    <p class="text-sm text-blue-500 mt-1">Categorie: {{ $module->category }}</p>
+            <div class="module-card bg-gray-50 dark:bg-gray-700 p-3 rounded-md transition ring-offset-2 ring-offset-gray-100 dark:ring-offset-gray-900 shadow-sm flex flex-col items-center text-center w-full"
+                draggable="true"
+                data-module-id="{{ $module->id }}"
+                data-name="{{ $module->name }}"
+                data-category="{{ $module->category }}">
+                <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200">{{ $module->name }}</h3>
+                <p class="text-sm text-blue-500 mt-1">Categorie: {{ $module->category }}</p>
 
-                    @if(isset($module->image_path))
-                        <div class="mt-2">
-                            <img src="{{ asset('storage/' . $module->image_path) }}"
-                                alt="{{ $module->name }}"
-                                class="w-14 h-14 object-contain rounded-md pointer-events-none">
-                        </div>
-                    @endif
+                @if(isset($module->image_path))
+                <div class="mt-2">
+                    <img src="{{ asset('storage/' . $module->image_path) }}"
+                        alt="{{ $module->name }}"
+                        class="w-14 h-14 object-contain rounded-md pointer-events-none">
                 </div>
+                @endif
+            </div>
             @empty
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow text-center col-span-full">
-                    <p class="text-gray-500 dark:text-gray-400">Er zijn geen modules beschikbaar.</p>
-                </div>
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow text-center col-span-full">
+                <p class="text-gray-500 dark:text-gray-400">Er zijn geen modules beschikbaar.</p>
+            </div>
             @endforelse
 
             {{-- Geen overeenkomsten --}}
