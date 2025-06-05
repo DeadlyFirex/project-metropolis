@@ -1,5 +1,13 @@
 <div class="py-8">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="mb-6 flex items-center justify-between">
+            <div class="text-lg font-medium text-gray-800 dark:text-gray-200">
+                <span id="clock">{{ $clockTime ?: '00:00:00' }}</span>
+            </div>
+            <button onclick="toggleDayNight()" class="bg-blue-500 text-white px-4 py-1 rounded shadow text-sm">
+                Dag/Nacht
+            </button>
+        </div>
 
         <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Metropolis Grid</h2>
 
@@ -10,7 +18,7 @@
                         @foreach ($row as $slot)
                             <td class="border border-gray-300 p-4 w-[200px] h-[150px] bg-gray-100 align-middle text-center city-cell"
                                 data-slot-id="{{ $slot->id }}" data-row="{{ $loop->parent->index }}"
-                                {{-- rij index --}} data-col="{{ $loop->index }}"> {{-- kolom index --}}
+                                data-col="{{ $loop->index }}">
 
                                 <div class="city-slot flex flex-col items-center justify-center h-full relative"
                                     data-slot-id="{{ $slot->id }}"
@@ -47,12 +55,10 @@
                                                 @endforeach
                                             </div>
 
-                                            <!-- Overlay voor gecombineerde effecten -->
                                             <div
                                                 class="combined-effects hidden absolute top-full mt-2 bg-white border text-[10px] text-gray-800 p-2 rounded shadow z-10">
                                             </div>
 
-                                            <!-- Verwijderknop -->
                                             <form method="POST" action="{{ route('slots.removeModule', $slot->id) }}"
                                                 class="absolute top-0 right-0">
                                                 @csrf
@@ -66,7 +72,6 @@
                                     @else
                                         <span class="text-xs text-gray-400">Leeg</span>
                                     @endif
-
                                 </div>
                             </td>
                         @endforeach
@@ -74,30 +79,113 @@
                 @endforeach
             </tbody>
         </table>
-
     </div>
 </div>
+
 <script>
+    let currentTime = '{{ $clockTime ?: '00:00:00' }}';
+
+    function pad(num) {
+        return String(num).padStart(2, '0');
+    }
+
+    function tickClock() {
+        let [h, m, s] = currentTime.split(':').map(Number);
+        s++;
+        if (s >= 60) {
+            s = 0;
+            m++;
+        }
+        if (m >= 60) {
+            m = 0;
+            h++;
+        }
+        if (h >= 24) {
+            h = 0;
+        }
+        currentTime = `${pad(h)}:${pad(m)}:${pad(s)}`;
+        document.getElementById('clock').innerText = currentTime;
+    }
+
+    function checkAndApplyNightMode() {
+        const hour = parseInt(currentTime.split(':')[0], 10);
+        if (hour >= 0 && hour < 6) {
+            document.body.classList.add('night-mode');
+        } else {
+            document.body.classList.remove('night-mode');
+        }
+    }
+
+    setInterval(() => {
+        tickClock();
+        checkAndApplyNightMode();
+        maybeSaveTime();
+    }, 1000);
+
+    let lastSave = 0;
+
+    function maybeSaveTime() {
+        if (Date.now() - lastSave >= 15000) {
+            saveTime();
+            lastSave = Date.now();
+        }
+    }
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    function saveTime() {
+        fetch('/save-clock', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                time: currentTime
+            })
+        }).catch(e => console.error('Tijd opslaan mislukt', e));
+    }
+
+    function toggleDayNight() {
+        const hour = parseInt(currentTime.split(':')[0]);
+        if (hour >= 6 && hour < 18) {
+            currentTime = '00:00:00'; // Nacht
+        } else {
+            currentTime = '12:00:00'; // Dag
+        }
+        document.getElementById('clock').innerText = currentTime;
+        checkAndApplyNightMode();
+        saveTime();
+    }
+
+    window.addEventListener('beforeunload', function() {
+        const url = '/save-clock';
+        const data = new FormData();
+        data.append('time', currentTime);
+        data.append('_token', csrfToken);
+        navigator.sendBeacon(url, data);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        checkAndApplyNightMode(); // Initieel checken
+    });
+
+    // Hover effecten
     const cityCells = document.querySelectorAll('td.city-cell');
-    // Hardcoded rows & cols - pas aan naar jouw data als nodig
     const rows = 3;
     const cols = 4;
 
     function getCell(row, col) {
-        const cell = document.querySelector(`.city-cell[data-row="${row}"][data-col="${col}"]`);
-        return cell;
+        return document.querySelector(`.city-cell[data-row="${row}"][data-col="${col}"]`);
     }
 
     document.querySelector('tbody').addEventListener('mouseover', (event) => {
         const slot = event.target.closest('.city-slot');
-        if (!slot || !slot.dataset.moduleId) {
-            return;
-        }
+        if (!slot || !slot.dataset.moduleId) return;
 
         const parentTd = slot.closest('td.city-cell');
-        if (!parentTd) {
-            return;
-        }
+        if (!parentTd) return;
 
         const row = parseInt(parentTd.dataset.row, 10);
         const col = parseInt(parentTd.dataset.col, 10);
@@ -114,16 +202,12 @@
 
         adjacentPositions.forEach(([r, c]) => {
             const cell = getCell(r, c);
-            if (!cell) {
-                return;
-            }
+            if (!cell) return;
 
             cell.classList.add('bg-green-200');
 
             const moduleSlot = cell.querySelector('.city-slot[data-module-id]');
-            if (!moduleSlot) {
-                return;
-            }
+            if (!moduleSlot) return;
 
             const effects = cell.querySelectorAll('.effect');
             effects.forEach(effect => {
@@ -134,7 +218,6 @@
         });
 
         const qol = Object.values(allEffects).reduce((sum, val) => sum + val, 0);
-
         const typeMap = {
             safety: 'Veiligheid',
             recreation: 'Recreatie',
@@ -151,17 +234,15 @@
             html += `<div class="${color}">${val > 0 ? '+' : ''}${val} ${label}</div>`;
         }
         html += `<div class="mt-1 font-bold ${qol > 0 ? 'text-green-600' : (qol < 0 ? 'text-red-600' : 'text-gray-600')}">
-            Kwaliteit van Leven: ${qol > 0 ? '+' : ''}${qol}
-        </div>`;
+                Kwaliteit van Leven: ${qol > 0 ? '+' : ''}${qol}
+            </div>`;
 
         const overlay = slot.querySelector('.combined-effects');
         if (overlay) {
             overlay.innerHTML = html;
-if (window.applyFontScaleTo && window.currentFontScale) {
-    window.applyFontScaleTo(overlay, window.currentFontScale);
-}
-
-
+            if (window.applyFontScaleTo && window.currentFontScale) {
+                window.applyFontScaleTo(overlay, window.currentFontScale);
+            }
             overlay.classList.remove('hidden');
         }
     });
@@ -178,3 +259,94 @@ if (window.applyFontScaleTo && window.currentFontScale) {
         if (overlay) overlay.classList.add('hidden');
     });
 </script>
+<style>
+    body {
+        transition: background-color 0.5s, color 0.5s;
+    }
+
+    .city-cell,
+    button,
+    .combined-effects {
+        transition: background-color 0.5s, color 0.5s;
+    }
+
+    /* Dagmodus */
+    body.day-mode {
+        background-color: #f9fafb;
+        /* lichtgrijs of wit */
+        color: #1f2937;
+        /* donkergrijs */
+    }
+
+    /* Nachtmodus */
+    body.night-mode {
+        background-color: #1a202c;
+        /* donkerblauw/grijs */
+        color: #f7fafc;
+        /* lichte tekst (witachtig) */
+    }
+
+    /* Zet standaard tekst in nacht wit */
+    body.night-mode,
+    body.night-mode * {
+        color: #f7fafc !important;
+    }
+
+    /* Witte achtergrond-blokken behouden zwarte tekst */
+    body.night-mode .bg-white,
+    body.night-mode .bg-gray-50,
+    body.night-mode .bg-[#ffffff] {
+        color: #2d3748 !important;
+        /* zwart */
+    }
+
+    /* Tekst in elementen binnen witte blokken ook zwart */
+    body.night-mode .bg-white *,
+    body.night-mode .bg-gray-50 * {
+        color: #000000 !important;
+    }
+
+    /* Grid cell achtergrond in nachtmodus donker maken */
+    body.night-mode .city-cell {
+        background-color: #2d3748 !important;
+    }
+
+    /* Effect beschrijvingen in nacht */
+    body.night-mode .effect {
+        color: #f7fafc !important;
+        /* lichte tekst */
+    }
+
+    /* Donkerder achtergrond voor gecombineerde effecten */
+    body.night-mode .combined-effects {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #f7fafc;
+    }
+
+    /* Knoppen nachtmodus */
+    body.night-mode button {
+        background-color: #4a5568;
+        color: #f7fafc;
+    }
+
+    /* Categorie filter nachtmodus */
+    body.night-mode .category {
+        background-color: #2d3748;
+        /* Donkere achtergrond */
+        color: #f7fafc;
+        /* lichte tekst */
+    }
+
+    body.night-mode .category select,
+    body.night-mode .category option,
+    body.night-mode .category label {
+        background-color: #2d3748;
+        color: #f7fafc;
+    }
+
+    /* Donkergroen highlight aanpassen voor nacht */
+    body.night-mode .bg-green-200 {
+        background-color: #22543d !important;
+    }
+</style>
