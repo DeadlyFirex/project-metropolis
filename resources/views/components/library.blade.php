@@ -10,7 +10,7 @@
         </button>
 
         <div class="relative w-full sm:w-1/2">
-            <label for="search" class="block text-sm font-medium text-gray-700 mb-1 sm:mb-0">Zoek modules:</label>
+            <label for="search" class="sr-only">Zoek modules:</label>
             <input type="text" id="search"
                 autocomplete="off"
                 placeholder="Zoek op naam of categorie..."
