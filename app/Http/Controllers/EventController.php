@@ -150,7 +150,7 @@ class EventController extends Controller
         $now = now();
         Log::debug('Current time for active event check: ' . $now);
 
-        $slots = Slot::with('event')->get()->fresh();
+        $slots = Slot::with(['event.eventType.effects'])->get()->fresh();
         Log::debug('Total slots with eager loaded events (after fresh): ' . $slots->count());
 
         foreach ($slots as $slot) {
@@ -250,32 +250,46 @@ class EventController extends Controller
         Log::info('Finished checking all compatible modules.');
     }
 
-    public function getEventEffects($eventTypeId)
+    /**
+     * Haal effecten op voor een event type
+     */
+    private function getEventEffects($eventTypeId)
     {
-        Log::debug('Fetching categorized event effects for event_type_id: ' . $eventTypeId);
+        $eventType = EventType::with('effects')->find($eventTypeId);
 
-        $effects = \App\Models\EventEffect::where('event_type_id', $eventTypeId)
-            ->get()
-            ->groupBy('type'); // Groepeer effecten op type/categorie
-
-        // Definieer alle mogelijke categorieën
-        $categories = [
-            'safety',
-            'recreation',
-            'climate',
-            'facilities',
-            'infrastructure'
-        ];
-
-        // Bouw het resultaat op met voor elke categorie de som van de waarden
-        $result = [];
-        foreach ($categories as $category) {
-            $result[$category] = $effects->has($category)
-                ? $effects->get($category)->sum('value')
-                : 0;
+        if (!$eventType) {
+            Log::error("EventType not found for ID: {$eventTypeId}");
+            return [];
         }
 
-        Log::debug('Categorized event effects:', $result);
-        return $result;
+        $effects = [
+            'safety' => 0,
+            'recreation' => 0,
+            'climate' => 0,
+            'facilities' => 0,
+            'infrastructure' => 0
+        ];
+
+        foreach ($eventType->effects as $effect) {
+            if (array_key_exists($effect->type, $effects)) {
+                $effects[$effect->type] += $effect->value;
+            }
+        }
+
+        // Filter out zero values
+        return array_filter($effects, fn($value) => $value !== 0);
+    }
+    /**
+     * API endpoint om effecten voor een specifiek event op te halen
+     */
+    public function getEventEffectsApi(Event $event)
+    {
+        Log::debug("Fetching effects for event {$event->id}");
+
+        $effects = $this->getEventEffects($event->event_type_id);
+
+        return response()->json([
+            'effects' => $effects
+        ]);
     }
 }
