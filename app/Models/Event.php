@@ -22,12 +22,16 @@ class Event extends Model
 
     public function type()
     {
-        return $this->hasOne(EventType::class);
+        return $this->belongsTo(EventType::class);
     }
 
     public function effects()
     {
         return $this->hasMany(Effect::class);
+    }
+
+    public function slot() {
+        return $this->belongsTo(Slot::class);
     }
 }
 

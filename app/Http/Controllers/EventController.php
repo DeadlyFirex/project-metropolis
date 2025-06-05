@@ -12,9 +12,11 @@ class EventController extends Controller
 {
     public function index()
     {
-        $event_types = $this->getAvailableEvents();
         $slots = Slot::all();
+        $event_types = $this->getAvailableEvents();
         $activeEvents = $this->getActiveSlotEvents();
+
+        $this->getAllCompatibleModules();
 
         return view('event_dashboard', compact('event_types', 'slots', 'activeEvents'));
     }
@@ -169,5 +171,19 @@ class EventController extends Controller
             $eventList[$event->name] = $event->description;
         }
         return $eventList;
+    }
+
+    private function getAllCompatibleModules() {
+        $event_types = EventType::all();
+        $compatible_modules = [];
+
+        foreach ($event_types as $event_type) {
+            // Fix: Get the actual compatible model instead of the relation
+            $compatible_module = $event_type->compatible;
+
+            if ($compatible_module) {
+                error_log($compatible_module);
+            }
+        }
     }
 }

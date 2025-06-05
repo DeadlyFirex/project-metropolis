@@ -25,7 +25,7 @@ class EventType extends Model
 
     public function compatible()
     {
-        return $this->hasOne(Module::class);
+        return $this->belongsTo(Module::class);
     }
 
     public function effects()
