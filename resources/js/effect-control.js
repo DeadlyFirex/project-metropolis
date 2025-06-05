@@ -66,41 +66,37 @@ function updateCalculatedEffectsDisplay(moduleId, type, newValue) {
     const rows = document.querySelectorAll('#calculated-effects-table tbody tr');
     const effectTypes = ['safety', 'recreation', 'climate', 'facilities', 'infrastructure'];
     const totals = {};
+
+    // Initialize totals for all categories
     effectTypes.forEach(t => totals[t] = 0);
 
     rows.forEach(row => {
         const rowModuleId = row.dataset.moduleId;
-        const cells = row.querySelectorAll('td');
-
-        effectTypes.forEach((t, index) => {
-            const cell = cells[index + 1];
+        effectTypes.forEach(t => {
+            const cell = row.querySelector(`td[data-type="${t}"]`);
             if (!cell) return;
 
-            let val = parseInt(cell.dataset.value);
+            let val = parseInt(cell.dataset.value) || 0;
             if (rowModuleId === moduleId.toString() && t === type) {
                 val = newValue;
-                const span = cell.querySelector('.effect-cell');
-                if (span) {
-                    span.textContent = (val > 0 ? '+' : '') + val;
-                    span.className = `effect-cell ${getEffectColorClass(val)}`;
-                    cell.dataset.value = val;
-                }
+                cell.textContent = (val > 0 ? '+' : '') + val;
+                cell.className = `effect-value ${getEffectColorClass(val)}`;
+                cell.dataset.value = val;
             }
 
             totals[t] += val;
         });
     });
 
+    // Update totals row
     const totalRow = document.querySelector('#calculated-effects-table tfoot tr');
     if (totalRow) {
-        const totalCells = totalRow.querySelectorAll('td');
-        effectTypes.forEach((t, i) => {
+        effectTypes.forEach(t => {
             const total = totals[t];
-            const cell = totalCells[i + 1];
-            const span = cell.querySelector('.effect-cell');
-            if (span) {
-                span.textContent = (total > 0 ? '+' : '') + total;
-                span.className = `effect-cell ${getEffectColorClass(total)}`;
+            const cell = totalRow.querySelector(`td[data-type="${t}"]`);
+            if (cell) {
+                cell.textContent = (total > 0 ? '+' : '') + total;
+                cell.className = `effect-value ${getEffectColorClass(total)}`;
                 cell.dataset.value = total;
             }
         });

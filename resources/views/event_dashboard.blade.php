@@ -25,7 +25,7 @@
                             <div>
                                 <strong>Vakje {{ $slotId }}:</strong> {{ $event['event_name'] }}
                                 <span class="ml-2 text-sm">Nog {{ $event['time_remaining'] }} resterend</span>
-                                @if($event['recurring'])
+                                @if($event['is_recurring'])
                                     <span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Terugkerend</span>
                                 @endif
                             </div>
