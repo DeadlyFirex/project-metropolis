@@ -30,7 +30,6 @@ class EventEffectSeeder extends Seeder
         // Festival effecten (nu via factories!)
         PrimaryEventEffectFactory::new()->festivalSafety()->for($festivalType, 'eventType')->create();
         PrimaryEventEffectFactory::new()->festivalRecreation()->for($festivalType, 'eventType')->create();
-        PrimaryEventEffectFactory::new()->festivalClimate()->for($festivalType, 'eventType')->create();
         AdjacentEventEffectFactory::new()->festivalSafety()->for($festivalType, 'eventType')->create();
 
         // Concert effecten
