@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('event_effects', function (Blueprint $table) {
             $table->id();
+            // Gebruik van enum voor het type, zoals door jou aangeleverd
             $table->enum('type',
                 [
                     'safety',
@@ -23,9 +24,13 @@ return new class extends Migration
                 ]
             )->comment('Type of effect');
             $table->integer('value');
+            // Gedetailleerde foreignId, zoals door jou aangeleverd
             $table->foreignId('event_type_id')
-                ->constrained('event_types')
+                ->constrained('event_types') // Specificeer de tabelnaam
                 ->onDelete('cascade');
+            // Cruciale boolean kolommen die eerder ontbraken
+            $table->boolean('is_primary_effect')->default(false);
+            $table->boolean('is_adjacent_effect')->default(false);
             $table->timestamps();
         });
     }

@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\Slot;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class EventController extends Controller
 {
@@ -148,48 +149,61 @@ class EventController extends Controller
     {
         $activeEvents = [];
         $now = now();
-        Log::debug('Current time for active event check: ' . $now);
+        $processedEvents = [];
 
         $slots = Slot::with(['event.eventType.effects'])->get()->fresh();
-        Log::debug('Total slots with eager loaded events (after fresh): ' . $slots->count());
 
         foreach ($slots as $slot) {
-            Log::debug('Checking slot ' . $slot->id . '. Raw event_id: ' . ($slot->event_id ?? 'NULL'));
-
             $event = $slot->event;
-            if ($event) {
-                Log::debug('Processing slot ' . $slot->id . '. Associated event: ' . $event->name . ' (ID: ' . $event->id . ')');
+            if (!$event || in_array($event->id, $processedEvents)) {
+                continue;
+            }
 
-                if ($event->end_time && Carbon::parse($event->end_time)->isFuture()) {
-                    $timeRemaining = $this->getRemainingTime($now, Carbon::parse($event->end_time));
-                    Log::debug('Event ' . $event->name . ' (ID: ' . $event->id . ') is active. Time remaining: ' . $timeRemaining);
+            if ($event->end_time && Carbon::parse($event->end_time)->isFuture()) {
+                // Hoofd-evenement
+                $eventEffects = $this->getEventEffects($event->event_type_id);
+                $timeRemaining = $this->getRemainingTime($now, Carbon::parse($event->end_time));
 
-                    $eventEffects = $this->getEventEffects($event->event_type_id);
-                    Log::debug('Fetched effects for event type ' . $event->event_type_id . ':', $eventEffects);
+                $activeEvents[$slot->id] = [
+                    'slot_id' => $slot->id,
+                    'event_id' => $event->id,
+                    'event_name' => $event->name,
+                    'description' => $event->description,
+                    'start_time' => $event->start_time,
+                    'end_time' => $event->end_time,
+                    'is_recurring' => (bool)$event->is_recurring,
+                    'time_remaining' => $timeRemaining,
+                    'effects' => $eventEffects,
+                    'is_primary' => true
+                ];
 
-                    $activeEvents[$slot->id] = [
-                        'slot_id' => $slot->id,
-                        'event_id' => $event->id,
-                        'event_name' => $event->name,
-                        'description' => $event->description,
-                        'start_time' => $event->start_time,
-                        'end_time' => $event->end_time,
-                        'is_recurring' => (bool)$event->is_recurring,
-                        'time_remaining' => $timeRemaining,
-                        'effects' => $eventEffects,
-                    ];
-                } else if ($event->end_time && Carbon::parse($event->end_time)->isPast()) {
-                    Log::info('Event ' . $event->name . ' (ID: ' . $event->id . ') for slot ' . $slot->id . ' has expired. End time: ' . $event->end_time);
-                } else {
-                    Log::debug('Event ' . $event->name . ' (ID: ' . $event->id . ') for slot ' . $slot->id . ' is not active (no end_time or not future).');
+                $adjacentSlots = $this->getAdjacentSlots($slot->id);
+                foreach ($adjacentSlots as $adjacentSlot) {
+                    if (!isset($activeEvents[$adjacentSlot->id])) {
+                        $adjacentEffects = $this->getAdjacentEventEffects($event->event_type_id);
+
+                        if (!empty($adjacentEffects)) {
+                            $activeEvents[$adjacentSlot->id] = [
+                                'slot_id' => $adjacentSlot->id,
+                                'event_id' => $event->id,
+                                'event_name' => $event->name . ' (Aangrenzend)',
+                                'description' => 'Aangrenzend effect van ' . $event->name,
+                                'start_time' => $event->start_time,
+                                'end_time' => $event->end_time,
+                                'is_recurring' => (bool)$event->is_recurring,
+                                'time_remaining' => $timeRemaining,
+                                'effects' => $adjacentEffects,
+                                'is_primary' => false,
+                                'source_slot_id' => $slot->id // Voor referentie
+                            ];
+                        }
+                    }
                 }
-            } else if ($slot->event_id && !empty($slot->event_id)) {
-                Log::error('DEBUG_ERROR: Slot ' . $slot->id . ' has event_id ' . $slot->event_id . ' but the associated Event model could not be loaded via the relationship. Check Slot and Event model relationships and database integrity. Is Event ID ' . $slot->event_id . ' missing from the "events" table?');
-            } else {
-                Log::debug('Slot ' . $slot->id . ' has no associated event based on relationship (event_id: ' . ($slot->event_id ?? 'NULL') . ').');
+
+                $processedEvents[] = $event->id;
             }
         }
-        Log::info('Finished processing active events. Total active events found: ' . count($activeEvents));
+
         return $activeEvents;
     }
 
@@ -250,17 +264,10 @@ class EventController extends Controller
         Log::info('Finished checking all compatible modules.');
     }
 
-    /**
-     * Haal effecten op voor een event type
-     */
-    private function getEventEffects($eventTypeId)
+    public function getEventEffects($eventTypeId)
     {
         $eventType = EventType::with('effects')->find($eventTypeId);
-
-        if (!$eventType) {
-            Log::error("EventType not found for ID: {$eventTypeId}");
-            return [];
-        }
+        if (!$eventType) return [];
 
         $effects = [
             'safety' => 0,
@@ -272,11 +279,13 @@ class EventController extends Controller
 
         foreach ($eventType->effects as $effect) {
             if (array_key_exists($effect->type, $effects)) {
-                $effects[$effect->type] += $effect->value;
+                if ($effect->is_primary_effect || $effect->is_adjacent_effect) {
+                    $effects[$effect->type] += $effect->value;
+                }
             }
         }
 
-        // Filter out zero values
+        // Filter eventuele effecten met een waarde van 0 eruit
         return array_filter($effects, fn($value) => $value !== 0);
     }
     /**
@@ -291,5 +300,54 @@ class EventController extends Controller
         return response()->json([
             'effects' => $effects
         ]);
+    }
+
+    /**
+     * Bepaal aangrenzende slots voor een 4x3 grid
+     */
+    public function getAdjacentSlots($slotId)
+    {
+        $gridWidth = 4;
+        $gridHeight = 3;
+
+        $slot = Slot::find($slotId);
+        if (!$slot) {
+            return collect();
+        }
+
+        $adjacentIds = [];
+        $currentPos = $slotId;
+
+        $row = ceil($currentPos / $gridWidth);
+        $col = $currentPos % $gridWidth;
+        if ($col == 0) $col = $gridWidth;
+        if ($col > 1) $adjacentIds[] = $currentPos - 1;
+        if ($col < $gridWidth) $adjacentIds[] = $currentPos + 1;
+        if ($row > 1) $adjacentIds[] = $currentPos - $gridWidth;
+        if ($row < $gridHeight) $adjacentIds[] = $currentPos + $gridWidth;
+
+        return Slot::whereIn('id', $adjacentIds)->get();
+    }
+
+    public function getAdjacentEventEffects($eventTypeId)
+    {
+        $eventType = EventType::with('effects')->find($eventTypeId);
+        if (!$eventType) return [];
+
+        $effects = [
+            'safety' => 0,
+            'recreation' => 0,
+            'climate' => 0,
+            'facilities' => 0,
+            'infrastructure' => 0
+        ];
+
+        foreach ($eventType->effects as $effect) {
+            if ($effect->is_adjacent_effect) {
+                $effects[$effect->type] = ($effects[$effect->type] ?? 0) + $effect->value;
+            }
+        }
+
+        return array_filter($effects, fn($value) => $value !== 0);
     }
 }
