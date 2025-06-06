@@ -63,16 +63,4 @@ class PrimaryEventEffectFactory extends Factory
         });
     }
 
-    /**
-     * State for the Festival's specific primary climate effect (-5).
-     */
-    public function festivalClimate()
-    {
-        return $this->state(function (array $attributes) {
-            return [
-                'type' => 'climate',
-                'value' => -5,
-            ];
-        });
-    }
 }
