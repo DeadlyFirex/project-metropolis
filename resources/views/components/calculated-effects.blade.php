@@ -258,12 +258,12 @@ usort($uniqueEventTypes, function($a, $b) {
                         @endphp
                         <td class="px-2 py-1 border border-gray-300">
                             <span class="{{ $value < 0 ? 'text-red-600' : ($value > 0 ? 'text-green-600' : 'text-gray-800') }}">
-                                {{ number_format($value, 1, ',', '.') > 0 ? '+' . number_format($value, 1, ',', '.') : number_format($value, 1, ',', '.') }}
+                                {{ number_format($value, 0, ',', '.') > 0 ? '+' . number_format($value, 0, ',', '.') : number_format($value, 0, ',', '.') }}
                             </span>
                         </td>
                     @endforeach
                     <td class="px-1 py-1 border border-gray-300 {{ $adjacentQolForType < 0 ? 'text-red-600' : ($adjacentQolForType > 0 ? 'text-green-600' : 'text-gray-800') }}">
-                        {{ number_format($adjacentQolForType, 1, ',', '.') > 0 ? '+' . number_format($adjacentQolForType, 1, ',', '.') : number_format($adjacentQolForType, 1, ',', '.') }}
+                        {{ number_format($adjacentQolForType, 0, ',', '.') > 0 ? '+' . number_format($adjacentQolForType, 0, ',', '.') : number_format($adjacentQolForType, 0, ',', '.') }}
                     </td>
                 </tr>
             @endforeach
@@ -281,12 +281,12 @@ usort($uniqueEventTypes, function($a, $b) {
                     @endphp
                     <td class="px-2 py-1 border border-gray-300">
                         <span class="effect-cell {{ $combinedTotalForType < 0 ? 'text-red-600' : ($combinedTotalForType > 0 ? 'text-green-600' : 'text-gray-800') }}">
-                            {{ number_format($combinedTotalForType, 1, ',', '.') > 0 ? '+' . number_format($combinedTotalForType, 1, ',', '.') : number_format($combinedTotalForType, 1, ',', '.') }}
+                            {{ number_format($combinedTotalForType, 0, ',', '.') > 0 ? '+' . number_format($combinedTotalForType, 0, ',', '.') : number_format($combinedTotalForType, 0, ',', '.') }}
                         </span>
                     </td>
                 @endforeach
                 <td class="px-1 py-1 border border-gray-300 font-semibold {{ $overallCombinedQol < 0 ? 'text-red-600' : ($overallCombinedQol > 0 ? 'text-green-600' : 'text-gray-800') }}">
-                    {{ number_format($overallCombinedQol, 1, ',', '.') > 0 ? '+' . number_format($overallCombinedQol, 1, ',', '.') : number_format($overallCombinedQol, 1, ',', '.') }}
+                    {{ number_format($overallCombinedQol, 0, ',', '.') > 0 ? '+' . number_format($overallCombinedQol, 0, ',', '.') : number_format($overallCombinedQol, 0, ',', '.') }}
                 </td>
             </tr>
             </tfoot>
