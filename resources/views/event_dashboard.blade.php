@@ -21,6 +21,7 @@
                 <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-6">
                     <h4 class="font-semibold mb-2">Actieve Events:</h4>
                     @foreach($activeEvents as $slotId => $event)
+                        @if(strpos($event['event_name'], '(Aangrenzend)') === false)
                         <div class="flex items-center justify-between mb-2 last:mb-0">
                             <div>
                                 <strong>Vakje {{ $slotId }}:</strong> {{ $event['event_name'] }}
@@ -37,6 +38,7 @@
                                 </button>
                             </form>
                         </div>
+                        @endif
                     @endforeach
                 </div>
             @endif
@@ -67,10 +69,10 @@
                                 <label for="slot_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Selecteer Vakje <span class="text-red-500">*</span>
                                 </label>
-                                <select name="slot_id" id="slot_id" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" required>
+                                <select name="slot_id" id="slot_id" disabled class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" required>
                                     <option value="">Kies een vakje...</option>
                                     @foreach($slots as $slot)
-                                        <option value="{{ $slot->id }}" {{ old('slot_id') == $slot->id ? 'selected' : '' }}>
+                                        <option value="{{ $slot->id }}" data-module="{{ $slot->module_id }}">
                                             Vakje {{ $slot->id }}
                                             @if($slot->module)
                                                 ({{ $slot->module->name }})
@@ -80,7 +82,6 @@
                                         </option>
                                     @endforeach
                                 </select>
-
                                 @error('slot_id')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
@@ -92,10 +93,8 @@
                                 </label>
                                 <select name="event_type" id="event_type" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" required>
                                     <option value="">Selecteer een event...</option>
-                                    @foreach($event_types as $key => $description)
-                                        <option value="{{ $key }}" {{ old('event_type') == $key ? 'selected' : '' }}>
-                                            {{ $key }}
-                                        </option>
+                                    @foreach($event_types as $id => $description)
+                                        <option value="{{ $id }}"> {{ $id }} </option>
                                     @endforeach
                                 </select>
                                 @error('event_type')
@@ -185,6 +184,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             const isRecurringCheckbox = document.getElementById('is_recurring');
             const recurringSettings = document.getElementById('recurringSettings');
+            const eventTypeSelect = document.getElementById('event_type');
+            const slotSelect = document.getElementById('slot_id');
+            const eventTypeModules = @json($event_type_modules);
 
             // Show/hide recurring settings based on checkbox
             isRecurringCheckbox.addEventListener('change', function() {
@@ -199,6 +201,25 @@
             if (isRecurringCheckbox.checked) {
                 recurringSettings.style.display = 'grid';
             }
+
+            eventTypeSelect.addEventListener('change', function() {
+                const selectedType = this.value;
+                slotSelect.disabled = !selectedType;
+
+                // Show only compatible slots
+                Array.from(slotSelect.options).forEach(option => {
+                    console.log('Checking option:', option.value, 'Module:', option.dataset.module);
+                    if (!option.dataset.module) return; // Skip placeholder
+                    const slotModule = option.getAttribute('data-module');
+                    const compatibleModule = eventTypeModules[selectedType];
+                    option.style.display = (slotModule == compatibleModule) ? '' : 'none';
+                });
+
+                // Reset selection if current is not compatible
+                if (slotSelect.selectedIndex > 0 && slotSelect.options[slotSelect.selectedIndex].style.display === 'none') {
+                    slotSelect.selectedIndex = 0;
+                }
+            });
         });
     </script>
 </x-app-layout>
