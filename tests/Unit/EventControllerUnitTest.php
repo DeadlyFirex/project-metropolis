@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 use App\Http\Controllers\EventController;
 use App\Models\Event; // Although not directly used in the unit tests' methods, keep for completeness
 use App\Models\Slot;
