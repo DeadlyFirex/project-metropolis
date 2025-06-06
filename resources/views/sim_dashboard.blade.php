@@ -65,6 +65,9 @@
                     } else {
                         let eventsHtml = '';
                         for (const [slotId, event] of Object.entries(data)) {
+                            if (event.event_name && event.event_name.includes('(Aangrenzend)')) {
+                                continue; // Skip adjacent events
+                            }
                             eventsHtml += `
                                 <div class="flex items-center justify-between p-3 mb-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
                                     <div class="flex items-center space-x-4">
