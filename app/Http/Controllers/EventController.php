@@ -8,15 +8,22 @@ use Illuminate\Http\Request;
 use App\Models\Slot;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 
 class EventController extends Controller
 {
+    /**
+     * Display the event dashboard with available slots and events.
+     *
+     * @return \Illuminate\View\View
+     */
     public function index()
     {
         Log::info('EventController index method called.');
 
-        $slots = Slot::all();
+        // Retrieve all slots that are not disabled
+        $slots = Slot::whereHas('module', function ($query) {
+            $query->where('category', '!=', 'disabled');
+        })->get();
         Log::debug('Total slots retrieved: ' . $slots->count());
 
         $event_types = $this->getAvailableEvents();
@@ -25,11 +32,19 @@ class EventController extends Controller
         $activeEvents = $this->getActiveSlotEvents();
         Log::debug('Active events fetched for dashboard:', $activeEvents);
 
-        $this->getAllCompatibleModules();
+        $event_type_modules = EventType::pluck('module_id', 'name');
+        Log::debug('Event type modules fetched:', $event_type_modules->toArray());
 
-        return view('event_dashboard', compact('event_types', 'slots', 'activeEvents'));
+        return view('event_dashboard', compact('event_types',
+            'slots', 'activeEvents', 'event_type_modules'));
     }
 
+    /**
+     * Set an event for a specific slot.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function setEvent(Request $request)
     {
         Log::info('setEvent method called with request data:', $request->all());
@@ -106,6 +121,12 @@ class EventController extends Controller
         return redirect()->back()->with('success', 'Event successfully set for slot ' . $request->slot_id . '!');
     }
 
+    /**
+     * Reset the event for a specific slot.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function resetEvent(Request $request)
     {
         Log::info('resetEvent method called for slot_id: ' . $request->slot_id);
@@ -137,6 +158,11 @@ class EventController extends Controller
         return redirect()->back()->with('success', 'Event for slot ' . $request->slot_id . ' has been reset to normal!');
     }
 
+    /**
+     * API endpoint to get all active slot events.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getSlotEvents()
     {
         Log::info('getSlotEvents API endpoint called.');
@@ -145,6 +171,11 @@ class EventController extends Controller
         return response()->json($activeEvents);
     }
 
+    /**
+     * Retrieves all active slot events with their details.
+     *
+     * @return array
+     */
     private function getActiveSlotEvents()
     {
         $activeEvents = [];
@@ -207,6 +238,14 @@ class EventController extends Controller
         return $activeEvents;
     }
 
+    /**
+     * Calculates the end time based on the start time, duration, and unit.
+     *
+     * @param Carbon $startTime
+     * @param int $duration
+     * @param string $unit
+     * @return Carbon
+     */
     private function calculateEndTime($startTime, $duration, $unit)
     {
         Log::debug('Calculating end time:', ['start' => $startTime, 'duration' => (int)$duration, 'unit' => $unit]);
@@ -217,6 +256,13 @@ class EventController extends Controller
         };
     }
 
+    /**
+     * Calculates the remaining time until the event ends.
+     *
+     * @param Carbon $now
+     * @param Carbon $endTime
+     * @return string
+     */
     private function getRemainingTime($now, $endTime)
     {
         $diff = $now->diff($endTime);
@@ -232,6 +278,11 @@ class EventController extends Controller
         return $diff->i . ' minuten';
     }
 
+    /**
+     * Retrieves a list of available event types with their descriptions.
+     *
+     * @return array
+     */
     private function getAvailableEvents()
     {
         $events = EventType::all();
@@ -243,27 +294,12 @@ class EventController extends Controller
         return $eventList;
     }
 
-    private function getAllCompatibleModules()
-    {
-        Log::info('getAllCompatibleModules method called.');
-        $event_types = EventType::all();
-        if ($event_types->isEmpty()) {
-            Log::warning('No EventTypes found in getAllCompatibleModules.');
-            return;
-        }
-
-        foreach ($event_types as $event_type) {
-            $compatible_module = $event_type->compatible;
-
-            if ($compatible_module) {
-                Log::debug('Compatible module found for event type "' . $event_type->name . '":', $compatible_module->toArray());
-            } else {
-                Log::debug('No compatible module found for event type: ' . $event_type->name);
-            }
-        }
-        Log::info('Finished checking all compatible modules.');
-    }
-
+    /**
+     * Retrieves the effects of a specific event type.
+     *
+     * @param int $eventTypeId
+     * @return array
+     */
     public function getEventEffects($eventTypeId)
     {
         $eventType = EventType::with('effects')->find($eventTypeId);
@@ -288,8 +324,12 @@ class EventController extends Controller
         // Filter eventuele effecten met een waarde van 0 eruit
         return array_filter($effects, fn($value) => $value !== 0);
     }
+
     /**
-     * API endpoint om effecten voor een specifiek event op te halen
+     * API endpoint to get the effects of a specific event.
+     *
+     * @param Event $event
+     * @return \Illuminate\Http\JsonResponse
      */
     public function getEventEffectsApi(Event $event)
     {
@@ -303,7 +343,10 @@ class EventController extends Controller
     }
 
     /**
-     * Bepaal aangrenzende slots voor een 4x3 grid
+     * Retrieves adjacent slots for a given slot ID.
+     *
+     * @param int $slotId
+     * @return \Illuminate\Support\Collection
      */
     public function getAdjacentSlots($slotId)
     {
@@ -329,6 +372,12 @@ class EventController extends Controller
         return Slot::whereIn('id', $adjacentIds)->get();
     }
 
+    /**
+     * Retrieves the effects of adjacent events for a given event type ID.
+     *
+     * @param int $eventTypeId
+     * @return array
+     */
     public function getAdjacentEventEffects($eventTypeId)
     {
         $eventType = EventType::with('effects')->find($eventTypeId);
