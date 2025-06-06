@@ -77,3 +77,66 @@
 body[data-font-scale="1.7"] .font-sensitive-grid {
     grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
 }
+
+@media print {
+    /* Verberg alles behalve #printable-area */
+    body * {
+        visibility: hidden !important;
+        overflow: hidden !important;
+    }
+
+    #printable-area,
+    #printable-area * {
+        visibility: visible !important;
+        overflow: visible !important;
+    }
+
+    #printable-area {
+        position: absolute !important;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 2rem;
+        background: white;
+        color: black;
+        page-break-inside: avoid;
+    }
+
+    /* Verberg knoppen, navigatie, etc */
+    .no-print,
+    button,
+    nav,
+    header,
+    footer {
+        display: none !important;
+    }
+
+    /* Tabellen goed laten breken */
+    table {
+        page-break-inside: auto;
+    }
+
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+
+    /* Verwijder standaard Tailwind marges die kunnen uitsmeren */
+    .pt-6, .pb-6, .mt-6, .mb-6,
+    .p-6, .m-6,
+    .py-6, .my-6 {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    html, body {
+        height: auto !important;
+        background: white !important;
+        font-size: 12px !important;
+    }
+    
+    body {
+        transform: scale(0.98);
+        transform-origin: top left;
+    }
+}
