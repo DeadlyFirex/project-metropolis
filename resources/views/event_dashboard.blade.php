@@ -94,7 +94,14 @@
                                 <select name="event_type" id="event_type" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100" required>
                                     <option value="">Selecteer een event...</option>
                                     @foreach($event_types as $id => $description)
-                                        <option value="{{ $id }}"> {{ $id }} </option>
+                                        <option value="{{ $id }}">
+                                            {{ $id }}
+                                            @if(strtolower($id) === 'festival' || strtolower($id) === 'concert')
+                                                (voor park)
+                                            @elseif(strtolower($id) === 'markt')
+                                                (voor weg)
+                                            @endif
+                                        </option>
                                     @endforeach
                                 </select>
                                 @error('event_type')
