@@ -118,15 +118,21 @@
             const row = parseInt(parentTd.dataset.row, 10);
             const col = parseInt(parentTd.dataset.col, 10);
 
-            // Highlight adjacent cells
+            const currentSlot = slot;
+            const hasCurrentModule = currentSlot && currentSlot.dataset.moduleId;
+
             document.querySelectorAll('td.city-cell.bg-green-200').forEach(cell => {
                 cell.classList.remove('bg-green-200');
             });
 
-            for (let r = row - 1; r <= row + 1; r++) {
-                for (let c = col - 1; c <= col + 1; c++) {
-                    const cell = getCell(r, c);
-                    if (cell) cell.classList.add('bg-green-200');
+            if (hasCurrentModule) {
+                for (let r = row - 1; r <= row + 1; r++) {
+                    for (let c = col - 1; c <= col + 1; c++) {
+                        const cell = getCell(r, c);
+                        if (cell) {
+                            cell.classList.add('bg-green-200');
+                        }
+                    }
                 }
             }
 

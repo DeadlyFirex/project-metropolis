@@ -56,7 +56,7 @@ class EventController extends Controller
             'slot_id' => 'required|exists:slots,id',
             'duration' => 'required|integer|min:1',
             'duration_unit' => 'required|string|in:minutes,hours,days',
-            'is_recurring' => 'nullable|boolean|default:false',
+            'is_recurring' => 'nullable|boolean',
             'recurring_interval' => 'nullable|integer|min:1',
             'recurring_unit' => 'nullable|string|in:minutes,hours,days'
         ]);
