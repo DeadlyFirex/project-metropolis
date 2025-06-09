@@ -8,6 +8,7 @@ use App\Models\Module;
 use App\Models\Slot;
 use App\Models\Effect;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class SimulationController extends Controller
 {
@@ -73,10 +74,34 @@ class SimulationController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Remove a module from a specific slot and associated event if any.
+     *
+     * @param Slot $slot
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function removeModule(Slot $slot)
     {
+        Log::info('removeModule method called for slot_id: ' . $slot->id);
+
+        // Check if there's an event associated with this slot
+        if ($slot->event_id) {
+            $event = Event::find($slot->event_id); // Find the event
+            if ($event) {
+                // Delete the event
+                $event->delete();
+                Log::info('Associated event deleted successfully: ' . $event->id);
+            }
+            // Reset the event_id on the slot
+            $slot->event_id = null;
+        }
+
+        // Remove the module from the slot
         $slot->update(['module_id' => null]);
-        return redirect()->back();
+
+        Log::info('Module removed from slot ' . $slot->id . ' and event (if any) reset.');
+
+        return redirect()->back()->with('success', 'Module en event (indien aanwezig) succesvol verwijderd!');
     }
 
     public function updateEffect(Request $request, $moduleId, $type)
