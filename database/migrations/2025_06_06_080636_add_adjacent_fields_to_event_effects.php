@@ -12,7 +12,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('event_effects', function (Blueprint $table) {
-            $table->boolean('affects_adjacent')->default(false);
+            //$table->boolean('affects_adjacent')->default(false);
         });
     }
 
