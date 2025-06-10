@@ -8,7 +8,7 @@
                 <button class="bg-blue-500 text-white px-4 py-2 text-sm sm:text-base rounded" id="increaseFontBtn">
                     Tekstgrootte Vergroten
                 </button>
-                <button onclick="window.print()" class="bg-green-600 text-white px-4 py-2 text-sm sm:text-base rounded">
+                <button onclick="copyEventsToPrintVersion(); window.print()" class="bg-green-600 text-white px-4 py-2 text-sm sm:text-base rounded">
                     Download als PDF
                 </button>
             </div>
@@ -32,8 +32,8 @@
                     <section
                         class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full h-[400px] overflow-y-auto">
                         @include('components.library', [
-                            'modules' => $modules,
-                            'categories' => $categories,
+                        'modules' => $modules,
+                        'categories' => $categories,
                         ])
                     </section>
 
@@ -63,104 +63,151 @@
         </div>
     </div>
 
-   {{-- Printbare versie van het rapport, wordt alleen zichtbaar tijdens afdrukken (window.print) --}}
-<div id="printable-area" class="hidden print:block absolute left-[-9999px] top-0 w-full">
-    <div class="p-6 bg-white text-black w-full">
-        
-        {{-- Titel van het rapport --}}
-        <h1 class="text-2xl font-bold mb-6">Simulatie Rapport</h1>
+    {{-- Printbare versie van het rapport, wordt alleen zichtbaar tijdens afdrukken (window.print) --}}
+    <div id="printable-area" class="hidden print:block absolute left-[-9999px] top-0 w-full">
+        <div class="p-6 bg-white text-black w-full">
 
-        {{-- Toon de Metropolis Grid zoals die nu staat --}}
-        @include('components.city-grid', ['slots' => $slots])
-
-        {{-- Tabel met berekende effecten per module --}}
-        <div class="mt-8 overflow-visible w-full">
-            {{-- Titel boven de effecttabel --}}
-            <div class="text-xl font-semibold mb-2">Effecten op de Grid</div>
-
-            {{-- Effectentabel met alle modules en hun waarden --}}
-            <div style="overflow: visible !important;">
-                <table class="w-full text-xs text-left border-collapse border border-gray-300">
-
-                    {{-- Tabelkoppen: effectcategorieën --}}
-                    <thead class="bg-gray-100 text-gray-800">
-                        <tr>
-                            <th class="px-2 py-1 border border-gray-300">Module</th>
-                            <th class="px-2 py-1 border border-gray-300">Veiligheid</th>
-                            <th class="px-2 py-1 border border-gray-300">Recreatie</th>
-                            <th class="px-2 py-1 border border-gray-300">Milieukwaliteit</th>
-                            <th class="px-2 py-1 border border-gray-300">Voorzieningen</th>
-                            <th class="px-2 py-1 border border-gray-300">Mobiliteit</th>
-                            <th class="px-2 py-1 border border-gray-300">Kwaliteit van Leven</th>
-                        </tr>
-                    </thead>
-
-                    {{-- Inhoud van de tabel: per module de effectwaarden ophalen --}}
-                    <tbody class="bg-white">
-                        @php 
-                            // Initialiseer totaalwaarden voor elk effecttype
-                            $totals = ['safety' => 0, 'recreation' => 0, 'climate' => 0, 'facilities' => 0, 'infrastructure' => 0]; 
-                        @endphp
-
-                        @foreach ($slots as $slot)
-                            @if($slot->module)
-                                @php
-                                    // Verzamel de waarden van elk effecttype voor de huidige module
-                                    $effects = [
-                                        'safety' => $slot->module->effects->firstWhere('type', 'safety')?->value ?? 0,
-                                        'recreation' => $slot->module->effects->firstWhere('type', 'recreation')?->value ?? 0,
-                                        'climate' => $slot->module->effects->firstWhere('type', 'climate')?->value ?? 0,
-                                        'facilities' => $slot->module->effects->firstWhere('type', 'facilities')?->value ?? 0,
-                                        'infrastructure' => $slot->module->effects->firstWhere('type', 'infrastructure')?->value ?? 0,
-                                    ];
-                                    
-                                    // Tel deze op bij de totalen
-                                    foreach ($effects as $type => $val) {
-                                        $totals[$type] += $val;
-                                    }
-
-                                    // Totale kwaliteit van leven berekenen als som van alle effecten
-                                    $qol = array_sum($effects);
-                                @endphp
-
-                                {{-- Rijtje voor deze module --}}
-                                <tr>
-                                    <td class="border px-2 py-1">{{ $slot->module->name }}</td>
-                                    <td class="border px-2 py-1">{{ $effects['safety'] }}</td>
-                                    <td class="border px-2 py-1">{{ $effects['recreation'] }}</td>
-                                    <td class="border px-2 py-1">{{ $effects['climate'] }}</td>
-                                    <td class="border px-2 py-1">{{ $effects['facilities'] }}</td>
-                                    <td class="border px-2 py-1">{{ $effects['infrastructure'] }}</td>
-                                    <td class="border px-2 py-1 font-semibold">{{ $qol }}</td>
-                                </tr>
-                            @endif
-                        @endforeach
-                    </tbody>
-
-                    {{-- Voetrij met totaalsom van alle effecten over alle modules --}}
-                    <tfoot>
-                        @php 
-                            $totalQol = array_sum($totals); 
-                        @endphp
-                        <tr class="bg-gray-200 font-bold">
-                            <td class="border px-2 py-1">Totaal</td>
-                            <td class="border px-2 py-1">{{ $totals['safety'] }}</td>
-                            <td class="border px-2 py-1">{{ $totals['recreation'] }}</td>
-                            <td class="border px-2 py-1">{{ $totals['climate'] }}</td>
-                            <td class="border px-2 py-1">{{ $totals['facilities'] }}</td>
-                            <td class="border px-2 py-1">{{ $totals['infrastructure'] }}</td>
-                            <td class="border px-2 py-1">{{ $totalQol }}</td>
-                        </tr>
-                    </tfoot>
-
-                </table>
+            {{-- Header met datum en tijd --}}
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h1 class="text-2xl font-bold">Simulatie Rapport</h1>
+                <div class="text-right text-gray-600">
+                    <div class="text-sm">{{ config('app.name', 'Laravel') }}</div>
+                </div>
             </div>
-        </div>
 
+            {{-- Toon de Metropolis Grid zoals die nu staat --}}
+            <div class="mb-8">
+                @include('components.city-grid', ['slots' => $slots])
+            </div>
+
+            {{-- Tabel met berekende effecten per module --}}
+            <div class="mb-8 overflow-visible w-full">
+                <h2 class="text-xl font-semibold mb-4">Effecten op de Grid</h2>
+
+                {{-- Effectentabel met alle modules en hun waarden --}}
+                <div style="overflow: visible !important;">
+                    <table class="w-full text-xs text-left border-collapse border border-gray-300">
+
+                        {{-- Tabelkoppen: effectcategorieën --}}
+                        <thead class="bg-gray-100 text-gray-800">
+                            <tr>
+                                <th class="px-2 py-1 border border-gray-300">Module</th>
+                                <th class="px-2 py-1 border border-gray-300">Veiligheid</th>
+                                <th class="px-2 py-1 border border-gray-300">Recreatie</th>
+                                <th class="px-2 py-1 border border-gray-300">Milieukwaliteit</th>
+                                <th class="px-2 py-1 border border-gray-300">Voorzieningen</th>
+                                <th class="px-2 py-1 border border-gray-300">Mobiliteit</th>
+                                <th class="px-2 py-1 border border-gray-300">Kwaliteit van Leven</th>
+                            </tr>
+                        </thead>
+
+                        {{-- Inhoud van de tabel: per module de effectwaarden ophalen --}}
+                        <tbody class="bg-white">
+                            @php
+                            // Initialiseer totaalwaarden voor elk effecttype
+                            $totals = ['safety' => 0, 'recreation' => 0, 'climate' => 0, 'facilities' => 0, 'infrastructure' => 0];
+                            @endphp
+
+                            @foreach ($slots as $slot)
+                            @if($slot->module)
+                            @php
+                            // Verzamel de waarden van elk effecttype voor de huidige module
+                            $effects = [
+                            'safety' => $slot->module->effects->firstWhere('type', 'safety')?->value ?? 0,
+                            'recreation' => $slot->module->effects->firstWhere('type', 'recreation')?->value ?? 0,
+                            'climate' => $slot->module->effects->firstWhere('type', 'climate')?->value ?? 0,
+                            'facilities' => $slot->module->effects->firstWhere('type', 'facilities')?->value ?? 0,
+                            'infrastructure' => $slot->module->effects->firstWhere('type', 'infrastructure')?->value ?? 0,
+                            ];
+
+                            // Tel deze op bij de totalen
+                            foreach ($effects as $type => $val) {
+                            $totals[$type] += $val;
+                            }
+
+                            // Totale kwaliteit van leven berekenen als som van alle effecten
+                            $qol = array_sum($effects);
+                            @endphp
+
+                            {{-- Rijtje voor deze module --}}
+                            <tr>
+                                <td class="border px-2 py-1">{{ $slot->module->name }}</td>
+                                <td class="border px-2 py-1">{{ $effects['safety'] }}</td>
+                                <td class="border px-2 py-1">{{ $effects['recreation'] }}</td>
+                                <td class="border px-2 py-1">{{ $effects['climate'] }}</td>
+                                <td class="border px-2 py-1">{{ $effects['facilities'] }}</td>
+                                <td class="border px-2 py-1">{{ $effects['infrastructure'] }}</td>
+                                <td class="border px-2 py-1 font-semibold">{{ $qol }}</td>
+                            </tr>
+                            @endif
+                            @endforeach
+
+                            {{-- Rij voor Eventeffecten --}}
+                            @php
+                            $eventEffects = ['safety' => 0, 'recreation' => 0, 'climate' => 0, 'facilities' => 0, 'infrastructure' => 0];
+                            // voorbeelddata, vervang dit als je echte event-effecten beschikbaar hebt
+                            @endphp
+                            <tr class="bg-blue-100 font-semibold">
+                                <td class="border px-2 py-1">Evenementen Overzicht</td>
+                                <td class="border px-2 py-1">{{ $eventEffects['safety'] > 0 ? '+' : '' }}{{ $eventEffects['safety'] }}</td>
+                                <td class="border px-2 py-1">{{ $eventEffects['recreation'] > 0 ? '+' : '' }}{{ $eventEffects['recreation'] }}</td>
+                                <td class="border px-2 py-1">{{ $eventEffects['climate'] > 0 ? '+' : '' }}{{ $eventEffects['climate'] }}</td>
+                                <td class="border px-2 py-1">{{ $eventEffects['facilities'] > 0 ? '+' : '' }}{{ $eventEffects['facilities'] }}</td>
+                                <td class="border px-2 py-1">{{ $eventEffects['infrastructure'] > 0 ? '+' : '' }}{{ $eventEffects['infrastructure'] }}</td>
+                                <td class="border px-2 py-1 font-semibold">
+                                    {{ array_sum($eventEffects) > 0 ? '+' : '' }}{{ array_sum($eventEffects) }}
+                                </td>
+                            </tr>
+
+
+                        </tbody>
+
+                        {{-- Voetrij met totaalsom van alle effecten over alle modules --}}
+                        <tfoot>
+                            @php
+                            $totalQol = array_sum($totals);
+                            @endphp
+                            <tr class="bg-gray-200 font-bold">
+                                <td class="border px-2 py-1">Totaal</td>
+                                <td class="border px-2 py-1">{{ $totals['safety'] }}</td>
+                                <td class="border px-2 py-1">{{ $totals['recreation'] }}</td>
+                                <td class="border px-2 py-1">{{ $totals['climate'] }}</td>
+                                <td class="border px-2 py-1">{{ $totals['facilities'] }}</td>
+                                <td class="border px-2 py-1">{{ $totals['infrastructure'] }}</td>
+                                <td class="border px-2 py-1">{{ $totalQol }}</td>
+                            </tr>
+                        </tfoot>
+
+                    </table>
+                </div>
+            </div>
+
+            {{-- Actieve Events sectie voor PDF --}}
+            <div class="w-full">
+                <h2 class="text-xl font-semibold mb-4">Actieve Events</h2>
+
+                <div id="printableEventsList">
+                    {{-- Dit wordt gevuld door JavaScript voordat er geprint wordt --}}
+                    <p class="text-gray-600">Laden van events...</p>
+                </div>
+            </div>
+
+            {{-- Footer --}}
+            <div class="border-t pt-4 mt-8 text-center text-gray-500 text-sm">
+                <p>Gegenereerd op {{ date('d-m-Y om H:i:s') }} | {{ config('app.name', 'Simulatie Platform') }}</p>
+            </div>
+
+        </div>
     </div>
-</div>
 
     <script>
+        function copyEventsToPrintVersion() {
+            const dashboardEvents = document.getElementById('activeEventsList').innerHTML;
+            const printableEvents = document.getElementById('printableEventsList');
+            if (printableEvents && dashboardEvents) {
+                printableEvents.innerHTML = dashboardEvents;
+            }
+        }
         // Function to fetch and display active events
         function updateActiveEvents() {
             fetch('/events/slot-events')
@@ -208,13 +255,13 @@
                 });
         }
 
-// Update events on page load
+        // Update events on page load
         document.addEventListener('DOMContentLoaded', function() {
             updateActiveEvents();
             // Update events every 30 seconds
             setInterval(updateActiveEvents, 30000);
         });
-        
+
         // Add visual indicators to grid cells with active events
         function highlightActiveEventSlots(activeEvents) {
             // Remove existing highlights
@@ -236,6 +283,7 @@
             position: relative;
             box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.5) !important;
         }
+
         .slot-with-event::after {
             content: '⚡';
             position: absolute;
@@ -252,6 +300,9 @@
             font-size: 12px;
             z-index: 10;
         }
-        [x-cloak]{display:none!important;}
+
+        [x-cloak] {
+            display: none !important;
+        }
     </style>
 </x-app-layout>
