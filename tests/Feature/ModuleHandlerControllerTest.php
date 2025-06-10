@@ -20,13 +20,14 @@ class ModuleHandlerControllerTest extends TestCase
         $this->actingAs($user);
 
         // Gebruik de factory om een module aan te maken
+        // De factory genereert al een geldige categorie dankzij de eerdere update
         $module = \App\Models\Module::factory()->make();
 
         // Simuleer een POST-verzoek om de module op te slaan
         $response = $this->post(route('modules.store'), [
             'name' => $module->name,
             'description' => $module->description,
-            'category' => $module->category,
+            'category' => $module->category, // Gebruik de geldige categorie van de factory
             'image' => null, // Geen afbeelding toevoegen voor de test
         ]);
 
@@ -49,8 +50,9 @@ class ModuleHandlerControllerTest extends TestCase
         // Log de gebruiker in
         $this->actingAs($user);
 
-        // Maak een bestaande module aan
+        // Maak een bestaande module aan met een geldige categorie
         $module = \App\Models\Module::factory()->create([
+            'category' => 'Recreatie', // Zorg dat de initiële module een geldige categorie heeft
             'image_path' => 'default-image.png', // beginsituatie
         ]);
 
@@ -58,8 +60,8 @@ class ModuleHandlerControllerTest extends TestCase
         $newData = [
             'name' => 'Updated Name',
             'description' => 'Updated Description',
-            'category' => 'Updated Category',
-            // geen 'image_path' hier — dat wordt automatisch door de controller afgehandeld
+            // Gebruik een geldige ENUM-waarde voor de update
+            'category' => 'Veiligheid', // Aangepast naar een geldige ENUM-waarde
         ];
 
         // Simuleer een PUT-verzoek
@@ -73,7 +75,7 @@ class ModuleHandlerControllerTest extends TestCase
             'id' => $module->id,
             'name' => 'Updated Name',
             'description' => 'Updated Description',
-            'category' => 'Updated Category',
+            'category' => 'Veiligheid', // Controleer met de nieuwe, geldige categorie
             'image_path' => 'default-image.png', // ← dit blijft staan als je niets uploadt
         ]);
     }
@@ -87,7 +89,7 @@ class ModuleHandlerControllerTest extends TestCase
         // Log de gebruiker in
         $this->actingAs($user);
 
-        // Maak een module aan met de factory
+        // Maak een module aan met de factory (die nu een geldige categorie genereert)
         $module = \App\Models\Module::factory()->create();
 
         // Simuleer een DELETE-verzoek om de module te verwijderen

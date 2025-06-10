@@ -29,6 +29,9 @@
                         <x-nav-link :href="route('conditions')" :active="request()->routeIs('conditions')">
                             Conditions Dashboard
                         </x-nav-link>
+                        <x-nav-link :href="route('events')" :active="request()->routeIs('events')">
+                            Events Dashboard
+                        </x-nav-link>
                     @endauth
                 </div>
             </div>
@@ -100,6 +103,9 @@
 
                     <x-responsive-nav-link :href="route('conditions')" :active="request()->routeIs('conditions')">
                         Conditions Dashboard
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('events')" :active="request()->routeIs('events')">
+                        Events Dashboard
                     </x-responsive-nav-link>
                 @endauth
             </div>
