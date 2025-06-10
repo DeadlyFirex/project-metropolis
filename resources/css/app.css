@@ -136,7 +136,19 @@ body[data-font-scale="1.7"] .font-sensitive-grid {
     }
     
     body {
-        transform: scale(0.98);
+        transform: scale(0.90);
         transform-origin: top left;
     }
+        .slot-with-event {
+        box-shadow: none !important;
+    }
+
+    .slot-with-event::after {
+        display: none !important;
+    }
+
+    #activeEventsSection {
+        display: none !important;
+    }
+
 }
