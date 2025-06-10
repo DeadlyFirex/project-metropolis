@@ -9,6 +9,7 @@ use App\Models\Slot;
 use App\Models\Effect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class SimulationController extends Controller
 {
@@ -20,9 +21,18 @@ class SimulationController extends Controller
         $categories   = Module::select('category')->distinct()->pluck('category');
         $slots        = Slot::with(['module.effects'])->get();
         $events       = Event::all();
+        $userId       = Auth::id();
+        $userClock    = \App\Models\UserClock::where('user_id', $userId)->first();
+        $clockTime    = $userClock ? $userClock->clock_time : '00:00:00';
 
         return view('sim_dashboard', compact(
-            'modules', 'category', 'categories', 'slots', 'all_modules', 'events'
+            'modules',
+            'category',
+            'categories',
+            'slots',
+            'all_modules',
+            'events',
+            'clockTime'
         ));
     }
 
@@ -122,5 +132,24 @@ class SimulationController extends Controller
         );
 
         return response()->json(['success' => true, 'effect' => $effect]);
+    }
+    public function saveClock(Request $request)
+    {
+        $request->validate([
+            'time' => ['required', 'regex:/^\d{2}:\d{2}:\d{2}$/']
+        ]);
+
+        $userId = Auth::id();
+        if (!$userId) {
+            return response()->json(['message' => 'User not authenticated'], 401);
+        }
+
+        $time = $request->input('time');
+        $userClock = \App\Models\UserClock::updateOrCreate(
+            ['user_id' => $userId],
+            ['clock_time' => $time]
+        );
+
+        return response()->json(['success' => true]);
     }
 }

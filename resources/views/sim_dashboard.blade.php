@@ -17,23 +17,29 @@
 
                 {{-- City Grid links --}}
                 <main class="w-full max-w-full lg:max-w-[1000px] bg-white p-4 sm:p-6 rounded-2xl shadow">
-                    @include('components.city-grid', ['slots' => $slots])
+                    @include('components.city-grid', ['slots' => $slots, 'clockTime' => $clockTime])
                 </main>
 
                 {{-- Rechterkant: Bibliotheek + Calculated Effects --}}
                 <div class="w-full lg:flex-1 flex flex-col gap-6">
                     {{-- Module Bibliotheek (boven) --}}
-                    <section class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full h-[400px] overflow-y-auto">
-                        @include('components.library', ['modules' => $modules, 'categories' => $categories])
+                    <section
+                        class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full h-[400px] overflow-y-auto">
+                        @include('components.library', [
+                            'modules' => $modules,
+                            'categories' => $categories,
+                        ])
                     </section>
 
                     {{-- Calculated Effects (zichtbaar) --}}
-                    <section id="effect-view" class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
+                    <section id="effect-view"
+                        class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
                         @include('components.calculated-effects', ['slots' => $slots])
                     </section>
 
                     {{-- Effect Control (verborgen) --}}
-                    <section id="effect-control-view" class="hidden bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
+                    <section id="effect-control-view"
+                        class="hidden bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
                         @include('components.effect-control', ['modules' => $modules])
                     </section>
                 </div>
@@ -99,21 +105,19 @@
                 });
         }
 
-        // Update events on page load
+// Update events on page load
         document.addEventListener('DOMContentLoaded', function() {
             updateActiveEvents();
-
             // Update events every 30 seconds
             setInterval(updateActiveEvents, 30000);
         });
-
+        
         // Add visual indicators to grid cells with active events
         function highlightActiveEventSlots(activeEvents) {
             // Remove existing highlights
             document.querySelectorAll('.slot-with-event').forEach(slot => {
                 slot.classList.remove('slot-with-event');
             });
-
             // Add highlights for active events
             for (const slotId in activeEvents) {
                 const slotElement = document.querySelector(`[data-slot-id="${slotId}"]`);
@@ -123,14 +127,12 @@
             }
         }
     </script>
-
     <style>
         /* Add visual indicator for slots with active events */
         .slot-with-event {
             position: relative;
             box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.5) !important;
         }
-
         .slot-with-event::after {
             content: '⚡';
             position: absolute;
@@ -147,7 +149,8 @@
             font-size: 12px;
             z-index: 10;
         }
-
         [x-cloak]{display:none!important;}
     </style>
+        </div>
+    </div>
 </x-app-layout>
