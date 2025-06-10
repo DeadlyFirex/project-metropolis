@@ -13,10 +13,16 @@ class Slot extends Model
     protected $fillable = [
         'index',
         'module_id',
+        'event_id'
     ];
 
     public function module()
     {
         return $this->belongsTo(Module::class);
+    }
+
+    public function event()
+    {
+        return $this->belongsTo(Event::class);
     }
 }

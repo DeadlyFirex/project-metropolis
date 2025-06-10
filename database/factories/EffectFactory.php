@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Effect;
-use App\Models\Module;
+use App\Models\EventType; // Importeer EventType model
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class EffectFactory extends Factory
@@ -11,6 +11,9 @@ class EffectFactory extends Factory
     protected $model = Effect::class;
 
     /**
+     * Definieer de standaard staat van het model.
+     *
+     * @return array<string, mixed>
      */
     public function definition(): array
     {
@@ -22,9 +25,13 @@ class EffectFactory extends Factory
                 'facilities',
                 'infrastructure',
             ]),
-            # Can be between -10 and 10
+            # Kan tussen -10 en 10 liggen
             'value' => $this->faker->numberBetween(-10, 10),
-            'module_id' => Module::factory(),
+            // Correctie: Verwijder 'module_id' en voeg 'event_type_id' toe.
+            // De 'event_effects' tabel (gekoppeld aan het Effect model) heeft 'event_type_id', niet 'module_id'.
+            'event_type_id' => EventType::factory(), // Koppelt aan een bestaand EventType
+            'is_primary_effect' => $this->faker->boolean(),
+            'is_adjacent_effect' => $this->faker->boolean(),
         ];
     }
 }

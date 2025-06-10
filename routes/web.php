@@ -5,6 +5,7 @@ use App\Http\Controllers\SimulationController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ModuleHandlerController;
 use App\Http\Controllers\ConditionsController;
+use App\Http\Controllers\EventController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -20,6 +21,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/simdash', [SimulationController::class, 'index'])->name('simulatiedashboard');
+    Route::prefix('events')->group(function () {
+        Route::get('/', [EventController::class, 'index'])->name('events');
+        Route::post('/set', [EventController::class, 'setEvent'])->name('events.set');
+        Route::post('/reset', [EventController::class, 'resetEvent'])->name('events.reset');
+        Route::get('/slot-events', [EventController::class, 'getSlotEvents'])->name('events.slot-events');
+    });
     Route::resource('conditions', ConditionsController::class)
         ->except(['show', 'create', 'edit'])
         ->names([
@@ -44,4 +51,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/modules/{module}', [ModuleHandlerController::class, 'destroy'])->name('modules.destroy');
 });
 
-require __DIR__ . '/auth.php';
+Route::get('/api/events/{event}/effects', [EventController::class, 'getEventEffects'])->name('api.events.effects');
+Route::get('/events/{event}/effects', [EventController::class, 'getEventEffectsApi']);
+
+require __DIR__.'/auth.php';

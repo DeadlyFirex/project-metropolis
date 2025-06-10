@@ -17,6 +17,9 @@ class DatabaseSeeder extends Seeder
             ConfigurationSeeder::class,
             SlotSeeder::class,
             EffectSeeder::class,
+            EventTypeSeeder::class,
+            EventEffectSeeder::class,
+            CategorySeeder::class,
         ]);
     }
 }

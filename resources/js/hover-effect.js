@@ -6,8 +6,6 @@ function getCell(row, col) {
 
 document.querySelectorAll('.city-slot').forEach(slot => {
     slot.addEventListener('mouseenter', () => {
-        if (!slot.dataset.moduleId) return; // STOP als geen module
-
         const parentTd = slot.closest('td.city-cell');
         const row = parseInt(parentTd.dataset.row, 10);
         const col = parseInt(parentTd.dataset.col, 10);
@@ -20,7 +18,15 @@ document.querySelectorAll('.city-slot').forEach(slot => {
             }
         }
 
-        const allEffects = {};
+        const allEffects = {
+            safety: 0,
+            recreation: 0,
+            climate: 0,
+            facilities: 0,
+            infrastructure: 0
+        };
+
+        let activeEventsHtml = '';
 
         adjacentPositions.forEach(([r, c]) => {
             const cell = getCell(r, c);
@@ -28,15 +34,45 @@ document.querySelectorAll('.city-slot').forEach(slot => {
 
             cell.classList.add('bg-green-200');
 
+            // Get module effects
             const moduleSlot = cell.querySelector('.city-slot[data-module-id]');
-            if (!moduleSlot) return;
+            if (moduleSlot) {
+                const effects = cell.querySelectorAll('.effect');
+                effects.forEach(effect => {
+                    const type = effect.dataset.type;
+                    const value = parseInt(effect.dataset.value, 10);
+                    allEffects[type] += value;
+                });
+            }
 
-            const effects = cell.querySelectorAll('.effect');
-            effects.forEach(effect => {
-                const type = effect.dataset.type;
-                const value = parseInt(effect.dataset.value, 10);
-                allEffects[type] = (allEffects[type] || 0) + value;
-            });
+            // Get event effects
+            const eventSlot = cell.querySelector('.city-slot[data-event-id]');
+            if (eventSlot) {
+                const eventName = eventSlot.dataset.eventName || 'Actief Event';
+                let eventEffectsHtml = '';
+
+                const eventEffects = eventSlot.querySelectorAll('.event-effect');
+                eventEffects.forEach(effect => {
+                    const type = effect.dataset.type;
+                    const value = parseInt(effect.dataset.value, 10);
+                    allEffects[type] += value;
+
+                    const typeMap = {
+                        safety: 'Veiligheid',
+                        recreation: 'Recreatie',
+                        climate: 'Milieukwaliteit',
+                        facilities: 'Voorzieningen',
+                        infrastructure: 'Mobiliteit'
+                    };
+                    const label = typeMap[type] || type;
+                    const color = value > 0 ? 'text-green-600' : (value < 0 ? 'text-red-600' : 'text-gray-600');
+                    eventEffectsHtml += `<div class="ml-2 ${color}">${value > 0 ? '+' : ''}${value} ${label}</div>`;
+                });
+
+                if (eventEffectsHtml) {
+                    activeEventsHtml += `<div class="mt-1 font-bold">${eventName}:</div>${eventEffectsHtml}`;
+                }
+            }
         });
 
         const qol = Object.values(allEffects).reduce((sum, val) => sum + val, 0);
@@ -50,15 +86,23 @@ document.querySelectorAll('.city-slot').forEach(slot => {
         };
 
         let html = '';
+
+        // Voeg module effecten toe
         for (const type in allEffects) {
             const val = allEffects[type];
             const label = typeMap[type] || type;
             const color = val > 0 ? 'text-green-600' : (val < 0 ? 'text-red-600' : 'text-gray-600');
             html += `<div class="${color}">${val > 0 ? '+' : ''}${val} ${label}</div>`;
         }
+
+        // Voeg event informatie toe als die er is
+        if (activeEventsHtml) {
+            html = `<div class="mb-2 pb-2 border-b border-gray-300">${activeEventsHtml}</div>` + html;
+        }
+
         html += `<div class="mt-1 font-bold ${qol > 0 ? 'text-green-600' : (qol < 0 ? 'text-red-600' : 'text-gray-600')}">
-                        Kwaliteit van Leven: ${qol > 0 ? '+' : ''}${qol}
-                    </div>`;
+                    Kwaliteit van Leven: ${qol > 0 ? '+' : ''}${qol}
+                </div>`;
 
         const overlay = slot.querySelector('.combined-effects');
         if (overlay) {
