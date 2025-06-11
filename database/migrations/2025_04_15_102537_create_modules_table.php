@@ -17,8 +17,14 @@ return new class extends Migration
             $table->string('description')
                 ->comment("A short description of the module");
 
-            // TODO: We'd need an ENUM for this one;
-            $table->string('category');
+            // TODO: We need to split this into a separate table for categories
+            $table->enum('category', [
+                'Veiligheid',
+                'Recreatie',
+                'Milieukwaliteit',
+                'Voorzieningen',
+                'Mobiliteit',
+            ]);
 
             $table->string('image_path')
                 ->default('default-image.png');

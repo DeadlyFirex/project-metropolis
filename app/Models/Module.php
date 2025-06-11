@@ -30,5 +30,9 @@ class Module extends Model
     {
         return $this->hasMany(Effect::class);
     }
+
+    public function compatible() {
+        return $this->hasMany(EventType::class);
+    }
 }
 
