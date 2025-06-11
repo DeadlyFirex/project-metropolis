@@ -191,17 +191,21 @@
 
     function updateModeIcon() {
         const icon = document.getElementById('mode-icon');
-        if (document.body.classList.contains('night-mode')) {
-            icon.textContent = '🌞';
-        } else {
-            icon.textContent = '🌙';
-        }
+
+        // Voeg flip class toe voor animatie
+        icon.classList.add('flipping');
+
+        // Na animatie wissel emoji en verwijder flip class
+        setTimeout(() => {
+            if (document.body.classList.contains('night-mode')) {
+                icon.textContent = '🌞';
+            } else {
+                icon.textContent = '🌙';
+            }
+            icon.classList.remove('flipping');
+        }, 200); // iets korter dan transition zodat het net iets vloeiender voelt
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-        checkAndApplyNightMode();
-        updateModeIcon(); // bij start meteen icoon goedzetten
-    });
 
 
     document.addEventListener("DOMContentLoaded", () => {
