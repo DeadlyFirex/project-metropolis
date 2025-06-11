@@ -83,10 +83,8 @@
 
                     for (const element of targets) {
                         const canvas = await html2canvas(element, {
-                            scale: 2,
-                            ignoreElements: (el) => el.classList?.contains('pdf-hide')
+                            scale: 2
                         });
-
                         const imgData = canvas.toDataURL('image/png');
 
                         const ratio = canvas.width / canvas.height;

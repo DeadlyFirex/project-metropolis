@@ -166,7 +166,7 @@ usort($uniqueEventTypes, function($a, $b) {
     <div class="mt-2 mb-4">
         <button
             id="swap-to-effect-control"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm pdf-hide">
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
             Effecten beheren
         </button>
     </div>
