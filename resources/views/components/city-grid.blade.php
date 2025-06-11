@@ -4,7 +4,7 @@
             <div class="text-lg font-medium text-gray-800 dark:text-gray-200">
                 <span id="clock">{{ $clockTime ?: '00:00:00' }}</span>
             </div>
-            <button onclick="toggleDayNight()" class="bg-blue-500 text-white px-4 py-1 rounded shadow text-sm">
+            <button onclick="toggleDayNight()" class="bg-blue-500 text-white px-4 py-1 rounded shadow text-sm pdf-hide">
                 Dag/Nacht
             </button>
         </div>
