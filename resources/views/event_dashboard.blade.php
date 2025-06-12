@@ -146,31 +146,33 @@
                                     <input type="checkbox" name="is_recurring" id="is_recurring" value="1" {{ old('is_recurring') ? 'checked' : '' }}
                                     class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                                     <label for="is_recurring" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                                        Maak dit event terugkerend
+                                       <!-- Maak dit event terugkerend-->
                                     </label>
                                 </div>
 
-                                <div id="recurringSettings" class="grid grid-cols-1 md:grid-cols-2 gap-4" style="display: none;">
-                                    <div>
-                                        <label for="recurring_interval" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Herhaal elke
-                                        </label>
-                                        <input type="number" name="recurring_interval" id="recurring_interval" min="1" value="{{ old('recurring_interval') }}"
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100"
-                                               placeholder="Interval">
-                                    </div>
+                                <!--
+<div id="recurringSettings" class="grid grid-cols-1 md:grid-cols-2 gap-4" style="display: none;">
+    <div>
+        <label for="recurring_interval" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Herhaal elke
+        </label>
+        <input type="number" name="recurring_interval" id="recurring_interval" min="1" value="{{ old('recurring_interval') }}"
+               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100"
+               placeholder="Interval">
+    </div>
 
-                                    <div>
-                                        <label for="recurring_unit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Eenheid
-                                        </label>
-                                        <select name="recurring_unit" id="recurring_unit" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100">
-                                            <option value="minutes" {{ old('recurring_unit') == 'minutes' ? 'selected' : '' }}>Minuten</option>
-                                            <option value="hours" {{ old('recurring_unit') == 'hours' ? 'selected' : '' }}>Uren</option>
-                                            <option value="days" {{ old('recurring_unit') == 'days' ? 'selected' : '' }}>Dagen</option>
-                                        </select>
-                                    </div>
-                                </div>
+    <div>
+        <label for="recurring_unit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Eenheid
+        </label>
+        <select name="recurring_unit" id="recurring_unit" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100">
+            <option value="minutes" {{ old('recurring_unit') == 'minutes' ? 'selected' : '' }}>Minuten</option>
+            <option value="hours" {{ old('recurring_unit') == 'hours' ? 'selected' : '' }}>Uren</option>
+            <option value="days" {{ old('recurring_unit') == 'days' ? 'selected' : '' }}>Dagen</option>
+        </select>
+    </div>
+</div>
+-->
                             </div>
                         </div>
 
