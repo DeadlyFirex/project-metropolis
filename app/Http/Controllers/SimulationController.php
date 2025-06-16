@@ -21,6 +21,11 @@ class SimulationController extends Controller
         $categories   = Module::select('category')->distinct()->pluck('category');
         $slots        = Slot::with(['module.effects'])->get();
         $events       = Event::all();
+
+        $nextExpiration = Event::whereNotNull('end_time')
+            ->where('end_time', '>', now())
+            ->min('end_time');
+
         $userId       = Auth::id();
         $userClock    = \App\Models\UserClock::where('user_id', $userId)->first();
         $clockTime    = $userClock ? $userClock->clock_time : '00:00:00';
@@ -32,9 +37,12 @@ class SimulationController extends Controller
             'slots',
             'all_modules',
             'events',
-            'clockTime'
+            'clockTime',
+            'nextExpiration'
         ));
     }
+
+
 
     private function getModules($category = null)
     {

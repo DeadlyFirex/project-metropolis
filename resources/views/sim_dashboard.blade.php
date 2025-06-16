@@ -1,4 +1,17 @@
 <x-app-layout>
+    @if(! is_null($nextExpiration))
+        <script>
+            const expiresMs = new Date("{{ \Carbon\Carbon::parse($nextExpiration)->toIso8601String() }}").getTime();
+            const nowMs     = Date.now();
+            const delay     = expiresMs - nowMs;
+
+            if (delay > 0) {
+                setTimeout(() => {
+                    window.location.reload();
+                }, delay);
+            }
+        </script>
+    @endif
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">

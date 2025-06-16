@@ -35,6 +35,8 @@ class EventController extends Controller
         $event_type_modules = EventType::pluck('module_id', 'name');
         Log::debug('Event type modules fetched:', $event_type_modules->toArray());
 
+        $this->cleanupExpiredEvents();
+
         return view('event_dashboard', compact('event_types',
             'slots', 'activeEvents', 'event_type_modules'));
     }
@@ -96,15 +98,17 @@ class EventController extends Controller
         Log::debug('EventType found:', ['id' => $eventType->id, 'name' => $eventType->name]);
 
         $new_event = new Event([
-            'name' => $request->event_name,
-            'description' => $request->event_description,
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-            'is_recurring' => $request->boolean('is_recurring'),
-            'recurring_interval' => $request->filled('recurring_interval') ? (int) $request->recurring_interval : null,
-            'event_type_id' => $eventType->id,
-            'slot_id' => $request->slot_id,
+            'name'               => $request->event_name,
+            'description'        => $request->event_description,
+            'start_time'         => $startTime,
+            'end_time'           => $endTime,
+            'is_recurring'       => $request->boolean('is_recurring'),
+            'recurring_interval' => $request->filled('recurring_interval') ? (int)$request->recurring_interval : null,
+            'recurring_unit'     => $request->filled('recurring_unit')   ? $request->recurring_unit          : null,
+            'event_type_id'      => $eventType->id,
+            'slot_id'            => $request->slot_id,
         ]);
+
         $new_event->save();
         Log::info('New event created and saved:', $new_event->toArray());
 
@@ -398,5 +402,51 @@ class EventController extends Controller
         }
 
         return array_filter($effects, fn($value) => $value !== 0);
+    }
+
+    /**
+     * Clean up expired events and reschedule recurring ones so that the next occurrence is always in the future.
+     */
+    private function cleanupExpiredEvents(): void
+    {
+        $now = Carbon::now();
+
+        Event::whereNotNull('end_time')
+            ->where('end_time', '<=', $now)
+            ->get()
+            ->each(function (Event $event) use ($now) {
+                // Recurring?
+                if ($event->is_recurring && $event->recurring_interval && $event->recurring_unit) {
+
+                    // Original duration in minutes
+                    $durationMinutes = Carbon::parse($event->end_time)
+                        ->diffInMinutes(Carbon::parse($event->start_time));
+
+                    // Calculate the next start that lies **after** $now
+                    $nextStart = Carbon::parse($event->start_time);
+                    $nextEnd   = Carbon::parse($event->end_time);
+
+                    do {
+                        $nextStart = match ($event->recurring_unit) {
+                            'hours'   => $nextStart->addHours($event->recurring_interval),
+                            'days'    => $nextStart->addDays($event->recurring_interval),
+                            default   => $nextStart->addMinutes($event->recurring_interval),
+                        };
+                        $nextEnd = $nextStart->copy()->addMinutes($durationMinutes);
+                    } while ($nextEnd->lte($now));
+
+                    // Persist the new schedule
+                    $event->start_time = $nextStart;
+                    $event->end_time   = $nextEnd;
+                    $event->save();
+                } else {
+                    // One‑off event – detach from slot and delete.
+                    $slot = Slot::where('event_id', $event->id)->first();
+                    if ($slot) {
+                        $slot->update(['event_id' => null]);
+                    }
+                    $event->delete();
+                }
+            });
     }
 }
