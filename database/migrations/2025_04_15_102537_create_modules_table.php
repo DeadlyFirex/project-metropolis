@@ -29,6 +29,7 @@ return new class extends Migration
             $table->string('image_path')
                 ->default('default-image.png');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

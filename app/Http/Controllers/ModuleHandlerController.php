@@ -18,7 +18,7 @@ class ModuleHandlerController extends Controller
     }
     private function getAllModules()
     {
-        return Module::all();
+        return Module::withoutTrashed()->get();
     }
     private function getAllCategories()
     {
