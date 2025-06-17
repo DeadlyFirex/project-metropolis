@@ -3,6 +3,14 @@ document.addEventListener("DOMContentLoaded", () => {
     let selectedSlotId = null;
     let currentMode = null;
 
+    function showLoading() {
+        document.getElementById('loading').style.display = 'block';
+    }
+
+    function hideLoading() {
+        document.getElementById('loading').style.display = 'none';
+    }
+
     function getElements() {
         return {
             moduleCards: document.querySelectorAll('.module-card'),
@@ -214,6 +222,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     function attachModule(moduleId, slotId) {
+        const loading = document.getElementById('loading');
+        loading.classList.remove('hidden');
+
         fetch('/simulatie/koppel-module', {
             method: 'POST',
             headers: {
@@ -223,11 +234,15 @@ document.addEventListener("DOMContentLoaded", () => {
             body: JSON.stringify({ module_id: moduleId, slot_id: slotId })
         })
             .then(response => {
+                loading.classList.add('hidden');
                 if (response.status === 422) alert("Je mag deze categorieën niet naast elkaar hebben.");
                 else if (response.status === 409) alert("Je mag niet meer van deze categorie neerzetten.");
                 else if (response.ok) location.reload();
                 else alert("Er is iets misgegaan bij het koppelen.");
             })
-            .catch(() => alert("Er is iets misgegaan bij het koppelen."));
+            .catch(() => {
+                loading.classList.add('hidden');
+                alert("Er is iets misgegaan bij het koppelen.");
+            });
     }
 });

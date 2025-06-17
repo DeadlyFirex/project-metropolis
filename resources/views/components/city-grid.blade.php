@@ -35,7 +35,7 @@
                                         <div class="relative flex flex-col items-center">
                                             @if (!$slot->approved)
                                                 <form method="POST" action="{{ route('slots.approve', $slot->id) }}"
-                                                    class="absolute top-0 left-0">
+                                                    class="absolute top-0 left-0" onsubmit="showLoading()">
                                                     @csrf
                                                     @method('PATCH')
                                                     <button type="submit"
@@ -86,7 +86,7 @@
                                             @if (!$slot->approved)
                                                 <form method="POST"
                                                     action="{{ route('slots.removeModule', $slot->id) }}"
-                                                    class="absolute top-0 right-0">
+                                                    class="absolute top-0 right-0" onsubmit="showLoading()">
                                                     @csrf
                                                     @method('PATCH')
                                                     <button type="submit"
@@ -126,11 +126,18 @@
         </table>
     </div>
 </div>
+<div id="loading" class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
+    <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+</div>
 
 <script>
+    function showLoading() {
+        const loading = document.getElementById('loading');
+        loading.classList.remove('hidden');
+    }
     let currentTime = '{{ $clockTime ?:
         '
-                        00: 00: 00 ' }}';
+                                            00: 00: 00 ' }}';
 
     function pad(num) {
         return String(num).padStart(2, '0');
