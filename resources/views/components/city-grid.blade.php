@@ -115,8 +115,39 @@
 </div>
 
 <script>
-    let currentTime = '{{ $clockTime ?: '
-    00: 00: 00 ' }}';
+    const clockEl   = document.getElementById('clock');
+    let   currentTime = clockEl.dataset.start || '00:00:00';
+
+    function refreshGrid () {
+        fetch("{{ route('events.slot-events') }}?time=" + currentTime)
+            .then(r => r.json())
+            .then(updateGrid)
+            .catch(console.error);
+    }
+
+    function updateGrid (events) {
+        document.querySelectorAll('.city-slot[data-event-id]').forEach(slot => {
+            slot.removeAttribute('data-event-id');
+            slot.removeAttribute('data-event-name');
+            slot.removeAttribute('data-event-image');
+            slot.querySelector('.event-badge')?.remove();
+        });
+
+        events.forEach(ev => {
+            const slot = document.querySelector(`.city-slot[data-slot-id="${ev.slot_id}"]`);
+            if (!slot) return;
+
+            slot.dataset.eventId   = ev.id;
+            slot.dataset.eventName = ev.name;
+            if (ev.image_path) {
+                slot.dataset.eventImage = ev.image_path.startsWith('http')
+                    ? ev.image_path
+                    : `{{ url('/') }}/${ev.image_path}`;
+            }
+
+        });
+    }
+
 
     function pad(num) {
         return String(num).padStart(2, '0');
@@ -153,6 +184,8 @@
         tickClock();
         checkAndApplyNightMode();
         maybeSaveTime();
+        refreshGrid();
+
     }, 1000);
 
     let lastSave = 0;
@@ -189,6 +222,7 @@
         }
         document.getElementById('clock').innerText = currentTime;
         checkAndApplyNightMode();
+        refreshGrid();
         saveTime();
         updateModeIcon();
     }

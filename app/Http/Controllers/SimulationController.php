@@ -160,4 +160,13 @@ class SimulationController extends Controller
 
         return response()->json(['success' => true]);
     }
+    private function slotIsActive(Event $event, Carbon $clock): bool
+    {
+        $start = $event->start_time->copy()->setDate($clock->year, $clock->month, $clock->day);
+        $end   = $event->end_time  ->copy()->setDate($clock->year, $clock->month, $clock->day);
+        if ($end->lte($start)) $end->addDay();
+
+        return $clock->between($start, $end);
+    }
+
 }
