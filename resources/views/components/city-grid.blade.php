@@ -4,8 +4,7 @@
             <div class="text-lg font-medium text-gray-800 dark:text-gray-200">
                 <span id="clock">{{ $clockTime ?: '00:00:00' }}</span>
             </div>
-            <button id="toggle-mode-btn"
-                onclick="toggleDayNight()"
+            <button id="toggle-mode-btn" onclick="toggleDayNight()"
                 class="bg-blue-500 text-white px-5 py-2 rounded shadow text-base flex items-center gap-3">
                 <span id="mode-icon" class="text-2xl">🌙</span>
                 <span class="text-sm sm:text-base font-semibold">Modus</span>
@@ -19,91 +18,109 @@
         <table class="table-auto border-collapse border border-gray-300 w-full text-center">
             <tbody>
                 @foreach ($slots->chunk(4) as $row)
-                <tr>
-                    @foreach ($row as $slot)
-                    <td class="border border-gray-300 p-4 w-[200px] h-[150px] bg-gray-100 align-middle text-center city-cell"
-                        data-slot-id="{{ $slot->id }}" data-row="{{ $loop->parent->index }}"
-                        data-col="{{ $loop->index }}">
+                    <tr>
+                        @foreach ($row as $slot)
+                            <td class="border border-gray-300 p-4 w-[200px] h-[150px] bg-gray-100 align-middle text-center city-cell"
+                                data-slot-id="{{ $slot->id }}" data-row="{{ $loop->parent->index }}"
+                                data-col="{{ $loop->index }}">
 
-                        <div class="city-slot flex flex-col items-center justify-center h-full relative"
-                            data-slot-id="{{ $slot->id }}"
-                            @if ($slot->module_id) data-module-id="{{ $slot->module_id }}" @endif
-                            @if ($slot->event_id)
-                            data-event-id="{{ $slot->event_id }}"
+                                <div class="city-slot flex flex-col items-center justify-center h-full relative"
+                                    data-slot-id="{{ $slot->id }}"
+                                    @if ($slot->module_id) data-module-id="{{ $slot->module_id }}" @endif
+                                    @if ($slot->event_id) data-event-id="{{ $slot->event_id }}"
                             data-event-name="{{ $slot->event->name ?? 'Actief Evenement' }}"
-                            data-event-image="{{ $slot->event->image_path ? asset('storage/' . $slot->event->image_path) : '' }}"
-                            @endif
-                            >
+                            data-event-image="{{ $slot->event->image_path ? asset('storage/' . $slot->event->image_path) : '' }}" @endif>
 
-                            @if ($slot->module_id != null && $slot->module && $slot->module->image_path)
-                            <div class="relative flex flex-col items-center">
-                                <img src="{{ asset('storage/' . $slot->module->image_path) }}"
-                                    alt="{{ $slot->module->name }}"
-                                    class="w-[80px] h-[80px] object-contain pointer-events-none">
+                                    @if ($slot->module_id != null && $slot->module && $slot->module->image_path)
+                                        <div class="relative flex flex-col items-center">
+                                            @if (!$slot->approved)
+                                                <form method="POST" action="{{ route('slots.approve', $slot->id) }}"
+                                                    class="absolute top-0 left-0">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit"
+                                                        class="bg-green-500 text-white rounded-full w-5 h-5 text-xs leading-none"
+                                                        title="Goedkeuren (vergrendelen)">
+                                                        ✓
+                                                    </button>
+                                                </form>
+                                            @endif
+                                            @if ($slot->approved)
+                                                <span class="absolute bottom-1 right-1 text-green-600 text-xs"
+                                                    title="Goedgekeurd">
+                                                    🔒
+                                                </span>
+                                            @endif
+                                            <img src="{{ asset('storage/' . $slot->module->image_path) }}"
+                                                alt="{{ $slot->module->name }}"
+                                                class="w-[80px] h-[80px] object-contain pointer-events-none">
 
-                                <span class="text-xs text-gray-700">{{ $slot->module->name }}</span>
+                                            <span class="text-xs text-gray-700">{{ $slot->module->name }}</span>
 
-                                <div class="grid-effects hidden text-[10px] mt-1 text-gray-600 text-center space-y-[1px]">
-                                    @php
-                                    $typeMap = [
-                                    'safety' => 'Veiligheid',
-                                    'recreation' => 'Recreatie',
-                                    'climate' => 'Milieukwaliteit',
-                                    'facilities' => 'Voorzieningen',
-                                    'infrastructure' => 'Mobiliteit',
-                                    ];
-                                    @endphp
+                                            <div
+                                                class="grid-effects hidden text-[10px] mt-1 text-gray-600 text-center space-y-[1px]">
+                                                @php
+                                                    $typeMap = [
+                                                        'safety' => 'Veiligheid',
+                                                        'recreation' => 'Recreatie',
+                                                        'climate' => 'Milieukwaliteit',
+                                                        'facilities' => 'Voorzieningen',
+                                                        'infrastructure' => 'Mobiliteit',
+                                                    ];
+                                                @endphp
 
-                                    @foreach ($slot->module->effects as $effect)
-                                    @if ($effect->value !== 0)
-                                    <div class="effect" data-type="{{ $effect->type }}"
-                                        data-value="{{ $effect->value }}">
-                                        {{ $effect->value > 0 ? '+' : '' }}{{ $effect->value }}
-                                        {{ $typeMap[$effect->type] ?? $effect->type }}
-                                    </div>
+                                                @foreach ($slot->module->effects as $effect)
+                                                    @if ($effect->value !== 0)
+                                                        <div class="effect" data-type="{{ $effect->type }}"
+                                                            data-value="{{ $effect->value }}">
+                                                            {{ $effect->value > 0 ? '+' : '' }}{{ $effect->value }}
+                                                            {{ $typeMap[$effect->type] ?? $effect->type }}
+                                                        </div>
+                                                    @endif
+                                                @endforeach
+                                            </div>
+
+                                            <div
+                                                class="combined-effects hidden absolute top-full mt-2 bg-white border text-[10px] text-gray-800 p-2 rounded shadow z-10">
+                                            </div>
+                                            @if (!$slot->approved)
+                                                <form method="POST"
+                                                    action="{{ route('slots.removeModule', $slot->id) }}"
+                                                    class="absolute top-0 right-0">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit"
+                                                        class="bg-red-500 text-white rounded-full w-5 h-5 text-xs leading-none">
+                                                        ×
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <span class="text-xs text-gray-400">Leeg</span>
                                     @endif
-                                    @endforeach
+
+                                    @if ($slot->event_id && $slot->event && $slot->event->eventType)
+                                        <div class="event-effect-data hidden">
+                                            @php
+                                                $effects = $slot->event->eventType->effects ?? [];
+                                            @endphp
+                                            @foreach ($effects as $effect)
+                                                @if ($effect->value != 0)
+                                                    <div class="effect-event" data-type="{{ $effect->type }}"
+                                                        data-value="{{ $effect->value }}"
+                                                        data-is-primary-effect="{{ $effect->is_primary_effect ? 'true' : 'false' }}"
+                                                        data-is-adjacent-effect="{{ $effect->is_adjacent_effect ? 'true' : 'false' }}">
+                                                    </div>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    @endif
+
                                 </div>
-
-                                <div class="combined-effects hidden absolute top-full mt-2 bg-white border text-[10px] text-gray-800 p-2 rounded shadow z-10">
-                                </div>
-
-                                <form method="POST" action="{{ route('slots.removeModule', $slot->id) }}"
-                                    class="absolute top-0 right-0">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit"
-                                        class="bg-red-500 text-white rounded-full w-5 h-5 text-xs leading-none">
-                                        ×
-                                    </button>
-                                </form>
-                            </div>
-                            @else
-                            <span class="text-xs text-gray-400">Leeg</span>
-                            @endif
-
-                            @if ($slot->event_id && $slot->event && $slot->event->eventType)
-                            <div class="event-effect-data hidden">
-                                @php
-                                $effects = $slot->event->eventType->effects ?? [];
-                                @endphp
-                                @foreach ($effects as $effect)
-                                @if ($effect->value != 0)
-                                <div class="effect-event"
-                                    data-type="{{ $effect->type }}"
-                                    data-value="{{ $effect->value }}"
-                                    data-is-primary-effect="{{ $effect->is_primary_effect ? 'true' : 'false' }}"
-                                    data-is-adjacent-effect="{{ $effect->is_adjacent_effect ? 'true' : 'false' }}">
-                                </div>
-                                @endif
-                                @endforeach
-                            </div>
-                            @endif
-
-                        </div>
-                    </td>
-                    @endforeach
-                </tr>
+                            </td>
+                        @endforeach
+                    </tr>
                 @endforeach
             </tbody>
         </table>
@@ -111,8 +128,9 @@
 </div>
 
 <script>
-    let currentTime = '{{ $clockTime ?: '
-    00: 00: 00 ' }}';
+    let currentTime = '{{ $clockTime ?:
+        '
+                        00: 00: 00 ' }}';
 
     function pad(num) {
         return String(num).padStart(2, '0');
@@ -278,7 +296,8 @@
 
                     // Process event effects
                     if (cellSlot.dataset.eventId) {
-                        const eventEffectElements = cellSlot.querySelectorAll('.event-effect-data .effect-event');
+                        const eventEffectElements = cellSlot.querySelectorAll(
+                            '.event-effect-data .effect-event');
                         eventEffectElements.forEach(el => {
                             const type = el.dataset.type;
                             const value = parseInt(el.dataset.value, 10);
@@ -293,7 +312,8 @@
                             } else {
                                 // Adjacent cells only contribute their adjacent effects
                                 if (isAdjacent) {
-                                    adjacentEventEffects[type] = (adjacentEventEffects[type] || 0) + value;
+                                    adjacentEventEffects[type] = (adjacentEventEffects[
+                                        type] || 0) + value;
                                 }
                             }
                         });
@@ -315,16 +335,20 @@
             // Event effects display
             if (slot.dataset.eventId) {
                 html += `<div class="mb-2 pb-2 border-b border-gray-300">`;
-                html += `<div class="font-bold text-gray-800 text-sm mb-1">Actief Evenement: ${slot.dataset.eventName}</div>`;
+                html +=
+                    `<div class="font-bold text-gray-800 text-sm mb-1">Actief Evenement: ${slot.dataset.eventName}</div>`;
                 if (slot.dataset.eventImage) {
-                    html += `<img src="${slot.dataset.eventImage}" alt="${slot.dataset.eventName}" class="w-10 h-10 object-contain mx-auto mb-1">`;
+                    html +=
+                        `<img src="${slot.dataset.eventImage}" alt="${slot.dataset.eventName}" class="w-10 h-10 object-contain mx-auto mb-1">`;
                 }
                 if (Object.keys(eventEffects).length > 0) {
-                    html += `<div class="font-semibold text-gray-700 text-xs mb-1">Evenement Effecten (deze cel):</div>`;
+                    html +=
+                        `<div class="font-semibold text-gray-700 text-xs mb-1">Evenement Effecten (deze cel):</div>`;
                     for (const type in eventEffects) {
                         const val = eventEffects[type];
                         const label = typeMap[type] || type;
-                        const color = val > 0 ? 'text-green-600' : (val < 0 ? 'text-red-600' : 'text-gray-600');
+                        const color = val > 0 ? 'text-green-600' : (val < 0 ? 'text-red-600' :
+                            'text-gray-600');
                         html += `<div class="${color}">${val > 0 ? '+' : ''}${val} ${label}</div>`;
                     }
                 } else {
@@ -336,11 +360,13 @@
             // Adjacent event effects
             if (Object.keys(adjacentEventEffects).length > 0) {
                 html += `<div class="mb-2 pb-2 border-b border-gray-300">`;
-                html += `<div class="font-semibold text-gray-700 text-xs mt-2 mb-1">Aangrenzende evenementeffecten:</div>`;
+                html +=
+                    `<div class="font-semibold text-gray-700 text-xs mt-2 mb-1">Aangrenzende evenementeffecten:</div>`;
                 for (const type in adjacentEventEffects) {
                     const val = Math.round(adjacentEventEffects[type] * 10) / 10;
                     const label = typeMap[type] || type;
-                    const color = val > 0 ? 'text-green-600' : (val < 0 ? 'text-red-600' : 'text-gray-600');
+                    const color = val > 0 ? 'text-green-600' : (val < 0 ? 'text-red-600' :
+                        'text-gray-600');
                     html += `<div class="${color}">${val > 0 ? '+' : ''}${val} ${label}</div>`;
                 }
                 html += `</div>`;
@@ -352,12 +378,14 @@
 
             // Module effects
             html += `<div class="mb-2 pb-2 border-b border-gray-300">`;
-            html += `<div class="font-bold text-gray-800 text-sm mb-1">Gezamenlijke Module Effecten (buurt):</div>`;
+            html +=
+                `<div class="font-bold text-gray-800 text-sm mb-1">Gezamenlijke Module Effecten (buurt):</div>`;
             if (Object.keys(moduleEffects).length > 0) {
                 for (const type in moduleEffects) {
                     const val = moduleEffects[type];
                     const label = typeMap[type] || type;
-                    const color = val > 0 ? 'text-green-600' : (val < 0 ? 'text-red-600' : 'text-gray-600');
+                    const color = val > 0 ? 'text-green-600' : (val < 0 ? 'text-red-600' :
+                        'text-gray-600');
                     html += `<div class="${color}">${val > 0 ? '+' : ''}${val} ${label}</div>`;
                 }
             } else {

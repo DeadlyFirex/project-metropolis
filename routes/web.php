@@ -49,9 +49,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/modules', [ModuleHandlerController::class, 'store'])->name('modules.store');
     Route::put('/modules/{id}', [ModuleHandlerController::class, 'update'])->name('modules.update');
     Route::delete('/modules/{module}', [ModuleHandlerController::class, 'destroy'])->name('modules.destroy');
+    Route::patch('/slots/{slot}/approve', [SimulationController::class, 'approve'])->name('slots.approve');
 });
 
 Route::get('/api/events/{event}/effects', [EventController::class, 'getEventEffects'])->name('api.events.effects');
 Route::get('/events/{event}/effects', [EventController::class, 'getEventEffectsApi']);
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

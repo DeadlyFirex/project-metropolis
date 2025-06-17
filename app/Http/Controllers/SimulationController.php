@@ -63,6 +63,12 @@ class SimulationController extends Controller
         $targetSlot = Slot::findOrFail($request->slot_id);
         $conditions = app(ConditionsController::class);
 
+        if ($targetSlot->approved) {
+            return response()->json([
+                'message' => 'Deze slot is goedgekeurd en kan niet meer gewijzigd worden.',
+            ], 403);
+        }
+
         if ($conditions->violatesAdjacencyRule($newModule, $targetSlot)) {
             return response()->json([
                 'message' => __('errors.category_incompatible', [
@@ -93,6 +99,12 @@ class SimulationController extends Controller
     public function removeModule(Slot $slot)
     {
         Log::info('removeModule method called for slot_id: ' . $slot->id);
+
+        // Blokkeer als slot is goedgekeurd
+        if ($slot->approved) {
+            Log::warning('Attempted to remove module from approved slot: ' . $slot->id);
+            return redirect()->back()->with('error', 'Je kunt een goedgekeurde module niet verwijderen.');
+        }
 
         // Check if there's an event associated with this slot
         if ($slot->event_id) {
@@ -151,5 +163,12 @@ class SimulationController extends Controller
         );
 
         return response()->json(['success' => true]);
+    }
+    public function approve(Slot $slot)
+    {
+        $slot->approved = true;
+        $slot->save();
+
+        return redirect()->back()->with('success', 'Module is goedgekeurd.');
     }
 }
