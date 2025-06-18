@@ -10,7 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
-
+use App\Models\UserClock;
 
 class EventController extends Controller
 {
@@ -24,7 +24,8 @@ class EventController extends Controller
         Log::info('EventController index method called.');
 
         // Haal simulatie tijd op uit request (voor AJAX calls)
-        $simTime = $request->query('time');
+        $simTime = UserClock::where('user_id', auth()->id())->value('clock_time');
+        Log::info('Simulation time parameter received', ['time' => $simTime]);
 
         // Retrieve all slots that are not disabled
         $slots = Slot::whereHas('module', function ($query) {
@@ -99,9 +100,12 @@ class EventController extends Controller
             Log::info('Validation passed successfully:', $data);
 
             /* ───── 2. TIJDEN VERWERKEN ─────────────────────────────────── */
-            $today = Carbon::today();
+            $simTime = $request->query('time', date('H:i:s'));
+            $today = Carbon::createFromFormat('H:i:s', $simTime)->startOfDay();
+
             $start = Carbon::createFromFormat('H:i', $data['start_time'])
                 ->setDate($today->year, $today->month, $today->day);
+
             $end = Carbon::createFromFormat('H:i', $data['end_time'])
                 ->setDate($today->year, $today->month, $today->day);
 
@@ -112,16 +116,11 @@ class EventController extends Controller
 
             // Voor niet-terugkerende events: als eindtijd in verleden ligt, schuif naar morgen
             $isRecurring = $request->boolean('is_recurring');
-            if (!$isRecurring && $end->lte(now())) {
+            $now = Carbon::createFromFormat('H:i:s', $simTime);
+            if (!$isRecurring && $end->lte($now)) {
                 $start->addDay();
                 $end->addDay();
             }
-
-            Log::info('Time processing completed:', [
-                'start_time' => $start->format('H:i:s'),
-                'end_time' => $end->format('H:i:s'),
-                'is_recurring' => $isRecurring
-            ]);
 
             /* ───── 3. EVENT-TYPE OPHALEN ───────────────────────────────── */
             $eventType = EventType::where('name', $data['event_type'])->first();
@@ -259,19 +258,19 @@ class EventController extends Controller
     public function getSlotEvents(Request $request)
     {
         $simTime = $request->query('time', date('H:i:s'));
-        $nowSec  = $this->timeToSeconds($simTime);
+        $nowSec = $this->timeToSeconds($simTime);
 
         $active = Event::whereHas('slot')->get()->filter(function($event) use ($nowSec) {
             $startSec = $this->timeToSeconds($event->start_time);
-            $endSec   = $this->timeToSeconds($event->end_time);
+            $endSec = $this->timeToSeconds($event->end_time);
 
             if ($endSec <= $startSec) $endSec += 24 * 3600;
 
             $nowAdj = $nowSec;
             if ($nowAdj < $startSec) $nowAdj += 24 * 3600;
 
-            // skip verlopen niet‐terugkerende
-            if (! $event->is_recurring && $nowAdj > $endSec) {
+            // Skip expired non-recurring events
+            if (!$event->is_recurring && $nowAdj > $endSec) {
                 return false;
             }
 
@@ -281,7 +280,6 @@ class EventController extends Controller
 
         return response()->json($active);
     }
-
 
 
     /**
@@ -538,26 +536,24 @@ class EventController extends Controller
         $nowSec = $this->timeToSeconds($currentTimeStr);
 
         Event::all()->each(function (Event $event) use ($nowSec) {
-            // FIXED: Handle both string and Carbon formats
             $startTime = is_string($event->start_time) ? $event->start_time : $event->start_time->format('H:i:s');
             $endTime = is_string($event->end_time) ? $event->end_time : $event->end_time->format('H:i:s');
 
             $startSec = $this->timeToSeconds($startTime);
-            $endSec   = $this->timeToSeconds($endTime);
+            $endSec = $this->timeToSeconds($endTime);
 
             if ($endSec <= $startSec) {
                 $endSec += 24 * 3600;
             }
 
-            // Voor niet-terugkerende events: verwijder als verlopen
+            // For non-recurring events: delete if expired
             if (!$event->is_recurring && $endSec <= $nowSec) {
                 Slot::where('event_id', $event->id)->update(['event_id' => null]);
                 $event->delete();
                 Log::info("Expired non-recurring event deleted: {$event->id}");
             }
-            // Voor terugkerende events: verschuif naar volgende dag als verlopen
+            // For recurring events: shift to next day if expired
             elseif ($event->is_recurring && $endSec <= $nowSec) {
-                // Verschuif beide tijden met 24 uur, maar houd ze binnen het 24-uurs formaat
                 $newStartSec = ($startSec + 24 * 3600) % (24 * 3600);
                 $newEndSec = ($endSec + 24 * 3600) % (24 * 3600);
 
@@ -583,8 +579,10 @@ class EventController extends Controller
 
     public function getSlotEventsForDashboard(?string $simTime = null): array
     {
+        // Gebruik altijd de simulatie tijd als die beschikbaar is
         $currentTime = $simTime ?? date('H:i:s');
-        $now = Carbon::createFromFormat('H:i:s', $currentTime);
+        $now = Carbon::createFromFormat('H:i:s', $currentTime)
+            ->setDate(Carbon::today()->year, Carbon::today()->month, Carbon::today()->day);
 
         $items = [];
 
@@ -592,49 +590,35 @@ class EventController extends Controller
             $event = $slot->event;
             if (!$event) return;
 
-            $start = Carbon::createFromFormat('H:i:s', $event->start_time);
-            $end = Carbon::createFromFormat('H:i:s', $event->end_time);
+            $start = Carbon::createFromFormat('H:i:s', $event->start_time)
+                ->setDate($now->year, $now->month, $now->day);
 
-            // Als eindtijd voor starttijd ligt, gaat het event over middernacht
+            $end = Carbon::createFromFormat('H:i:s', $event->end_time)
+                ->setDate($now->year, $now->month, $now->day);
+
+            // Handle overnight events
             if ($end->lte($start)) {
                 $end->addDay();
             }
 
-            // Voor niet-terugkerende events: skip als verlopen
+            // For non-recurring events: skip if expired
             if (!$event->is_recurring && $now->gt($end)) {
                 return;
             }
 
-            // Voor terugkerende events: bereken de huidige dagelijkse cyclus
-            if ($event->is_recurring) {
-                $currentStart = $start->copy()->setDate($now->year, $now->month, $now->day);
-                $currentEnd = $end->copy()->setDate($now->year, $now->month, $now->day);
-
-                if ($currentEnd->lte($currentStart)) {
-                    $currentEnd->addDay();
-                }
-
-                $start = $currentStart;
-                $end = $currentEnd;
-            }
-
-            // Controleer of de huidige tijd binnen het event valt
-            if ($now->between($start, $end)) {
-                $remaining = $now->diff($end);
-
-                $items[$slot->id] = [
-                    'slot_id' => $slot->id,
-                    'event_id' => $event->id,
-                    'event_name' => $event->name,
-                    'description' => $event->description,
-                    'start_time' => $event->start_time,
-                    'end_time' => $event->end_time,
-                    'is_recurring' => (bool)$event->is_recurring,
-                    'time_remaining' => $this->formatRemainingTime($now, $end),
-                    'effects' => $this->getEventEffects($event->event_type_id),
-                    'status' => 'running',
-                ];
-            }
+            // Check if current time is within the event window
+            $items[$slot->id] = [
+                'slot_id' => $slot->id,
+                'event_id' => $event->id,
+                'event_name' => $event->name,
+                'description' => $event->description,
+                'start_time' => $event->start_time,
+                'end_time' => $event->end_time,
+                'is_recurring' => (bool)$event->is_recurring,
+                'time_remaining' => $this->formatRemainingTime($now, $end),
+                'effects' => $this->getEventEffects($event->event_type_id),
+                'status' => $now->between($start, $end) ? 'running' : 'scheduled',
+            ];
         });
 
         return $items;
