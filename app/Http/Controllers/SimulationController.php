@@ -10,6 +10,8 @@ use App\Models\Effect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Feedback; 
+
 
 class SimulationController extends Controller
 {
@@ -24,6 +26,7 @@ class SimulationController extends Controller
         $userId       = Auth::id();
         $userClock    = \App\Models\UserClock::where('user_id', $userId)->first();
         $clockTime    = $userClock ? $userClock->clock_time : '00:00:00';
+        $feedback = Feedback::latest()->get();
 
         return view('sim_dashboard', compact(
             'modules',
@@ -32,7 +35,8 @@ class SimulationController extends Controller
             'slots',
             'all_modules',
             'events',
-            'clockTime'
+            'clockTime',
+            'feedback'
         ));
     }
 

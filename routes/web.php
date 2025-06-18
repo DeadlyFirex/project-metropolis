@@ -51,6 +51,10 @@ Route::middleware('auth')->group(function () {
 
     // Feedback
     Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
+    Route::get('/feedback', [FeedbackController::class, 'index'])->name('feedback.index');
+    Route::get('/feedback/{feedback}/edit', [FeedbackController::class, 'edit'])->name('feedback.edit');
+    Route::patch('/feedback/{feedback}', [FeedbackController::class, 'update'])->name('feedback.update');
+    Route::delete('/feedback/{feedback}', [FeedbackController::class, 'destroy'])->name('feedback.destroy');
 });
 
 // ========== API routes ==========
