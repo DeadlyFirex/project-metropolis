@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/save-clock', [SimulationController::class, 'saveClock'])->name('save.clock');
     Route::post('/simulatie/koppel-module', [SimulationController::class, 'koppelModule']);
     Route::patch('/slots/{slot}/remove-module', [SimulationController::class, 'removeModule'])->name('slots.removeModule');
+    Route::post('/simulatie/verplaats-module', [SimulationController::class, 'moveModule'])->name('slots.update');
     Route::post('/effects/module/{moduleId}/{type}', [SimulationController::class, 'updateEffect'])->name('effects.update');
     Route::get('/api/modules/{module}/effects', function (\App\Models\Module $module) {
         return response()->json([

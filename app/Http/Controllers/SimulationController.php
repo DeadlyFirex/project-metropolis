@@ -171,4 +171,36 @@ class SimulationController extends Controller
 
         return redirect()->back()->with('success', 'Module is goedgekeurd.');
     }
+    public function moveModule(Request $request)
+    {
+        $request->validate([
+            'module_id' => 'required|integer|exists:modules,id',
+            'from_slot_id' => 'required|integer|exists:slots,id',
+            'to_slot_id' => 'required|integer|exists:slots,id',
+        ]);
+
+        $from = Slot::find($request->from_slot_id);
+        $to = Slot::find($request->to_slot_id);
+
+        if (!$from || !$to || $from->module_id != $request->module_id) {
+            return response()->json(['message' => 'Ongeldige gegevens.'], 422);
+        }
+
+        if ($to->approved) {
+            return response()->json([
+                'message' => 'Dit slot is goedgekeurd en kan niet worden gewijzigd.'
+            ], 403);
+        }
+
+        // Verwijder uit oude slot
+        $from->module_id = null;
+        $from->save();
+
+        // Plaats in nieuwe slot
+        $to->module_id = $request->module_id;
+        $to->approved = false; // optioneel: opnieuw laten goedkeuren
+        $to->save();
+
+        return response()->json(['message' => 'Module verplaatst.']);
+    }
 }

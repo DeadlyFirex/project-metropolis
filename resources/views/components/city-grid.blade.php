@@ -26,13 +26,15 @@
 
                                 <div class="city-slot flex flex-col items-center justify-center h-full relative"
                                     data-slot-id="{{ $slot->id }}"
+                                    data-approved="{{ $slot->approved ? '1' : '0' }}"
                                     @if ($slot->module_id) data-module-id="{{ $slot->module_id }}" @endif
                                     @if ($slot->event_id) data-event-id="{{ $slot->event_id }}"
                             data-event-name="{{ $slot->event->name ?? 'Actief Evenement' }}"
                             data-event-image="{{ $slot->event->image_path ? asset('storage/' . $slot->event->image_path) : '' }}" @endif>
 
                                     @if ($slot->module_id != null && $slot->module && $slot->module->image_path)
-                                        <div class="relative flex flex-col items-center">
+                                        <div class="slot-module relative flex flex-col items-center" draggable="true"
+                                            data-module-id="{{ $slot->module_id }}">
                                             @if (!$slot->approved)
                                                 <form method="POST" action="{{ route('slots.approve', $slot->id) }}"
                                                     class="absolute top-0 left-0" onsubmit="showLoading()">
@@ -126,9 +128,11 @@
         </table>
     </div>
 </div>
-<div id="loading" class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
+<div id="loading"
+    class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center min-h-screen">
     <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
 </div>
+
 
 <script>
     function showLoading() {
@@ -137,7 +141,7 @@
     }
     let currentTime = '{{ $clockTime ?:
         '
-                                            00: 00: 00 ' }}';
+                                                    00: 00: 00 ' }}';
 
     function pad(num) {
         return String(num).padStart(2, '0');
