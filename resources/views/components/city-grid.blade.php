@@ -3,8 +3,20 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="mb-6 flex items-center justify-between">
             <div class="text-lg font-medium text-gray-800 dark:text-gray-200">
-                <span id="clock">{{ $clockTime ?: '00:00:00' }}</span>
+                <span id="clock" data-start="{{ $clockTime ?: '00:00:00' }}">00:00:00</span>
             </div>
+            <div class="space-x-2 my-4">
+    <button class="speed-button bg-blue-500 text-white px-2 py-1 text-sm sm:text-base rounded" data-speed="0.5">1X</button>
+    <button class="speed-button bg-blue-500 text-white px-2 py-1 text-sm sm:text-base rounded" data-speed="1">2X</button>
+    <button class="speed-button bg-blue-500 text-white px-2 py-1 text-sm sm:text-base rounded" data-speed="2">4X</button>
+    <button class="speed-button bg-blue-500 text-white px-2 py-1 text-sm sm:text-base rounded" data-speed="5">10X</button>
+    <button class="speed-button bg-blue-500 text-white px-2 py-1 text-sm sm:text-base rounded" data-speed="10">20X</button>
+</div>
+<!-- Pause/Resume Buttons -->
+<div class="space-x-2 my-4">
+    <button id="pause-button" class="bg-red-500 text-white px-3 py-1 rounded">Pause</button>
+    <button id="resume-button" class="bg-green-500 text-white px-3 py-1 rounded hidden">Resume</button>
+</div>
             <button id="toggle-mode-btn"
                     onclick="toggleDayNight()"
                     class="bg-blue-500 text-white px-5 py-2 rounded shadow text-base flex items-center gap-3">
@@ -115,8 +127,70 @@
 </div>
 
 <script>
-    const clockEl   = document.getElementById('clock');
-    let   currentTime = clockEl.dataset.start || '00:00:00';
+    const clockEl = document.getElementById('clock');
+    const startTimeStr = clockEl.dataset.start || '00:00:00';
+
+    // Convert HH:MM:SS to total seconds
+    function timeStrToSeconds(str) {
+        const [h, m, s] = str.split(':').map(Number);
+        return h * 3600 + m * 60 + s;
+    }
+
+    // Convert total seconds to HH:MM:SS string (24-hour wrap)
+    function secondsToTimeStr(totalSeconds) {
+        totalSeconds = Math.floor(totalSeconds) % (24 * 3600);  // wrap after 24h
+        if (totalSeconds < 0) totalSeconds += 24 * 3600; // handle negative times just in case
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+        return `${pad(h)}:${pad(m)}:${pad(s)}`;
+    }
+
+    function pad(num) {
+        return num.toString().padStart(2, '0');
+    }
+
+    let currentSeconds = timeStrToSeconds(startTimeStr);
+    let tickSpeed = 0.5; // seconds to add per tick
+    let interval = null;
+    let isPaused = false;
+
+    function tickClock() {
+        currentSeconds += tickSpeed;
+        clockEl.innerText = secondsToTimeStr(currentSeconds);
+    }
+
+    function startClock() {
+        if (interval) clearInterval(interval);
+        interval = setInterval(tickClock, 1000);
+    }
+
+    function pauseClock() {
+        if (interval) clearInterval(interval);
+        isPaused = true;
+        document.getElementById('pause-button').classList.add('hidden');
+        document.getElementById('resume-button').classList.remove('hidden');
+    }
+
+    function resumeClock() {
+        if (!isPaused) return;
+        isPaused = false;
+        startClock();
+        document.getElementById('pause-button').classList.remove('hidden');
+        document.getElementById('resume-button').classList.add('hidden');
+    }
+
+    // Speed buttons update tickSpeed but do not restart if paused
+    document.querySelectorAll('.speed-button').forEach(button => {
+        button.addEventListener('click', () => {
+            tickSpeed = parseFloat(button.dataset.speed);
+        });
+    });
+
+    document.getElementById('pause-button').addEventListener('click', pauseClock);
+    document.getElementById('resume-button').addEventListener('click', resumeClock);
+
+    startClock();
 
     function refreshGrid () {
         fetch("{{ route('events.slot-events') }}?time=" + currentTime)
@@ -149,27 +223,6 @@
     }
 
 
-    function pad(num) {
-        return String(num).padStart(2, '0');
-    }
-
-    function tickClock() {
-        let [h, m, s] = currentTime.split(':').map(Number);
-        s++;
-        if (s >= 60) {
-            s = 0;
-            m++;
-        }
-        if (m >= 60) {
-            m = 0;
-            h++;
-        }
-        if (h >= 24) {
-            h = 0;
-        }
-        currentTime = `${pad(h)}:${pad(m)}:${pad(s)}`;
-        document.getElementById('clock').innerText = currentTime;
-    }
 
     function checkAndApplyNightMode() {
         const hour = parseInt(currentTime.split(':')[0], 10);
