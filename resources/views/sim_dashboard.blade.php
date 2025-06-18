@@ -55,6 +55,30 @@
                 </div>
             </div>
 
+            <section id="sim-feedback" class="bg-white dark:bg-gray-900 px-6 py-6 rounded-2xl shadow w-full max-w-3xl mx-auto">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Feedback op de Simulatie</h3>
+
+                @if(session('success'))
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                    {{ session('success') }}
+                </div>
+                @endif
+
+                <form method="POST" action="{{ route('feedback.store') }}">
+                    @csrf
+                    <textarea name="content"
+                        rows="4"
+                        required
+                        placeholder="Wat wil je kwijt over de simulatie?"
+                        class="w-full border border-gray-300 rounded-md p-3 text-sm dark:bg-gray-700 dark:text-white dark:border-gray-600"></textarea>
+                    <button type="submit"
+                        class="mt-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded">
+                        Verstuur Feedback
+                    </button>
+                </form>
+            </section>
+
+
             <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
