@@ -25,16 +25,20 @@
                                 data-col="{{ $loop->index }}">
 
                                 <div class="city-slot flex flex-col items-center justify-center h-full relative"
-                                    data-slot-id="{{ $slot->id }}"
-                                    data-approved="{{ $slot->approved ? '1' : '0' }}"
+                                    data-slot-id="{{ $slot->id }}" data-approved="{{ $slot->approved ? '1' : '0' }}"
                                     @if ($slot->module_id) data-module-id="{{ $slot->module_id }}" @endif
                                     @if ($slot->event_id) data-event-id="{{ $slot->event_id }}"
                             data-event-name="{{ $slot->event->name ?? 'Actief Evenement' }}"
                             data-event-image="{{ $slot->event->image_path ? asset('storage/' . $slot->event->image_path) : '' }}" @endif>
-
+                                    @if ($slot->approved)
+                                        <span class="absolute top-1 right-1 text-green-600 text-xs" title="Goedgekeurd">
+                                            🔒
+                                        </span>
+                                    @endif
                                     @if ($slot->module_id != null && $slot->module && $slot->module->image_path)
                                         <div class="slot-module relative flex flex-col items-center" draggable="true"
                                             data-module-id="{{ $slot->module_id }}">
+
                                             @if (!$slot->approved)
                                                 <form method="POST" action="{{ route('slots.approve', $slot->id) }}"
                                                     class="absolute top-0 left-0" onsubmit="showLoading()">
@@ -47,12 +51,7 @@
                                                     </button>
                                                 </form>
                                             @endif
-                                            @if ($slot->approved)
-                                                <span class="absolute bottom-1 right-1 text-green-600 text-xs"
-                                                    title="Goedgekeurd">
-                                                    🔒
-                                                </span>
-                                            @endif
+
                                             <img src="{{ asset('storage/' . $slot->module->image_path) }}"
                                                 alt="{{ $slot->module->name }}"
                                                 class="w-[80px] h-[80px] object-contain pointer-events-none">
@@ -139,9 +138,10 @@
         const loading = document.getElementById('loading');
         loading.classList.remove('hidden');
     }
-    let currentTime = '{{ $clockTime ?:
-        '
-                                                    00: 00: 00 ' }}';
+    let currentTime =
+        '{{ $clockTime ?:
+            '
+                                                                        00: 00: 00 ' }}';
 
     function pad(num) {
         return String(num).padStart(2, '0');
