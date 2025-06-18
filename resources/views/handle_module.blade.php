@@ -42,8 +42,7 @@
             class="bg-green-700 hover:bg-green-900 text-white px-4 py-2 rounded w-full sm:w-auto">
             Simulatie Dashboard
         </button>
-        <button id="openModuleForm"
-            class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded w-full sm:w-auto">
+        <button id="openModuleForm" class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded w-full sm:w-auto">
             Module Toevoegen
         </button>
     </div>
@@ -108,7 +107,9 @@
                         <option value="{{ $category }}">{{ $category }}</option>
                     @endforeach
                 </select>
-                <input type="file" name="image" class="w-full mb-3 p-2 border rounded" required>
+                <input type="file" name="image" id="image" class="w-full mb-1 p-2 border rounded"
+                    accept=".jpeg,.jpg,.png" required>
+                <small class="text-gray-500 block mb-3">Toegestane bestandstypes: .jpg, .jpeg, .png – Max. 2MB</small>
                 <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded w-full">Opslaan</button>
             </form>
         </div>
@@ -122,16 +123,19 @@
             <form method="POST" id="editModuleForm" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
-                <input type="text" name="name" id="editName" placeholder="Naam" class="w-full mb-3 p-2 border rounded" required>
-                <textarea name="description" id="editDescription" placeholder="Beschrijving"
-                    class="w-full mb-3 p-2 border rounded" required></textarea>
+                <input type="text" name="name" id="editName" placeholder="Naam"
+                    class="w-full mb-3 p-2 border rounded" required>
+                <textarea name="description" id="editDescription" placeholder="Beschrijving" class="w-full mb-3 p-2 border rounded"
+                    required></textarea>
                 <select name="category" id="editCategory" class="w-full mb-3 p-2 border rounded" required>
                     <option value="" disabled>Kies een categorie</option>
                     @foreach ($categories as $category)
                         <option value="{{ $category }}">{{ $category }}</option>
                     @endforeach
                 </select>
-                <input type="file" name="image" id="editImage" class="w-full mb-3 p-2 border rounded">
+                <input type="file" name="image" id="image" class="w-full mb-1 p-2 border rounded"
+                    accept=".jpeg,.jpg,.png">
+                <small class="text-gray-500 block mb-3">Toegestane bestandstypes: .jpg, .jpeg, .png – Max. 2MB</small>
                 <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded w-full">Opslaan</button>
             </form>
         </div>

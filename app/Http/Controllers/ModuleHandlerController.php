@@ -35,7 +35,7 @@ class ModuleHandlerController extends Controller
             'name' => 'required|string|max:255|unique:modules,name',
             'description' => 'required|string|max:500',
             'category' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         $module = new Module([
@@ -76,7 +76,7 @@ class ModuleHandlerController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'category' => 'required|string',
-            'image' => 'nullable|image|max:1024', // je kunt de validatie aanpassen op basis van je vereisten
+            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         // Werk de module bij
