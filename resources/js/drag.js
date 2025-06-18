@@ -1,16 +1,20 @@
+// Wait until the DOM is fully loaded
 document.addEventListener("DOMContentLoaded", () => {
     let selectedModuleId = null;
     let selectedSlotId = null;
     let currentMode = null;
 
+    // Show a loading spinner/overlay
     function showLoading() {
         document.getElementById('loading').style.display = 'flex';
     }
 
+    // Hide the loading spinner/overlay
     function hideLoading() {
         document.getElementById('loading').style.display = 'none';
     }
 
+    // Get all module cards and city slots from the DOM
     function getElements() {
         return {
             moduleCards: document.querySelectorAll('.module-card'),
@@ -18,21 +22,22 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
+    // Enable drag-and-drop functionality for desktop mode
     function enableDesktopMode() {
         currentMode = 'desktop';
 
         const slots = document.querySelectorAll('.city-slot');
 
-        // Modules in slots (already placed)
+        // Find modules that are already placed in slots
         const modulesInSlots = Array.from(slots).flatMap(slot => {
             const module = slot.querySelector('[data-module-id]');
             return module ? [module] : [];
         });
 
-        // Library modules zijn gewoon alle .module-card buiten de grid (of ook in grid? Pas aan indien nodig)
+        // Get all module cards (library modules)
         const libraryModules = document.querySelectorAll('.module-card');
 
-        // Voeg draggable en dragstart toe aan modules in slots
+        // Add draggable support to modules that are already placed in the slots
         modulesInSlots.forEach(card => {
             card.setAttribute('draggable', 'true');
             card.classList.remove('selected');
@@ -45,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                console.log('Dragstart from slot module:', card.dataset.moduleId);
+                // Set data for the drag event
                 e.dataTransfer.setData('module_id', card.dataset.moduleId);
                 e.dataTransfer.setData('name', card.dataset.name || '');
                 const img = card.querySelector('img');
@@ -56,13 +61,12 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-        // Voeg draggable en dragstart toe aan library modules (ook die in de grid, voorzichtig als dat zo is)
+        // Add draggable support to library modules
         libraryModules.forEach(card => {
             card.setAttribute('draggable', 'true');
             card.classList.remove('selected');
 
             card.addEventListener('dragstart', (e) => {
-                console.log('Dragstart from library module:', card.dataset.moduleId);
                 e.dataTransfer.setData('module_id', card.dataset.moduleId);
                 e.dataTransfer.setData('name', card.dataset.name || '');
                 const img = card.querySelector('img');
@@ -73,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-        // Setup drop events op slots
+        // Set up drop targets for each slot
         slots.forEach(slot => {
             slot.classList.remove('selected');
 
@@ -94,37 +98,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 const fromSlotId = e.dataTransfer.getData('from_slot_id');
                 const toSlotId = slot.dataset.slotId;
 
-                console.log(`Drop event: moduleId=${moduleId}, fromSlotId=${fromSlotId}, toSlotId=${toSlotId}`);
-
                 const approved = slot.dataset.approved === '1';
                 if (approved) {
                     alert("Dit slot is goedgekeurd en kan niet worden gewijzigd.");
                     return;
                 }
 
-                if (!moduleId || !toSlotId) {
-                    console.warn('Missing moduleId or toSlotId, ignoring drop');
-                    return;
-                }
+                if (!moduleId || !toSlotId) return;
 
                 if (fromSlotId === 'library') {
-                    // Vanuit library naar grid
+                    // Place module from library into the slot
                     attachModule(moduleId, toSlotId);
                 } else if (fromSlotId !== toSlotId) {
-                    // Verplaatsen binnen grid
+                    // Move module from one slot to another
                     moveModule(moduleId, fromSlotId, toSlotId);
-                } else {
-                    // Zelfde slot, niets doen
-                    console.log('Dropped in same slot, ignoring');
                 }
             });
         });
     }
 
+    // Enable tap-to-select functionality for mobile mode
     function enableMobileMode() {
         currentMode = 'mobile';
         const { moduleCards, slots } = getElements();
 
+        // Disable drag and handle click for module selection
         moduleCards.forEach(card => {
             card.removeAttribute('draggable');
             card.classList.remove('selected');
@@ -132,12 +130,14 @@ document.addEventListener("DOMContentLoaded", () => {
             card.addEventListener('click', () => {
                 const moduleId = card.dataset.moduleId;
                 if (selectedSlotId) {
+                    // Attach selected module to the previously selected slot
                     attachModule(moduleId, selectedSlotId);
                     selectedSlotId = null;
                     selectedModuleId = null;
                     clearSelections();
                     removeInlineModulePickers();
                 } else {
+                    // Select this module
                     selectedModuleId = moduleId;
                     moduleCards.forEach(c => c.classList.remove('selected'));
                     card.classList.add('selected');
@@ -145,17 +145,20 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
+        // Handle slot selection
         slots.forEach(slot => {
             slot.classList.remove('selected');
             slot.addEventListener('click', () => {
                 const slotId = slot.dataset.slotId;
                 if (selectedModuleId) {
+                    // Attach selected module to the selected slot
                     attachModule(selectedModuleId, slotId);
                     selectedModuleId = null;
                     selectedSlotId = null;
                     clearSelections();
                     removeInlineModulePickers();
                 } else {
+                    // Select this slot and show picker
                     selectedSlotId = slotId;
                     clearSelections();
                     slot.classList.add('selected');
@@ -165,6 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Show module picker popup (for mobile)
     function showModulePicker(slot) {
         removeInlineModulePickers();
 
@@ -191,6 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         document.body.appendChild(modulePicker);
 
+        // Clone and list all available modules
         document.querySelectorAll('.module-card').forEach(card => {
             const clone = card.cloneNode(true);
             clone.classList.add('inline-option');
@@ -221,6 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
+            // Attach this module to the selected slot
             clone.addEventListener('click', () => {
                 attachModule(clone.dataset.moduleId, slot.dataset.slotId);
                 selectedModuleId = null;
@@ -232,6 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
             modulePicker.appendChild(clone);
         });
 
+        // Position the picker below the clicked slot
         const rect = slot.getBoundingClientRect();
         const pickerRect = modulePicker.getBoundingClientRect();
 
@@ -251,17 +258,19 @@ document.addEventListener("DOMContentLoaded", () => {
         modulePicker.style.top = `${top}px`;
     }
 
+    // Remove any open inline module pickers
     function removeInlineModulePickers() {
         document.querySelectorAll('.inline-module-picker').forEach(picker => picker.remove());
     }
 
+    // Clear all selected module cards and slots
     function clearSelections() {
         document.querySelectorAll('.module-card').forEach(c => c.classList.remove('selected'));
         document.querySelectorAll('.city-slot').forEach(s => s.classList.remove('selected'));
     }
 
+    // Remove all event listeners by replacing DOM nodes
     function clearAllListeners() {
-        // Clone nodes om listeners te verwijderen
         document.querySelectorAll('.module-card').forEach(card => {
             const clone = card.cloneNode(true);
             card.replaceWith(clone);
@@ -272,6 +281,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Check screen width and switch between desktop and mobile modes
     function handleResizeMode() {
         const isMobile = window.innerWidth <= 605;
         const newMode = isMobile ? 'mobile' : 'desktop';
@@ -286,6 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Attach a module to a slot (via backend API)
     function attachModule(moduleId, slotId) {
         showLoading();
 
@@ -310,6 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
 
+    // Move a module from one slot to another (via backend API)
     function moveModule(moduleId, fromSlotId, toSlotId) {
         showLoading();
 
@@ -336,7 +348,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
 
-    // Init
+    // Initialize view mode and bind to window resize
     handleResizeMode();
     window.addEventListener('resize', () => {
         clearTimeout(window._resizeTimeout);

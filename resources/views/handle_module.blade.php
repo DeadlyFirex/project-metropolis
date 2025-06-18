@@ -159,13 +159,18 @@
         </div>
     </div>
 
+    {{-- Check if there are any modules before setting up JavaScript variables --}}
     @if ($modules->count())
         <script>
+            // Make the list of modules available globally in JavaScript (used in other scripts)
             window.modules = @json($modules);
-            window.bulkDeleteUrl = "{{ route('modules.bulkDestroy') }}"; // <-- voeg dit toe
-            window.csrfToken = "{{ csrf_token() }}"; // <-- ook nodig voor de fetch-aanroep
+            // Set the URL for performing a bulk delete action (used in fetch requests)
+            window.bulkDeleteUrl = "{{ route('modules.bulkDestroy') }}";
+            // Set the CSRF token as a global variable, required for secure fetch() POST requests in Laravel
+            window.csrfToken = "{{ csrf_token() }}";
         </script>
     @endif
 
+    {{-- Load the corresponding JavaScript file via Vite --}}
     @vite(['resources/js/openModule.js'])
 </x-app-layout>
