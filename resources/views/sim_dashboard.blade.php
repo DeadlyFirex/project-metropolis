@@ -72,21 +72,19 @@
             <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
             <script>
-                async function downloadDashboardAsPDF() {
-                    const {
-                        jsPDF
-                    } = window.jspdf;
-                    const pdf = new jsPDF({
-                        unit: 'px',
-                        format: 'a4'
-                    });
+                /* =====================================================
+                 | PDF-EXPORT
+                 ===================================================== */
+                async function downloadDashboardAsPDF () {
+                    const { jsPDF } = window.jspdf;
+                    const pdf       = new jsPDF({ unit: 'px', format: 'a4' });
 
-                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageWidth  = pdf.internal.pageSize.getWidth();
                     const pageHeight = pdf.internal.pageSize.getHeight();
-                    const padding = 40;
-                    const now = new Date().toLocaleString('nl-NL');
+                    const padding    = 40;
+                    const now        = new Date().toLocaleString('nl-NL');
 
-                    let currentY = 60;
+                    let currentY   = 60;
                     let pageNumber = 1;
 
                     const targets = [
@@ -94,42 +92,41 @@
                         document.getElementById('effect-view')
                     ];
 
-                    for (const element of targets) {
-                        const canvas = await html2canvas(element, {
-                            scale: 2
-                        });
+                    for (const el of targets) {
+                        const canvas  = await html2canvas(el, { scale: 2 });
                         const imgData = canvas.toDataURL('image/png');
 
-                        const ratio = canvas.width / canvas.height;
+                        const ratio    = canvas.width / canvas.height;
                         const maxWidth = pageWidth - padding * 2;
-                        let imgWidth = maxWidth;
-                        let imgHeight = imgWidth / ratio;
+                        let imgWidth   = maxWidth;
+                        let imgHeight  = imgWidth / ratio;
 
                         if (imgHeight > pageHeight - padding * 2 - 40) {
                             imgHeight = pageHeight - padding * 2 - 40;
-                            imgWidth = imgHeight * ratio;
+                            imgWidth  = imgHeight * ratio;
                         }
-
                         if (currentY + imgHeight > pageHeight - padding) {
                             addFooter(pdf, pageWidth, pageHeight, pageNumber++);
                             pdf.addPage();
                             currentY = 60;
                             addHeader(pdf, pageWidth, now);
                         }
-
                         if (pageNumber === 1 && currentY === 60) {
                             addHeader(pdf, pageWidth, now);
                         }
-
-                        pdf.addImage(imgData, 'PNG', (pageWidth - imgWidth) / 2, currentY, imgWidth, imgHeight);
+                        pdf.addImage(imgData, 'PNG',
+                            (pageWidth - imgWidth) / 2,
+                            currentY,
+                            imgWidth,
+                            imgHeight
+                        );
                         currentY += imgHeight + 20;
                     }
-
                     addFooter(pdf, pageWidth, pageHeight, pageNumber);
                     pdf.save('simulatie-grid-en-effecten.pdf');
                 }
 
-                function addHeader(pdf, pageWidth, now) {
+                function addHeader (pdf, pageWidth, now) {
                     pdf.setFontSize(16);
                     pdf.setFont('helvetica', 'bold');
                     pdf.text('Simulatie Dashboard', 40, 30);
@@ -141,61 +138,114 @@
                     pdf.setDrawColor(150);
                     pdf.line(40, 50, pageWidth - 40, 50);
                 }
-
-                function addFooter(pdf, pageWidth, pageHeight, pageNumber) {
+                function addFooter (pdf, pageWidth, pageHeight, pageNumber) {
                     pdf.setFontSize(9);
                     pdf.setTextColor(150);
-                    pdf.text(`Pagina ${pageNumber}`, pageWidth / 2, pageHeight - 10, {
-                        align: 'center'
+                    pdf.text(`Pagina ${pageNumber}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+                }
+
+                /* =====================================================
+                 | HULPFUNCTIES
+                 ===================================================== */
+                const SECS_DAY = 86400;
+                const hmsToSec = hms => {
+                    const [h, m, s] = hms.split(':').map(Number);
+                    return h * 3600 + m * 60 + s;
+                };
+                const secToTxt = sec => {
+                    const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+                    const ss = String(sec % 60).padStart(2, '0');
+                    return `${mm} min ${ss} sec`;
+                };
+
+                /* =====================================================
+                 | VARIABELEN
+                 ===================================================== */
+                let currentSimSec;                        // simulatie-seconden (0-86399)
+
+                /* =====================================================
+                 | SECONDE-TIK (LOKALE COUNTDOWN)
+                 ===================================================== */
+                function tickClock () {
+                    currentSimSec = (currentSimSec + 1) % SECS_DAY;
+                    document.querySelectorAll('[data-end-sec]').forEach(span => {
+                        let end  = Number(span.dataset.endSec);
+                        let diff = end - currentSimSec;
+                        if (diff < 0) diff += SECS_DAY;
+                        span.textContent = secToTxt(diff);
                     });
                 }
 
-                function updateActiveEvents() {
-                    fetch('/events/slot-events?time=' + currentTime)
-                        .then(response => response.json())
+                /* =====================================================
+                 | EVENT-LIJST OPHALEN & TONEN
+                 ===================================================== */
+                function updateActiveEvents () {
+                    fetch('/events/slot-events?time=' + window.currentTime)
+                        .then(r => r.json())
                         .then(data => {
-                            const eventsList = document.getElementById('activeEventsList');
-                            const noEventsMessage = document.getElementById('noEventsMessage');
+                            const box  = document.getElementById('activeEventsList');
+                            const list = Array.isArray(data) ? data : Object.values(data);
 
-                            if (Object.keys(data).length === 0) {
-                                eventsList.innerHTML = '<p class="text-gray-500 dark:text-gray-400" id="noEventsMessage">Geen actieve events</p>';
-                            } else {
-                                let eventsHtml = '';
-                                for (const [slotId, event] of Object.entries(data)) {
-                                    if (event.event_name && event.event_name.includes('(Aangrenzend)')) {
-                                        continue;
-                                    }
-                                    eventsHtml += `
-                        <div class="flex items-center justify-between p-3 mb-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
-                            <div class="flex items-center space-x-4">
-                                <div class="bg-yellow-500 text-white px-2 py-1 rounded text-sm font-medium">
-                                    Vakje ${slotId}
-                                </div>
-                                <div>
-                                    <span class="font-medium text-gray-800 dark:text-gray-200">${event.event_name}</span>
-                                    <div class="text-sm text-gray-600 dark:text-gray-400">
-                                        Nog ${event.time_remaining} resterend
-                                        ${event.is_recurring ? '<span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Terugkerend</span>' : ''}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse" title="Actief"></div>
-                                <a href="/events?time=${currentTime}" class="text-blue-600 hover:text-blue-800 text-sm">
-                                    Beheren
-                                </a>
-                            </div>
-                        </div>
-                    `;
-                                }
-                                eventsList.innerHTML = eventsHtml;
+                            if (list.length === 0) {
+                                box.innerHTML =
+                                    '<p class="text-gray-500 dark:text-gray-400">Geen actieve events</p>';
+                                return;
                             }
+
+                            let html = '';
+                            list.forEach(ev => {
+                                if (ev.name?.includes('(Aangrenzend)')) return;
+
+                                /* --- bereken diff initieel --- */
+                                let endSec = hmsToSec(ev.end_time);
+                                let diff   = endSec - currentSimSec;
+                                if (diff < 0) diff += SECS_DAY;
+
+                                html += `
+<div class="flex items-center justify-between p-3 mb-2 bg-yellow-50 dark:bg-yellow-900/20
+            border border-yellow-200 dark:border-yellow-700 rounded-lg">
+  <div class="flex items-center space-x-4">
+    <div class="bg-yellow-500 text-white px-2 py-1 rounded text-sm font-medium">
+      Vakje ${ev.slot_id}
+    </div>
+    <div>
+      <span class="font-medium text-gray-800 dark:text-gray-200">${ev.name}</span>
+      <div class="text-sm text-gray-600 dark:text-gray-400">
+        Nog <span class="time-left" data-end-sec="${endSec}">${secToTxt(diff)}</span> resterend
+        ${ev.is_recurring
+                                    ? '<span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Terugkerend</span>'
+                                    : ''}
+      </div>
+    </div>
+  </div>
+  <div class="flex items-center space-x-2">
+    <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse" title="Actief"></div>
+    <a href="/events?time=${window.currentTime}"
+       class="text-blue-600 hover:text-blue-800 text-sm">Beheren</a>
+  </div>
+</div>`;
+                            });
+
+                            box.innerHTML = html;
                         })
-                        .catch(error => {
-                            console.error('Error fetching events:', error);
-                        });
+                        .catch(err => console.error('Error fetching events:', err));
                 }
+
+                /* =====================================================
+                 | INIT
+                 ===================================================== */
+                if (typeof window.currentTime === 'undefined') {
+                    window.currentTime = "{{ $clockTime ?? date('H:i:s') }}";  // UserClock uit Blade
+                }
+                currentSimSec = hmsToSec(window.currentTime);
+
+                document.addEventListener('DOMContentLoaded', () => {
+                    updateActiveEvents();                 // direct laden
+                    setInterval(updateActiveEvents, 60000); // elke minuut refresh
+                    setInterval(tickClock, 1000);          // elke seconde countdown-update
+                });
             </script>
+
 
             <style>
                 .slot-with-event {

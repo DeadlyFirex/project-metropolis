@@ -127,7 +127,7 @@
 </div>
 
 <script>
-    const clockEl = document.getElementById('clock');
+    const clockEl      = document.getElementById('clock');
     const startTimeStr = clockEl.dataset.start || '00:00:00';
 
     // Convert HH:MM:SS to total seconds
@@ -138,8 +138,8 @@
 
     // Convert total seconds to HH:MM:SS string (24-hour wrap)
     function secondsToTimeStr(totalSeconds) {
-        totalSeconds = Math.floor(totalSeconds) % (24 * 3600);  // wrap after 24h
-        if (totalSeconds < 0) totalSeconds += 24 * 3600; // handle negative times just in case
+        totalSeconds = Math.floor(totalSeconds) % (24 * 3600);
+        if (totalSeconds < 0) totalSeconds += 24 * 3600;
         const h = Math.floor(totalSeconds / 3600);
         const m = Math.floor((totalSeconds % 3600) / 60);
         const s = totalSeconds % 60;
@@ -150,15 +150,19 @@
         return num.toString().padStart(2, '0');
     }
 
+    // ——— HIER de twee variabelen declareren voordat je ze gebruikt ———
     let currentSeconds = timeStrToSeconds(startTimeStr);
-    let tickSpeed = 0.5; // seconds to add per tick
-    let interval = null;
-    let isPaused = false;
+    let currentTime    = startTimeStr;
+    let tickSpeed      = 0.5;
+    let interval       = null;
+    let isPaused       = false;
 
     function tickClock() {
         currentSeconds += tickSpeed;
-        clockEl.innerText = secondsToTimeStr(currentSeconds);
+        currentTime     = secondsToTimeStr(currentSeconds);
+        clockEl.innerText = currentTime;
     }
+
 
     function startClock() {
         if (interval) clearInterval(interval);
@@ -192,12 +196,19 @@
 
     startClock();
 
-    function refreshGrid () {
-        fetch("{{ route('events.slot-events') }}?time=" + currentTime)
-            .then(r => r.json())
+    function refreshGrid() {
+        fetch("{{ route('events.slot-events') }}?time=" + encodeURIComponent(currentTime))
+            .then(r => {
+                if (!r.ok) {
+                    console.error('Error fetching slot-events:', r.status, r.statusText);
+                    return [];
+                }
+                return r.json();
+            })
             .then(updateGrid)
-            .catch(console.error);
+            .catch(err => console.error('Network or JSON error:', err));
     }
+
 
     function updateGrid (events) {
         document.querySelectorAll('.city-slot[data-event-id]').forEach(slot => {
@@ -245,26 +256,42 @@
 
     function maybeSaveTime() {
         if (Date.now() - lastSave >= 15000) {
-            saveTime();
+            saveTime(currentTime);
             lastSave = Date.now();
         }
     }
 
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    function saveTime() {
-        fetch('/save-clock', {
+    const csrfToken = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute('content');
+
+    function saveTime(timeArg) {
+        // gebruik timeArg als die aanwezig is, anders de globale variabele
+        const timeToSave = timeArg ?? currentTime;
+
+        fetch(@json(route('clock.save')), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': csrfToken
             },
-            credentials: 'same-origin',
-            body: JSON.stringify({
-                time: currentTime
+            body: JSON.stringify({ time: timeToSave })
+        })
+            .then(r => {
+                if (!r.ok) {
+                    return r.text().then(text => {
+                        console.error('Server error response:', text);
+                        throw new Error(`Save failed: ${r.status}`);
+                    });
+                }
+                return r.json();
             })
-        }).catch(e => console.error('Tijd opslaan mislukt', e));
+            .then(data => console.log('Clock saved:', data))
+            .catch(e => console.error('Tijd opslaan mislukt', e));
     }
+
 
     function toggleDayNight() {
         const hour = parseInt(currentTime.split(':')[0]);
@@ -554,5 +581,5 @@
         transition: background-color 0.3s ease, border-color 0.3s ease;
     }
 
-    }
+
 </style>

@@ -100,7 +100,7 @@ class EventController extends Controller
             Log::info('Validation passed successfully:', $data);
 
             /* ───── 2. TIJDEN VERWERKEN ─────────────────────────────────── */
-            $simTime = $request->query('time', date('H:i:s'));
+            $simTime = UserClock::where('user_id', auth()->id())->value('clock_time');
             $today = Carbon::createFromFormat('H:i:s', $simTime)->startOfDay();
 
             $start = Carbon::createFromFormat('H:i', $data['start_time'])
@@ -257,10 +257,19 @@ class EventController extends Controller
      */
     public function getSlotEvents(Request $request)
     {
-        $simTime = $request->query('time', date('H:i:s'));
+        $simTime = $request->query('time')
+            ?: UserClock::where('user_id', auth()->id())
+                ->value('clock_time')
+                ?: now()->format('H:i:s');
+
+        if (preg_match('/^\d{2}:\d{2}$/', $simTime)) {
+            $simTime .= ':00';
+        }
+
         $nowSec = $this->timeToSeconds($simTime);
 
-        $active = Event::whereHas('slot')->get()->filter(function($event) use ($nowSec) {
+        $active = Event::whereHas('slot')->get()
+            ->filter(function($event) use ($nowSec) {
             $startSec = $this->timeToSeconds($event->start_time);
             $endSec = $this->timeToSeconds($event->end_time);
 
@@ -650,7 +659,7 @@ class EventController extends Controller
 
     public function getActiveEventsForSimulation(Request $request)
     {
-        $simTime = $request->query('time', date('H:i:s'));
+        $simTime = UserClock::where('user_id', auth()->id())->value('clock_time');
 
         // Cleanup verlopen events
         $this->cleanupExpiredEvents($simTime);

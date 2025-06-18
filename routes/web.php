@@ -53,5 +53,9 @@ Route::middleware('auth')->group(function () {
 
 Route::get('/api/events/{event}/effects', [EventController::class, 'getEventEffects'])->name('api.events.effects');
 Route::get('/events/{event}/effects', [EventController::class, 'getEventEffectsApi']);
+Route::post('/save-clock', [App\Http\Controllers\ClockController::class, 'store'])
+    ->middleware('auth')
+    ->name('clock.save');
+
 
 require __DIR__.'/auth.php';
