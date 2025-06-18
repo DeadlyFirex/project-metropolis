@@ -61,6 +61,11 @@
                     </div>
                 </div>
             </div>
+            <div id="loading"
+                class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
+                <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+            </div>
+
 
             <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

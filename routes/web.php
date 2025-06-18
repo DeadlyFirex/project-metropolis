@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/save-clock', [SimulationController::class, 'saveClock'])->name('save.clock');
     Route::post('/simulatie/koppel-module', [SimulationController::class, 'koppelModule']);
     Route::patch('/slots/{slot}/remove-module', [SimulationController::class, 'removeModule'])->name('slots.removeModule');
+    Route::post('/simulatie/verplaats-module', [SimulationController::class, 'moveModule'])->name('slots.update');
     Route::post('/effects/module/{moduleId}/{type}', [SimulationController::class, 'updateEffect'])->name('effects.update');
     Route::get('/api/modules/{module}/effects', function (\App\Models\Module $module) {
         return response()->json([
@@ -49,6 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/modules', [ModuleHandlerController::class, 'store'])->name('modules.store');
     Route::put('/modules/{id}', [ModuleHandlerController::class, 'update'])->name('modules.update');
     Route::delete('/modules/{module}', [ModuleHandlerController::class, 'destroy'])->name('modules.destroy');
+    Route::post('/modules/bulk-destroy', [ModuleHandlerController::class, 'bulkDestroy'])->name('modules.bulkDestroy');
     Route::patch('/slots/{slot}/approve', [SimulationController::class, 'approve'])->name('slots.approve');
 });
 

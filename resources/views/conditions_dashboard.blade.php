@@ -123,8 +123,10 @@
                             </select>
                         </div>
 
-                        <button type="button" @click="openMaxModal()" class="px-4 py-2 bg-blue-600 text-white rounded h-10">Wijzig&nbsp;max</button>
-                        <button type="button" @click="openIncModal()" class="px-4 py-2 bg-blue-600 text-white rounded h-10">Wijzig&nbsp;mag&nbsp;niet&nbsp;naast</button>
+                        <button type="button" @click="openMaxModal()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">Wijzig max</button>
+                        <button type="button" @click="openIncModal()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">Wijzig mag niet naast</button>
                     </div>
 
                     {{-- Modal Max --}}
