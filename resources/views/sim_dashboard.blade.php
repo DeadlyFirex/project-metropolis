@@ -150,11 +150,8 @@
                     });
                 }
 
-
-
-
                 function updateActiveEvents() {
-                    fetch('/events/slot-events')
+                    fetch('/events/slot-events?time=' + currentTime)
                         .then(response => response.json())
                         .then(data => {
                             const eventsList = document.getElementById('activeEventsList');
@@ -169,27 +166,27 @@
                                         continue;
                                     }
                                     eventsHtml += `
-                                <div class="flex items-center justify-between p-3 mb-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
-                                    <div class="flex items-center space-x-4">
-                                        <div class="bg-yellow-500 text-white px-2 py-1 rounded text-sm font-medium">
-                                            Vakje ${slotId}
-                                        </div>
-                                        <div>
-                                            <span class="font-medium text-gray-800 dark:text-gray-200">${event.event_name}</span>
-                                            <div class="text-sm text-gray-600 dark:text-gray-400">
-                                                Nog ${event.time_remaining} resterend
-                                                ${event.is_recurring ? '<span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Terugkerend</span>' : ''}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center space-x-2">
-                                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse" title="Actief"></div>
-                                        <a href="/events" class="text-blue-600 hover:text-blue-800 text-sm">
-                                            Beheren
-                                        </a>
+                        <div class="flex items-center justify-between p-3 mb-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                            <div class="flex items-center space-x-4">
+                                <div class="bg-yellow-500 text-white px-2 py-1 rounded text-sm font-medium">
+                                    Vakje ${slotId}
+                                </div>
+                                <div>
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">${event.event_name}</span>
+                                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                                        Nog ${event.time_remaining} resterend
+                                        ${event.is_recurring ? '<span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Terugkerend</span>' : ''}
                                     </div>
                                 </div>
-                            `;
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse" title="Actief"></div>
+                                <a href="/events?time=${currentTime}" class="text-blue-600 hover:text-blue-800 text-sm">
+                                    Beheren
+                                </a>
+                            </div>
+                        </div>
+                    `;
                                 }
                                 eventsList.innerHTML = eventsHtml;
                             }
@@ -198,11 +195,6 @@
                             console.error('Error fetching events:', error);
                         });
                 }
-
-                document.addEventListener('DOMContentLoaded', function() {
-                    updateActiveEvents();
-                    setInterval(updateActiveEvents, 30000);
-                });
             </script>
 
             <style>

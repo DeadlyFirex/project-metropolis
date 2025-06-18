@@ -35,20 +35,29 @@ class EventController extends Controller
         $event_types = $this->getAvailableEvents();
         Log::debug('Available event types fetched:', $event_types);
 
-        // Gebruik simulatie tijd voor dashboard events
+        // FIXED: Altijd cleanup doen, ook bij simulatie tijd
+        $this->cleanupExpiredEvents($simTime);
+
+        // Fetch all events for management, regardless of active status
+        // We'll order them for better readability, e.g., by start_time
+        $allEvents = Event::with('slot')->orderBy('start_time')->get()->groupBy('slot_id');
+        Log::debug('All events fetched for dashboard:', $allEvents->toArray());
+
+
+        // FIXED: Gebruik simulatie tijd consistent
         $activeEvents = $this->getSlotEventsForDashboard($simTime);
         Log::debug('Active events fetched for dashboard:', $activeEvents);
 
         $event_type_modules = EventType::pluck('module_id', 'name');
         Log::debug('Event type modules fetched:', $event_type_modules->toArray());
 
-        // Cleanup alleen bij echte tijd (niet bij simulatie)
-        if ($simTime !== null) {
-            $this->cleanupExpiredEvents($simTime);
-        }
-
-        return view('event_dashboard', compact('event_types',
-            'slots', 'activeEvents', 'event_type_modules'));
+        return view('event_dashboard', compact(
+            'slots',
+            'event_types',
+            'activeEvents',
+            'allEvents', // Pass all events to the view
+            'event_type_modules'
+        ));
     }
 
     /**
@@ -525,27 +534,38 @@ class EventController extends Controller
      */
     private function cleanupExpiredEvents(?string $simTime = null): void
     {
-        $nowSec = $this->timeToSeconds($simTime);
+        $currentTimeStr = $simTime ?? date('H:i:s');
+        $nowSec = $this->timeToSeconds($currentTimeStr);
 
         Event::all()->each(function (Event $event) use ($nowSec) {
-            $startSec = $this->timeToSeconds($event->start_time);
-            $endSec   = $this->timeToSeconds($event->end_time);
+            // FIXED: Handle both string and Carbon formats
+            $startTime = is_string($event->start_time) ? $event->start_time : $event->start_time->format('H:i:s');
+            $endTime = is_string($event->end_time) ? $event->end_time : $event->end_time->format('H:i:s');
+
+            $startSec = $this->timeToSeconds($startTime);
+            $endSec   = $this->timeToSeconds($endTime);
+
             if ($endSec <= $startSec) {
                 $endSec += 24 * 3600;
             }
 
-            if ($endSec <= $nowSec) {
-                if ($event->is_recurring) {
-                    // opschuiven: start_time en end_time als HH:MM:SS
-                    $startSec = $this->timeToSeconds($event->start_time) + 24*3600;
-                    $endSec   = $this->timeToSeconds($event->end_time)   + 24*3600;
-                    $event->start_time = gmdate('H:i:s', $startSec % (24*3600));
-                    $event->end_time   = gmdate('H:i:s', $endSec   % (24*3600));
-                    $event->save();
-                } else {
-                    Slot::where('event_id', $event->id)->update(['event_id' => null]);
-                    $event->delete();
-                }
+            // Voor niet-terugkerende events: verwijder als verlopen
+            if (!$event->is_recurring && $endSec <= $nowSec) {
+                Slot::where('event_id', $event->id)->update(['event_id' => null]);
+                $event->delete();
+                Log::info("Expired non-recurring event deleted: {$event->id}");
+            }
+            // Voor terugkerende events: verschuif naar volgende dag als verlopen
+            elseif ($event->is_recurring && $endSec <= $nowSec) {
+                // Verschuif beide tijden met 24 uur, maar houd ze binnen het 24-uurs formaat
+                $newStartSec = ($startSec + 24 * 3600) % (24 * 3600);
+                $newEndSec = ($endSec + 24 * 3600) % (24 * 3600);
+
+                $event->start_time = gmdate('H:i:s', $newStartSec);
+                $event->end_time = gmdate('H:i:s', $newEndSec);
+                $event->save();
+
+                Log::info("Recurring event rescheduled: {$event->id} to {$event->start_time}-{$event->end_time}");
             }
         });
     }
@@ -561,57 +581,65 @@ class EventController extends Controller
                 :                    $diff->i.' minuten');
     }
 
-    private function getSlotEventsForDashboard(?string $simTime = null): array
+    public function getSlotEventsForDashboard(?string $simTime = null): array
     {
-        // bepaal huidige tijd als "HH:MM:SS"
         $currentTime = $simTime ?? date('H:i:s');
-        $nowSec      = $this->timeToSeconds($currentTime);
+        $now = Carbon::createFromFormat('H:i:s', $currentTime);
 
         $items = [];
 
-        Slot::with(['event.eventType.effects'])->get()->each(function ($slot) use (&$items, $nowSec) {
+        Slot::with(['event.eventType.effects', 'module'])->get()->each(function ($slot) use (&$items, $now) {
             $event = $slot->event;
-            if (! $event) return;
+            if (!$event) return;
 
-            // zet start‐/end‐tijd om naar seconden
-            $startSec = $this->timeToSeconds($event->start_time);
-            $endSec   = $this->timeToSeconds($event->end_time);
+            $start = Carbon::createFromFormat('H:i:s', $event->start_time);
+            $end = Carbon::createFromFormat('H:i:s', $event->end_time);
 
-            // over middernacht?
-            if ($endSec <= $startSec) {
-                $endSec += 24 * 3600;
+            // Als eindtijd voor starttijd ligt, gaat het event over middernacht
+            if ($end->lte($start)) {
+                $end->addDay();
             }
 
-            // als 'now' voor start ligt maar event over middernacht gaat, schuif now ook
-            $nowAdj = $nowSec;
-            if ($nowAdj < $startSec) {
-                $nowAdj += 24 * 3600;
-            }
-
-            // alleen door als nu tussen start en end valt
-            if ($nowAdj < $startSec || $nowAdj > $endSec) {
+            // Voor niet-terugkerende events: skip als verlopen
+            if (!$event->is_recurring && $now->gt($end)) {
                 return;
             }
 
-            // resten­de seconden tot einde
-            $remaining = $endSec - $nowAdj;
+            // Voor terugkerende events: bereken de huidige dagelijkse cyclus
+            if ($event->is_recurring) {
+                $currentStart = $start->copy()->setDate($now->year, $now->month, $now->day);
+                $currentEnd = $end->copy()->setDate($now->year, $now->month, $now->day);
 
-            $items[$slot->id] = [
-                'slot_id'        => $slot->id,
-                'event_id'       => $event->id,
-                'event_name'     => $event->name,
-                'description'    => $event->description,
-                'start_time'     => $event->start_time,
-                'end_time'       => $event->end_time,
-                'is_recurring'   => (bool)$event->is_recurring,
-                'time_remaining' => $this->formatRemainingTimeSec($remaining),
-                'effects'        => $this->getEventEffects($event->event_type_id),
-                'status'         => 'running',
-            ];
+                if ($currentEnd->lte($currentStart)) {
+                    $currentEnd->addDay();
+                }
+
+                $start = $currentStart;
+                $end = $currentEnd;
+            }
+
+            // Controleer of de huidige tijd binnen het event valt
+            if ($now->between($start, $end)) {
+                $remaining = $now->diff($end);
+
+                $items[$slot->id] = [
+                    'slot_id' => $slot->id,
+                    'event_id' => $event->id,
+                    'event_name' => $event->name,
+                    'description' => $event->description,
+                    'start_time' => $event->start_time,
+                    'end_time' => $event->end_time,
+                    'is_recurring' => (bool)$event->is_recurring,
+                    'time_remaining' => $this->formatRemainingTime($now, $end),
+                    'effects' => $this->getEventEffects($event->event_type_id),
+                    'status' => 'running',
+                ];
+            }
         });
 
         return $items;
     }
+
 
     /**
      * Zet "HH:MM:SS" om naar seconden sinds middernacht.
@@ -636,5 +664,17 @@ class EventController extends Controller
         return "{$m} minuten";
     }
 
+    public function getActiveEventsForSimulation(Request $request)
+    {
+        $simTime = $request->query('time', date('H:i:s'));
+
+        // Cleanup verlopen events
+        $this->cleanupExpiredEvents($simTime);
+
+        // Haal actieve events op
+        $activeEvents = $this->getSlotEventsForDashboard($simTime);
+
+        return response()->json($activeEvents);
+    }
 
 }
