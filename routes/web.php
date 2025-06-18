@@ -50,6 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/modules', [ModuleHandlerController::class, 'store'])->name('modules.store');
     Route::put('/modules/{id}', [ModuleHandlerController::class, 'update'])->name('modules.update');
     Route::delete('/modules/{module}', [ModuleHandlerController::class, 'destroy'])->name('modules.destroy');
+    Route::post('/modules/bulk-destroy', [ModuleHandlerController::class, 'bulkDestroy'])->name('modules.bulkDestroy');
     Route::patch('/slots/{slot}/approve', [SimulationController::class, 'approve'])->name('slots.approve');
 });
 

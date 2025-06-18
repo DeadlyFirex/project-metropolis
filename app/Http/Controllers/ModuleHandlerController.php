@@ -96,4 +96,15 @@ class ModuleHandlerController extends Controller
         // Redirect naar de lijst met modules of waar je naartoe wilt gaan
         return redirect()->route('module.index')->with('success', 'Module bijgewerkt');
     }
+    public function bulkDestroy(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:modules,id',
+        ]);
+
+        Module::whereIn('id', $request->ids)->delete();
+
+        return response()->json(['message' => 'Modules succesvol verwijderd.'], 200);
+    }
 }

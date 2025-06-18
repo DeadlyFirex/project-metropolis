@@ -52,6 +52,21 @@
             <table class="min-w-[700px] w-full text-sm text-left border border-gray-300 rounded-lg shadow-sm">
                 <thead class="bg-gray-100">
                     <tr>
+                        <th class="px-4 py-3">
+                            <input type="checkbox" id="selectAll" />
+                        </th>
+                        <td class="px-4 text-gray-800 break-words">
+                            <div class="my-2 max-w-md">
+                                <button id="deleteSelectedBtn"
+                                    class="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-md shadow-md transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled>
+                                    Verwijder Geselecteerde Modules
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+
                         <th class="px-4 py-3 font-medium text-gray-700 min-w-[120px]">Naam</th>
                         <th class="px-4 py-3 font-medium text-gray-700 min-w-[200px]">Beschrijving</th>
                         <th class="px-4 py-3 font-medium text-gray-700 min-w-[120px]">Categorie</th>
@@ -62,6 +77,9 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @foreach ($modules as $module)
                         <tr>
+                            <td class="px-4 py-3">
+                                <input type="checkbox" class="module-checkbox" value="{{ $module->id }}" />
+                            </td>
                             <td class="px-4 py-3 text-gray-800 break-words">{{ $module->name }}</td>
                             <td class="px-4 py-3 text-gray-600 break-words">{{ $module->description }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $module->category }}</td>
@@ -144,8 +162,10 @@
     @if ($modules->count())
         <script>
             window.modules = @json($modules);
+            window.bulkDeleteUrl = "{{ route('modules.bulkDestroy') }}"; // <-- voeg dit toe
+            window.csrfToken = "{{ csrf_token() }}"; // <-- ook nodig voor de fetch-aanroep
         </script>
     @endif
 
-    <script src="{{ asset('js/openModule.js') }}"></script>
+    @vite(['resources/js/openModule.js'])
 </x-app-layout>
