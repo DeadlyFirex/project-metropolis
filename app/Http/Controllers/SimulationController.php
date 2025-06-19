@@ -10,11 +10,14 @@ use App\Models\Effect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Models\UserClock;
 
 class SimulationController extends Controller
 {
     public function index(Request $request)
     {
+        $simTime = UserClock::where('user_id', Auth::id())
+        ->value('clock_time') ?? now()->format('H:i:s');
         $category     = $request->input('category');
         $all_modules  = $this->getModules();
         $modules      = $this->getModules($category);
@@ -38,7 +41,8 @@ class SimulationController extends Controller
             'all_modules',
             'events',
             'clockTime',
-            'nextExpiration'
+            'nextExpiration',
+            'simTime'
         ));
     }
 

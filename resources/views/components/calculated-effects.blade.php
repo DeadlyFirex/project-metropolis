@@ -1,4 +1,8 @@
 <?php
+
+$simTime   = $simTime ?? now()->format('H:i:s');
+$simCarbon = \Carbon\Carbon::createFromFormat('H:i:s', $simTime);
+
 $effectTypes = [
     'safety' => 'Veiligheid',
     'recreation' => 'Recreatie',
@@ -82,7 +86,8 @@ foreach ($slots as $slot) {
     if (
         $slot->event
         && $slot->event->end_time
-        && \Carbon\Carbon::parse($slot->event->end_time)->isPast()
+        && \Carbon\Carbon::createFromFormat('H:i:s', $slot->event->end_time)
+            ->lte($simCarbon)
     ) {
         continue;
     }
@@ -147,7 +152,8 @@ foreach ($slots as $slot) {
                 && $adjSlot->event->eventType
                 && $adjSlot->module
                 && $adjSlot->event->end_time
-                && !\Carbon\Carbon::parse($adjSlot->event->end_time)->isPast()
+                && \Carbon\Carbon::createFromFormat('H:i:s', $adjSlot->event->end_time)
+                    ->gt($simCarbon)
             ) {
                 $adjEventTypeName = $adjSlot->event->eventType->name;
 
