@@ -1,3 +1,10 @@
+/**
+ * Sets up everything for the feedback panel:
+ * - Opening/closing the sidebar
+ * - Sending new feedback with fetch
+ * - Re-loading the feedback list without page refresh
+ * - Making sure edit/delete buttons keep working
+ */
 export function initFeedback() {
     const openBtn = document.getElementById('open-feedback');
     const closeBtn = document.getElementById('close-feedback');
@@ -5,6 +12,7 @@ export function initFeedback() {
     const feedbackForm = document.getElementById('feedback-form');
     const feedbackIndexUrl = document.querySelector('meta[name="feedback-index-url"]')?.content;
 
+    // Open and close the sidebar
     if (openBtn && closeBtn && panel) {
         openBtn.addEventListener('click', () => {
             panel.classList.remove('translate-x-full');
@@ -15,6 +23,7 @@ export function initFeedback() {
         });
     }
 
+    // Send new feedback without refreshing the page
     if (feedbackForm) {
         feedbackForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -36,9 +45,9 @@ export function initFeedback() {
                 });
 
                 textarea.value = '';
-                loadFeedbackList(feedbackIndexUrl);
+                loadFeedbackList(feedbackIndexUrl); // Update the list
             } catch (error) {
-                console.error('Fout bij versturen van feedback:', error);
+                console.error('Something went wrong while sending feedback:', error);
             }
         });
     }
@@ -46,7 +55,12 @@ export function initFeedback() {
     bindInlineEditEvents(feedbackIndexUrl);
 }
 
+/**
+ * Makes the edit, cancel, save and delete buttons work.
+ * This is called every time the list is updated.
+ */
 function bindInlineEditEvents(feedbackIndexUrl) {
+    // Edit button
     document.querySelectorAll('.edit-btn').forEach(button => {
         button.addEventListener('click', () => {
             const id = button.dataset.editId;
@@ -56,6 +70,7 @@ function bindInlineEditEvents(feedbackIndexUrl) {
         });
     });
 
+    // Cancel button
     document.querySelectorAll('.cancel-edit-btn').forEach(button => {
         button.addEventListener('click', () => {
             const wrapper = button.closest('div[data-id]');
@@ -64,6 +79,7 @@ function bindInlineEditEvents(feedbackIndexUrl) {
         });
     });
 
+    // Save (update) feedback
     document.querySelectorAll('.feedback-edit-form').forEach(form => {
         form.addEventListener('submit', async e => {
             e.preventDefault();
@@ -84,11 +100,12 @@ function bindInlineEditEvents(feedbackIndexUrl) {
 
                 loadFeedbackList(feedbackIndexUrl);
             } catch (err) {
-                console.error('Update mislukt:', err);
+                console.error('Could not update feedback:', err);
             }
         });
     });
 
+    // Delete feedback
     document.querySelectorAll('.feedback-delete-form').forEach(form => {
         const deleteBtn = form.querySelector('.delete-btn');
         if (!deleteBtn) return;
@@ -108,12 +125,16 @@ function bindInlineEditEvents(feedbackIndexUrl) {
 
                 loadFeedbackList(feedbackIndexUrl);
             } catch (err) {
-                console.error('Verwijderen mislukt:', err);
+                console.error('Could not delete feedback:', err);
             }
         });
     });
 }
 
+/**
+ * Reloads the feedback list from the server using fetch.
+ * Called after sending, updating, or deleting feedback.
+ */
 async function loadFeedbackList(url) {
     const container = document.getElementById('feedback-list');
     if (!url || !container) return;
@@ -130,6 +151,6 @@ async function loadFeedbackList(url) {
             bindInlineEditEvents(url);
         }
     } catch (err) {
-        console.error('Kon feedbacklijst niet ophalen:', err);
+        console.error('Could not load feedback list:', err);
     }
 }
