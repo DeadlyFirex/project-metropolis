@@ -12,14 +12,21 @@ use App\Models\Event;
 class FeedbackController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
         $feedback = Feedback::latest()->get();
+
+        // AJAX? Geef alleen feedbacklijst terug
+        if ($request->ajax()) {
+            return view('components.feedback.list', compact('feedback'));
+        }
+
+        // Volledige pagina
         $slots = Slot::with(['module.effects'])->get();
         $modules = Module::with('effects')->get();
         $categories = Module::select('category')->distinct()->pluck('category');
         $events = Event::all();
-        $clockTime = '00:00:00'; // of ophalen via UserClock als je dat wil
+        $clockTime = '00:00:00'; // eventueel via UserClock ophalen
 
         return view('sim_dashboard', compact(
             'slots',
@@ -30,6 +37,7 @@ class FeedbackController extends Controller
             'feedback'
         ));
     }
+
 
     public function update(Request $request, Feedback $feedback)
     {

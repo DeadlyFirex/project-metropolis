@@ -55,13 +55,200 @@
                 </div>
             </div>
 
-            @include('components.feedback.form')
-            @include('components.feedback.list', ['feedback' => $feedback])
+
+            <!-- Floating Button -->
+            <button id="open-feedback" class="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-full shadow-lg z-50">
+                Feedback
+            </button>
+
+            <!-- Feedback Sidebar -->
+            <div id="feedback-panel" class="fixed top-0 right-0 w-full max-w-md h-full bg-white dark:bg-gray-900 shadow-lg transform translate-x-full transition-transform duration-300 z-40 flex flex-col">
+
+                <div class="p-6 flex-1 flex flex-col overflow-hidden">
+                    <!-- Header -->
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Feedback</h2>
+                        <button id="close-feedback" class="text-gray-500 hover:text-gray-800 dark:hover:text-white text-2xl">&times;</button>
+                    </div>
+
+                    <!-- Feedback Form -->
+                    <form id="feedback-form" method="POST" action="{{ route('feedback.store') }}" data-url="{{ route('feedback.store') }}">
+                        @csrf
+                        <textarea name="content" required class="w-full border rounded p-3 dark:bg-gray-700 dark:text-white mb-3" rows="3" placeholder="Wat wil je delen?"></textarea>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            Verstuur
+                        </button>
+                    </form>
+
+                    <hr class="my-4 border-gray-300 dark:border-gray-700" />
+
+                    <!-- Scrollable Feedback List -->
+                    <div id="feedback-list" class="flex-1 overflow-y-auto pr-1">
+                        @include('components.feedback.list', ['feedback' => $feedback])
+                    </div>
+                </div>
+            </div>
+
 
 
 
             <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+
+            <script>
+                const feedbackIndexUrl = "{{ route('feedback.index') }}";
+                document.addEventListener('DOMContentLoaded', () => {
+                    const openBtn = document.getElementById('open-feedback');
+                    const closeBtn = document.getElementById('close-feedback');
+                    const panel = document.getElementById('feedback-panel');
+                    const feedbackForm = document.getElementById('feedback-form');
+
+                    // Open/close panel
+                    if (openBtn && closeBtn && panel) {
+                        openBtn.addEventListener('click', () => {
+                            panel.classList.remove('translate-x-full');
+                        });
+
+                        closeBtn.addEventListener('click', () => {
+                            panel.classList.add('translate-x-full');
+                        });
+                    }
+
+                    // Submit feedback (create)
+                    if (feedbackForm) {
+                        feedbackForm.addEventListener('submit', async (e) => {
+                            e.preventDefault();
+                            const textarea = feedbackForm.querySelector('textarea[name="content"]');
+                            const content = textarea.value.trim();
+                            const url = feedbackForm.dataset.url;
+                            const csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+                            if (!content) return;
+
+                            try {
+                                await fetch(url, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': csrf
+                                    },
+                                    body: JSON.stringify({
+                                        content
+                                    })
+                                });
+
+                                textarea.value = '';
+                                loadFeedbackList(); // Herlaad feedback
+                            } catch (error) {
+                                console.error('Fout bij versturen van feedback:', error);
+                            }
+                        });
+                    }
+
+                    bindInlineEditEvents(); // Initieel
+                });
+
+                // ⬇️ Verwijder, Bewerken, Annuleren, Update
+                function bindInlineEditEvents() {
+                    // Bewerken knop
+                    document.querySelectorAll('.edit-btn').forEach(button => {
+                        button.addEventListener('click', () => {
+                            const id = button.dataset.editId;
+                            const wrapper = document.querySelector(`div[data-id="${id}"]`);
+                            const view = wrapper.querySelector('.view-mode');
+                            const edit = wrapper.querySelector('.feedback-edit-form');
+                            view.classList.add('hidden');
+                            edit.classList.remove('hidden');
+                        });
+                    });
+
+                    // Annuleren
+                    document.querySelectorAll('.cancel-edit-btn').forEach(button => {
+                        button.addEventListener('click', () => {
+                            const wrapper = button.closest('div[data-id]');
+                            const view = wrapper.querySelector('.view-mode');
+                            const edit = wrapper.querySelector('.feedback-edit-form');
+                            view.classList.remove('hidden');
+                            edit.classList.add('hidden');
+                        });
+                    });
+
+                    // Update (PATCH)
+                    document.querySelectorAll('.feedback-edit-form').forEach(form => {
+                        form.addEventListener('submit', async e => {
+                            e.preventDefault();
+                            const content = form.querySelector('textarea').value.trim();
+                            const csrf = document.querySelector('meta[name="csrf-token"]').content;
+                            const url = form.action;
+                            if (!content) return;
+
+                            try {
+                                await fetch(url, {
+                                    method: 'PATCH',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': csrf
+                                    },
+                                    body: JSON.stringify({
+                                        content
+                                    })
+                                });
+                                loadFeedbackList();
+                            } catch (err) {
+                                console.error('Update mislukt:', err);
+                            }
+                        });
+                    });
+
+                    // Verwijderen (DELETE)
+                    document.querySelectorAll('.feedback-delete-form').forEach(form => {
+                        const deleteBtn = form.querySelector('.delete-btn');
+                        if (!deleteBtn) return;
+                        deleteBtn.addEventListener('click', async e => {
+                            e.preventDefault();
+                            const url = form.action;
+                            const csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+                            try {
+                                await fetch(url, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'X-CSRF-TOKEN': csrf
+                                    }
+                                });
+                                loadFeedbackList();
+                            } catch (err) {
+                                console.error('Verwijderen mislukt:', err);
+                            }
+                        });
+                    });
+                }
+
+                // ⬇️ Haalt nieuwste versie op van feedbacklijst (component)
+                async function loadFeedbackList() {
+                    const container = document.getElementById('feedback-list');
+                    try {
+                        const response = await fetch(feedbackIndexUrl);
+                        const html = await response.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newList = doc.querySelector('#feedback-list');
+
+                        if (newList) {
+                            container.innerHTML = newList.innerHTML;
+                            bindInlineEditEvents(); // Herbind alles
+                        }
+                    } catch (err) {
+                        console.error('Kon feedbacklijst niet ophalen:', err);
+                    }
+                }
+            </script>
+
+
+
+
+
 
             <script>
                 async function downloadDashboardAsPDF() {
@@ -228,4 +415,6 @@
                     display: none !important;
                 }
             </style>
+
+
 </x-app-layout>
