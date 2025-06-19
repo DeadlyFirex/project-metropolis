@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ModuleHandlerController;
 use App\Http\Controllers\ConditionsController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\ClockController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -53,9 +54,13 @@ Route::middleware('auth')->group(function () {
 
 Route::get('/api/events/{event}/effects', [EventController::class, 'getEventEffects'])->name('api.events.effects');
 Route::get('/events/{event}/effects', [EventController::class, 'getEventEffectsApi']);
-Route::post('/save-clock', [App\Http\Controllers\ClockController::class, 'store'])
-    ->middleware('auth')
-    ->name('clock.save');
+Route::middleware('auth')->group(function () {
+    Route::post('/save-clock',  [ClockController::class, 'store'])
+        ->name('clock.save');
+
+    Route::get('/user-clock/current', [ClockController::class, 'current'])
+        ->name('clock.current');
+});
 
 
 require __DIR__.'/auth.php';

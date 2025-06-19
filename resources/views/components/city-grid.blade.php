@@ -255,7 +255,7 @@
     let lastSave = 0;
 
     function maybeSaveTime() {
-        if (Date.now() - lastSave >= 15000) {
+        if (Date.now() - lastSave >= 1000) {
             saveTime(currentTime);
             lastSave = Date.now();
         }

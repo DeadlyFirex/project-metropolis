@@ -73,7 +73,7 @@
 
             <script>
                 /* =====================================================
-                 | PDF-EXPORT
+                 | PDF-EXPORT  (ongewijzigd)
                  ===================================================== */
                 async function downloadDashboardAsPDF () {
                     const { jsPDF } = window.jspdf;
@@ -126,7 +126,7 @@
                     pdf.save('simulatie-grid-en-effecten.pdf');
                 }
 
-                function addHeader (pdf, pageWidth, now) {
+                function addHeader (pdf, w, now) {
                     pdf.setFontSize(16);
                     pdf.setFont('helvetica', 'bold');
                     pdf.text('Simulatie Dashboard', 40, 30);
@@ -136,43 +136,63 @@
                     pdf.text(`Gegenereerd op: ${now}`, 40, 45);
 
                     pdf.setDrawColor(150);
-                    pdf.line(40, 50, pageWidth - 40, 50);
+                    pdf.line(40, 50, w - 40, 50);
                 }
-                function addFooter (pdf, pageWidth, pageHeight, pageNumber) {
+                function addFooter (pdf, w, h, p) {
                     pdf.setFontSize(9);
                     pdf.setTextColor(150);
-                    pdf.text(`Pagina ${pageNumber}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+                    pdf.text(`Pagina ${p}`, w / 2, h - 10, { align: 'center' });
                 }
 
                 /* =====================================================
                  | HULPFUNCTIES
                  ===================================================== */
                 const SECS_DAY = 86400;
+
                 const hmsToSec = hms => {
                     const [h, m, s] = hms.split(':').map(Number);
                     return h * 3600 + m * 60 + s;
                 };
-                const secToTxt = sec => {
-                    const mm = String(Math.floor(sec / 60)).padStart(2, '0');
-                    const ss = String(sec % 60).padStart(2, '0');
-                    return `${mm} min ${ss} sec`;
+
+                const secToMinTxt = sec => {
+                    const mm = String(Math.floor(sec / 60)).padStart(2, '0');   // alleen minuten
+                    return `${mm} min`;
                 };
 
                 /* =====================================================
                  | VARIABELEN
                  ===================================================== */
-                let currentSimSec;                        // simulatie-seconden (0-86399)
+                let currentSimSec = 0;                                // simulatie-seconden (0-86399)
+                const CURRENT_TIME_ENDPOINT = '/user-clock/current';  // route uit de controller
 
                 /* =====================================================
-                 | SECONDE-TIK (LOKALE COUNTDOWN)
+                 | HUIDIGE TIJD OPHALEN
                  ===================================================== */
-                function tickClock () {
-                    currentSimSec = (currentSimSec + 1) % SECS_DAY;
+                async function fetchCurrentSimSec () {
+                    try {
+                        const resp = await fetch(CURRENT_TIME_ENDPOINT, { cache: 'no-store' });
+                        if (!resp.ok) throw new Error(resp.statusText);
+                        const timeStr = (await resp.text()).trim();       // verwacht “HH:MM:SS”
+                        window.currentTime = timeStr;
+                        return hmsToSec(timeStr);
+                    } catch (err) {
+                        console.error('Kon huidige kloktijd niet ophalen:', err);
+                        // Fallback: ga lokaal één seconde vooruit
+                        return (currentSimSec + 1) % SECS_DAY;
+                    }
+                }
+
+                /* =====================================================
+                 | SECONDE-TIK (UPDATE COUNTDOWN)
+                 ===================================================== */
+                async function tickClock () {
+                    currentSimSec = await fetchCurrentSimSec();
+
                     document.querySelectorAll('[data-end-sec]').forEach(span => {
                         let end  = Number(span.dataset.endSec);
                         let diff = end - currentSimSec;
                         if (diff < 0) diff += SECS_DAY;
-                        span.textContent = secToTxt(diff);
+                        span.textContent = secToMinTxt(diff);
                     });
                 }
 
@@ -180,7 +200,7 @@
                  | EVENT-LIJST OPHALEN & TONEN
                  ===================================================== */
                 function updateActiveEvents () {
-                    fetch('/events/slot-events?time=' + window.currentTime)
+                    fetch('/events/slot-events?time=' + window.currentTime, { cache: 'no-store' })
                         .then(r => r.json())
                         .then(data => {
                             const box  = document.getElementById('activeEventsList');
@@ -196,7 +216,7 @@
                             list.forEach(ev => {
                                 if (ev.name?.includes('(Aangrenzend)')) return;
 
-                                /* --- bereken diff initieel --- */
+                                /* --- init diff --- */
                                 let endSec = hmsToSec(ev.end_time);
                                 let diff   = endSec - currentSimSec;
                                 if (diff < 0) diff += SECS_DAY;
@@ -211,7 +231,7 @@
     <div>
       <span class="font-medium text-gray-800 dark:text-gray-200">${ev.name}</span>
       <div class="text-sm text-gray-600 dark:text-gray-400">
-        Nog <span class="time-left" data-end-sec="${endSec}">${secToTxt(diff)}</span> resterend
+        Nog <span class="time-left" data-end-sec="${endSec}">${secToMinTxt(diff)}</span> resterend
         ${ev.is_recurring
                                     ? '<span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Terugkerend</span>'
                                     : ''}
@@ -234,17 +254,16 @@
                 /* =====================================================
                  | INIT
                  ===================================================== */
-                if (typeof window.currentTime === 'undefined') {
-                    window.currentTime = "{{ $clockTime ?? date('H:i:s') }}";  // UserClock uit Blade
-                }
-                currentSimSec = hmsToSec(window.currentTime);
+                document.addEventListener('DOMContentLoaded', async () => {
+                    currentSimSec = await fetchCurrentSimSec();  // startwaarde ophalen
 
-                document.addEventListener('DOMContentLoaded', () => {
-                    updateActiveEvents();                 // direct laden
-                    setInterval(updateActiveEvents, 60000); // elke minuut refresh
-                    setInterval(tickClock, 1000);          // elke seconde countdown-update
+                    updateActiveEvents();                    // meteen tonen
+                    setInterval(updateActiveEvents, 60000);  // lijst elke minuut vernieuwen
+                    setInterval(tickClock, 1000);            // countdown elke seconde up-to-date
                 });
+
             </script>
+
 
 
             <style>
