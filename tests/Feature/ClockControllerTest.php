@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\User;
-use App\Models\UserClock;
+use App\Models\Clock;
 
 class ClockControllerTest extends TestCase
 {
@@ -74,7 +74,7 @@ class ClockControllerTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        UserClock::create([
+        Clock::create([
             'user_id' => $user->id,
             'clock_time' => '12:34:56'
         ]);
@@ -82,7 +82,7 @@ class ClockControllerTest extends TestCase
         $this->actingAs($user);
 
         // Simuleer de logica van SimulationController
-        $clockTime = UserClock::where('user_id', $user->id)->first()->clock_time ?? '00:00:00';
+        $clockTime = Clock::where('user_id', $user->id)->first()->clock_time ?? '00:00:00';
 
         $this->assertEquals('12:34:56', $clockTime);
     }
@@ -99,7 +99,7 @@ class ClockControllerTest extends TestCase
         $this->actingAs($user);
 
         // Simuleer de logica van SimulationController
-        $clockTime = UserClock::where('user_id', $user->id)->first()->clock_time ?? '00:00:00';
+        $clockTime = Clock::where('user_id', $user->id)->first()->clock_time ?? '00:00:00';
 
         $this->assertEquals('00:00:00', $clockTime);
     }
