@@ -49,7 +49,7 @@ class ClockController extends Controller
     public function current(Request $request): \Illuminate\Http\JsonResponse
     {
         $time = Clock::where('user_id', $request->user()->id)
-            ->value('clock_time')          // 'HH:MM:SS' or null
+            ->value('time')          // 'HH:MM:SS' or null
             ?? now()->format('H:i:s');
 
         $date = Clock::where('user_id', $request->user()->id)
