@@ -44,7 +44,7 @@
                     </section>
 
                     <section id="effect-view" class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
-                        @include('components.calculated-effects', ['slots' => $slots, 'simTime' => $simTime])
+                        @include('components.calculated-effects', ['slots' => $slots, '$clockTime' => $clockTime, '$clockDate' => $clockDate])
                     </section>
 
                     <section id="effect-control-view" class="hidden bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
