@@ -6,6 +6,7 @@ use App\Http\Controllers\SimulationController;
 use App\Http\Controllers\ModuleHandlerController;
 use App\Http\Controllers\ConditionsController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\ClockController;
 use App\Http\Controllers\FeedbackController;
 
 // ========== Publiek ==========
@@ -51,7 +52,21 @@ Route::middleware('auth')->group(function () {
     // Conditiebeheer
     Route::resource('conditions', ConditionsController::class)
         ->except(['show', 'create', 'edit'])
-        ->names(['index' => 'conditions']);
+        ->names([
+            'index' => 'conditions',
+        ]);
+  
+    Route::post('/simulatie/koppel-module', [SimulationController::class, 'koppelModule']);
+    Route::patch('/slots/{slot}/remove-module', [SimulationController::class, 'removeModule'])->name('slots.removeModule');
+    Route::post('/effects/module/{moduleId}/{type}', [SimulationController::class, 'updateEffect'])->name('effects.update');
+    Route::get('/api/modules/{module}/effects', function (\App\Models\Module $module) {
+        return response()->json([
+            'effects' => $module->effects->map(fn($e) => [
+                'type' => $e->type,
+                'value' => $e->value,
+            ])
+        ]);
+    });
 
     // Feedback (beveiligd)
     Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
@@ -72,6 +87,14 @@ Route::get('/api/modules/{module}/effects', function (\App\Models\Module $module
 
 Route::get('/api/events/{event}/effects', [EventController::class, 'getEventEffects'])->name('api.events.effects');
 Route::get('/events/{event}/effects', [EventController::class, 'getEventEffectsApi']);
+Route::middleware('auth')->group(function () {
+    Route::post('/save-clock',  [ClockController::class, 'store'])
+        ->name('clock.save');
+
+    Route::get('/user-clock/current', [ClockController::class, 'current'])
+        ->name('clock.current');
+});
+
 
 // ========== Auth scaffolding ==========
 require __DIR__ . '/auth.php';

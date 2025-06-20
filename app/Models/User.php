@@ -47,6 +47,6 @@ class User extends Authenticatable
     }
     public function clock()
     {
-        return $this->hasOne(UserClock::class);
+        return $this->hasOne(Clock::class);
     }
 }

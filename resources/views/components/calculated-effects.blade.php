@@ -1,4 +1,8 @@
 <?php
+
+$simTime   = $simTime ?? now()->format('H:i:s');
+$simCarbon = \Carbon\Carbon::createFromFormat('H:i:s', $simTime);
+
 $effectTypes = [
     'safety' => 'Veiligheid',
     'recreation' => 'Recreatie',
@@ -78,6 +82,16 @@ function getAdjacentSlotsForBlade($slotId, $allSlots, $gridWidth, $gridHeight) {
 
 // --- Pass 1: Aggregate effects for Modules and EventTypes ---
 foreach ($slots as $slot) {
+    // Sla verlopen events volledig over
+    if (
+        $slot->event
+        && $slot->event->end_time
+        && \Carbon\Carbon::createFromFormat('H:i:s', $slot->event->end_time)
+            ->lte($simCarbon)
+    ) {
+        continue;
+    }
+
     // Collect all unique event types and modules
     if ($slot->event && $slot->event->eventType) {
         $eventTypeId = $slot->event->eventType->id;
@@ -132,7 +146,15 @@ foreach ($slots as $slot) {
 
         foreach ($adjacentSlotsForCurrentSlot as $adjSlot) {
             // Only consider adjacent slots that have BOTH an event AND a module
-            if ($adjSlot->id != $slot->id && $adjSlot->event && $adjSlot->event->eventType && $adjSlot->module) {
+            if (
+                $adjSlot->id != $slot->id
+                && $adjSlot->event
+                && $adjSlot->event->eventType
+                && $adjSlot->module
+                && $adjSlot->event->end_time
+                && \Carbon\Carbon::createFromFormat('H:i:s', $adjSlot->event->end_time)
+                    ->gt($simCarbon)
+            ) {
                 $adjEventTypeName = $adjSlot->event->eventType->name;
 
                 if (!isset($eventAdjacentEffectTotalsByType[$adjEventTypeName])) {
@@ -151,6 +173,7 @@ foreach ($slots as $slot) {
         }
     }
 }
+
 
 // Sort unique modules and event types by name for consistent display
 usort($uniqueModules, function($a, $b) {

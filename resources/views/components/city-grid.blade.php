@@ -1,20 +1,68 @@
+@php use Carbon\Carbon; @endphp
+<meta name="slot-events-url" content="{{ route('events.slot-events') }}">
+<meta name="clock-save-url" content="{{ route('clock.save') }}">
 <div class="py-8">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="mb-6 flex items-center justify-between">
-            <div class="text-lg font-medium text-gray-800 dark:text-gray-200">
-                <span id="clock">{{ $clockTime ?: '00:00:00' }}</span>
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-6 mb-6">
+
+            <!-- Clock & Date Display -->
+            <div class="flex flex-col items-start sm:items-start text-left">
+                <div class="text-4xl font-semibold text-gray-800 tracking-wider" id="clock" data-start="{{ $clockTime ?: '00:00:00' }}">
+                    00:00:00
+                </div>
+                <div class="text-lg text-gray-600  mt-1" id="date" data-start="{{ $clockDate ?: '1974-01-01' }}">
+                    1974-01-01
+                </div>
             </div>
-            <button id="toggle-mode-btn" onclick="toggleDayNight()"
-                class="bg-blue-500 text-white px-5 py-2 rounded shadow text-base flex items-center gap-3">
-                <span id="mode-icon" class="text-2xl">🌙</span>
-                <span class="text-sm sm:text-base font-semibold">Modus</span>
-            </button>
 
+            <!-- Button Dashboard -->
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-md px-4 py-3 flex flex-wrap gap-2 justify-center sm:justify-start max-w-full">
+                <!-- Play/Pause -->
+                <button onclick="resumeClock()"
+                        title="Hervat simulatie"
+                        class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 text-sm rounded-md shadow-sm">
+                    ▶ Hervat
+                </button>
+                <button onclick="pauseClock()"
+                        title="Pauzeer simulatie"
+                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 text-sm rounded-md shadow-sm">
+                    ⏸ Pauzeer
+                </button>
 
+                <!-- Speed Controls -->
+                <button onclick="accelerateClock(1)"
+                        title="1x snelheid"
+                        class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1.5 text-sm rounded-md shadow-sm">
+                    1x
+                </button>
+                <button onclick="accelerateClock(25)"
+                        title="25x versnellen"
+                        class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1.5 text-sm rounded-md shadow-sm">
+                    25x
+                </button>
+                <button onclick="accelerateClock(1000)"
+                        title="∞ versnelling"
+                        class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1.5 text-sm rounded-md shadow-sm">
+                    ∞
+                </button>
+
+                <!-- Time Skip -->
+                <button onclick="skipMinutes(1)"
+                        title="Skip 1 minuut"
+                        class="bg-blue-400 hover:bg-blue-500 text-white px-3 py-1.5 text-sm rounded-md shadow-sm">
+                    +1 min
+                </button>
+                <button onclick="skipHours(1)"
+                        title="Skip 1 uur"
+                        class="bg-blue-400 hover:bg-blue-500 text-white px-3 py-1.5 text-sm rounded-md shadow-sm">
+                    +1 uur
+                </button>
+
+                <span id="mode-icon" class="text-2xl">?</span>
+            </div>
         </div>
 
         <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Metropolis Grid</h2>
-
         <table class="table-auto border-collapse border border-gray-300 w-full text-center">
             <tbody>
                 @foreach ($slots->chunk(4) as $row)
@@ -131,7 +179,7 @@
     class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center min-h-screen">
     <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
 </div>
-
+@vite('resources/js/clock.js')
 
 <script>
     function showLoading() {
@@ -235,11 +283,7 @@
         }, 200); // iets korter dan transition zodat het net iets vloeiender voelt
     }
 
-
-
     document.addEventListener("DOMContentLoaded", () => {
-        checkAndApplyNightMode(); // Initieel checken
-
         const cityCells = document.querySelectorAll('td.city-cell');
         const rows = 3;
         const cols = 4;
@@ -466,7 +510,7 @@
     /* Alleen Metropolis Grid in nachtmodus zwart maken */
     body.night-mode .city-cell {
         background-color: rgb(50, 64, 90);
-        !important;
+    !important;
         /* diep zwart */
         color: #ffffff !important;
         /* witte tekst */
@@ -500,7 +544,5 @@
         border: 1px solid #93c5fd;
         /* lichtere rand, 'blue-300' */
         transition: background-color 0.3s ease, border-color 0.3s ease;
-    }
-
     }
 </style>

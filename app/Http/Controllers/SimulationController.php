@@ -10,6 +10,7 @@ use App\Models\Effect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Clock;
 use App\Models\Feedback; 
 
 
@@ -17,12 +18,19 @@ class SimulationController extends Controller
 {
     public function index(Request $request)
     {
+        $clockTime = Clock::where('user_id', Auth::id())
+            ->value('time') ?? now()->format('H:i:s');
+        $clockDate = Clock::where('user_id', Auth::id())
+            ->value('date') ?? now()->format('Y-m-d');
         $category     = $request->input('category');
         $all_modules  = $this->getModules();
         $modules      = $this->getModules($category);
         $categories   = Module::select('category')->distinct()->pluck('category');
         $slots        = Slot::with(['module.effects'])->get();
         $events       = Event::all();
+        $nextExpiration = Event::whereNotNull('end_time')
+            ->where('end_time', '>', now())
+            ->min('end_time');
         $userId       = Auth::id();
         $userClock    = \App\Models\UserClock::where('user_id', $userId)->first();
         $clockTime    = $userClock ? $userClock->clock_time : '00:00:00';
@@ -36,6 +44,8 @@ class SimulationController extends Controller
             'all_modules',
             'events',
             'clockTime',
+            'clockDate',
+            'nextExpiration',
             'feedback'
         ));
     }
@@ -149,25 +159,16 @@ class SimulationController extends Controller
 
         return response()->json(['success' => true, 'effect' => $effect]);
     }
-    public function saveClock(Request $request)
+
+    private function slotIsActive(Event $event, Carbon $clock): bool
     {
-        $request->validate([
-            'time' => ['required', 'regex:/^\d{2}:\d{2}:\d{2}$/']
-        ]);
+        $start = $event->start_time->copy()->setDate($clock->year, $clock->month, $clock->day);
+        $end   = $event->end_time  ->copy()->setDate($clock->year, $clock->month, $clock->day);
+        if ($end->lte($start)) $end->addDay();
 
-        $userId = Auth::id();
-        if (!$userId) {
-            return response()->json(['message' => 'User not authenticated'], 401);
-        }
-
-        $time = $request->input('time');
-        $userClock = \App\Models\UserClock::updateOrCreate(
-            ['user_id' => $userId],
-            ['clock_time' => $time]
-        );
-
-        return response()->json(['success' => true]);
+        return $clock->between($start, $end);
     }
+
     public function approve(Slot $slot)
     {
         $slot->approved = true;
