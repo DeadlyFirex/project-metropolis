@@ -325,7 +325,12 @@
                                 }
 
                                 // 4) sla events over waar we niet in het tijdslot zitten
-                                if (nowSec < startSec || nowSec > endSec) return;
+                                setInterval(() => { 
+                                    if (nowSec < startSec || nowSec > endSec) return;
+                                // Your code to execute during the interval goes here
+                                    console.log("Event should be in active events.");
+                                    }, 2000); // Run every 1000ms (2.5 second)
+
 
                                 // 5) nu pas de HTML bouwen
                                 const diff = endSec - nowSec;
