@@ -11,30 +11,34 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Clock;
-use App\Models\Feedback; 
+use App\Models\Feedback;
 
 
 class SimulationController extends Controller
 {
     public function index(Request $request)
     {
+        // Get current category
+        $category     = $request->input('category');
+        $modules      = $this->getModules($category);
+
+        // Overall information
+        $categories   = Module::select('category')->distinct()->pluck('category');
+        $all_modules  = $this->getModules();
+        $slots        = Slot::with(['module.effects'])->get();
+        $events       = Event::all();
+        $feedback = Feedback::latest()->get();
+
+        // Get clock time and date
         $clockTime = Clock::where('user_id', Auth::id())
             ->value('time') ?? now()->format('H:i:s');
         $clockDate = Clock::where('user_id', Auth::id())
             ->value('date') ?? now()->format('Y-m-d');
-        $category     = $request->input('category');
-        $all_modules  = $this->getModules();
-        $modules      = $this->getModules($category);
-        $categories   = Module::select('category')->distinct()->pluck('category');
-        $slots        = Slot::with(['module.effects'])->get();
-        $events       = Event::all();
+
+        // ?
         $nextExpiration = Event::whereNotNull('end_time')
             ->where('end_time', '>', now())
             ->min('end_time');
-        $userId       = Auth::id();
-        $userClock    = \App\Models\UserClock::where('user_id', $userId)->first();
-        $clockTime    = $userClock ? $userClock->clock_time : '00:00:00';
-        $feedback = Feedback::latest()->get();
 
         return view('sim_dashboard', compact(
             'modules',
