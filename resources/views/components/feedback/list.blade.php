@@ -5,7 +5,7 @@
         <div class="border rounded p-4 mb-4 dark:border-gray-700 dark:text-white" data-id="{{ $item->id }}">
             <!-- Show view-mode by default -->
             <div class="view-mode">
-                <p class="mb-2">{{ $item->content }}</p>
+                <p class="mb-2 text-left text-sm whitespace-pre-line break-words">{{ $item->content }}</p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
                     Geplaatst op {{ $item->created_at->format('d-m-Y H:i') }}
                     @if ($item->updated_at && $item->updated_at->gt($item->created_at))
