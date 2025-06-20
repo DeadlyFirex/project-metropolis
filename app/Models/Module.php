@@ -4,12 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Module extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     protected $table = 'modules';
+    protected $dates = ['deleted_at'];
     protected $fillable = [
         'name',
         'description',
@@ -31,8 +34,8 @@ class Module extends Model
         return $this->hasMany(Effect::class);
     }
 
-    public function compatible() {
+    public function compatible()
+    {
         return $this->hasMany(EventType::class);
     }
 }
-

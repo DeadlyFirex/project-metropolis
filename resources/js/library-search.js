@@ -52,8 +52,14 @@ export function initLibrarySearch() {
     }
 
     document.addEventListener('click', (e) => {
-        if (!suggestionBox.contains(e.target) && e.target !== searchInput) {
-            suggestionBox.classList.add('hidden');
+        const suggestionBox = document.getElementById('suggestionBox');
+        const searchInput = document.getElementById('searchInput');
+
+        if (suggestionBox && searchInput) {
+            if (!suggestionBox.contains(e.target) && e.target !== searchInput) {
+                suggestionBox.classList.add('hidden');
+            }
         }
     });
+
 }

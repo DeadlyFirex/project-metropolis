@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Clock;
+use App\Models\Feedback; 
+
 
 class SimulationController extends Controller
 {
@@ -26,10 +28,13 @@ class SimulationController extends Controller
         $categories   = Module::select('category')->distinct()->pluck('category');
         $slots        = Slot::with(['module.effects'])->get();
         $events       = Event::all();
-
         $nextExpiration = Event::whereNotNull('end_time')
             ->where('end_time', '>', now())
             ->min('end_time');
+        $userId       = Auth::id();
+        $userClock    = \App\Models\UserClock::where('user_id', $userId)->first();
+        $clockTime    = $userClock ? $userClock->clock_time : '00:00:00';
+        $feedback = Feedback::latest()->get();
 
         return view('sim_dashboard', compact(
             'modules',
@@ -41,6 +46,7 @@ class SimulationController extends Controller
             'clockTime',
             'clockDate',
             'nextExpiration',
+            'feedback'
         ));
     }
 
@@ -70,6 +76,12 @@ class SimulationController extends Controller
         $newModule  = Module::findOrFail($request->module_id);
         $targetSlot = Slot::findOrFail($request->slot_id);
         $conditions = app(ConditionsController::class);
+
+        if ($targetSlot->approved) {
+            return response()->json([
+                'message' => 'Deze slot is goedgekeurd en kan niet meer gewijzigd worden.',
+            ], 403);
+        }
 
         if ($conditions->violatesAdjacencyRule($newModule, $targetSlot)) {
             return response()->json([
@@ -101,6 +113,12 @@ class SimulationController extends Controller
     public function removeModule(Slot $slot)
     {
         Log::info('removeModule method called for slot_id: ' . $slot->id);
+
+        // Blokkeer als slot is goedgekeurd
+        if ($slot->approved) {
+            Log::warning('Attempted to remove module from approved slot: ' . $slot->id);
+            return redirect()->back()->with('error', 'Je kunt een goedgekeurde module niet verwijderen.');
+        }
 
         // Check if there's an event associated with this slot
         if ($slot->event_id) {
@@ -151,4 +169,43 @@ class SimulationController extends Controller
         return $clock->between($start, $end);
     }
 
+    public function approve(Slot $slot)
+    {
+        $slot->approved = true;
+        $slot->save();
+
+        return redirect()->back()->with('success', 'Module is goedgekeurd.');
+    }
+    public function moveModule(Request $request)
+    {
+        $request->validate([
+            'module_id' => 'required|integer|exists:modules,id',
+            'from_slot_id' => 'required|integer|exists:slots,id',
+            'to_slot_id' => 'required|integer|exists:slots,id',
+        ]);
+
+        $from = Slot::find($request->from_slot_id);
+        $to = Slot::find($request->to_slot_id);
+
+        if (!$from || !$to || $from->module_id != $request->module_id) {
+            return response()->json(['message' => 'Ongeldige gegevens.'], 422);
+        }
+
+        if ($to->approved) {
+            return response()->json([
+                'message' => 'Dit slot is goedgekeurd en kan niet worden gewijzigd.'
+            ], 403);
+        }
+
+        // Verwijder uit oude slot
+        $from->module_id = null;
+        $from->save();
+
+        // Plaats in nieuwe slot
+        $to->module_id = $request->module_id;
+        $to->approved = false; // optioneel: opnieuw laten goedkeuren
+        $to->save();
+
+        return response()->json(['message' => 'Module verplaatst.']);
+    }
 }
