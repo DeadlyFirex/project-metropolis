@@ -1,5 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
+        <meta name="feedback-index-url" content="{{ route('feedback.index') }}">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ __('Simulatie Dashboard') }}
@@ -65,6 +66,46 @@
                 class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
                 <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
             </div>
+
+
+
+            <!-- Floating Button -->
+            <button id="open-feedback" class="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-full shadow-lg z-50">
+                💬 Feedback
+            </button>
+
+            <!-- Feedback Sidebar -->
+            <div id="feedback-panel" class="fixed top-0 right-0 w-full max-w-md h-full bg-white dark:bg-gray-900 shadow-lg transform translate-x-full transition-transform duration-300 z-40 flex flex-col">
+
+                <div class="p-6 flex-1 flex flex-col overflow-hidden">
+                    <!-- Header -->
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Feedback</h2>
+                        <button id="close-feedback"
+                            class="text-4xl text-gray-500 hover:text-gray-800 dark:hover:text-white transition-transform duration-200 hover:rotate-90">
+                            &times;
+                        </button>
+                    </div>
+
+                    <!-- Feedback Form -->
+                    <form id="feedback-form" method="POST" action="{{ route('feedback.store') }}" data-url="{{ route('feedback.store') }}">
+                        @csrf
+                        <textarea name="content" required class="w-full border rounded p-3 dark:bg-gray-700 dark:text-white mb-3" rows="3" placeholder="Wat wil je delen?"></textarea>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            Verstuur
+                        </button>
+                    </form>
+
+                    <hr class="my-4 border-gray-300 dark:border-gray-700" />
+
+                    <!-- Scrollable Feedback List -->
+                    <div id="feedback-list" class="flex-1 overflow-y-auto pr-1">
+                        @include('components.feedback.list', ['feedback' => $feedback])
+                    </div>
+                </div>
+            </div>
+
+
 
 
             <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
