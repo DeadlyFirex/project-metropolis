@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class UserClock extends Model
+class Clock extends Model
 {
-    protected $fillable = ['user_id', 'clock_time'];
+    protected $fillable = [
+        'user_id',
+        'time',
+        'date'
+    ];
 
     public function user()
     {
