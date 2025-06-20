@@ -59,7 +59,7 @@
 
             <!-- Floating Button -->
             <button id="open-feedback" class="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-full shadow-lg z-50">
-                Feedback
+                💬 Feedback
             </button>
 
             <!-- Feedback Sidebar -->
@@ -69,7 +69,10 @@
                     <!-- Header -->
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Feedback</h2>
-                        <button id="close-feedback" class="text-gray-500 hover:text-gray-800 dark:hover:text-white text-2xl">&times;</button>
+                        <button id="close-feedback"
+                            class="text-4xl text-gray-500 hover:text-gray-800 dark:hover:text-white transition-transform duration-200 hover:rotate-90">
+                            &times;
+                        </button>
                     </div>
 
                     <!-- Feedback Form -->
