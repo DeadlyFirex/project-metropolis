@@ -1,34 +1,68 @@
 @php use Carbon\Carbon; @endphp
+<meta name="slot-events-url" content="{{ route('events.slot-events') }}">
+<meta name="clock-save-url" content="{{ route('clock.save') }}">
 <div class="py-8">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="mb-6 flex items-center justify-between">
-            <div class="text-lg font-medium text-gray-800 dark:text-gray-200">
-                <span id="clock" data-start="{{ $clockTime ?: '00:00:00' }}">00:00:00</span>
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-6 mb-6">
+
+            <!-- Clock & Date Display -->
+            <div class="flex flex-col items-start sm:items-start text-left">
+                <div class="text-4xl font-semibold text-gray-800 tracking-wider" id="clock" data-start="{{ $clockTime ?: '00:00:00' }}">
+                    00:00:00
+                </div>
+                <div class="text-lg text-gray-600  mt-1" id="date" data-start="{{ $clockDate ?: '1974-01-01' }}">
+                    1974-01-01
+                </div>
             </div>
-            <div class="space-x-2 my-4">
-    <button class="speed-button bg-blue-500 text-white px-2 py-1 text-sm sm:text-base rounded" data-speed="0.5">1X</button>
-    <button class="speed-button bg-blue-500 text-white px-2 py-1 text-sm sm:text-base rounded" data-speed="1">2X</button>
-    <button class="speed-button bg-blue-500 text-white px-2 py-1 text-sm sm:text-base rounded" data-speed="2">4X</button>
-    <button class="speed-button bg-blue-500 text-white px-2 py-1 text-sm sm:text-base rounded" data-speed="5">10X</button>
-    <button class="speed-button bg-blue-500 text-white px-2 py-1 text-sm sm:text-base rounded" data-speed="10">20X</button>
-</div>
-<!-- Pause/Resume Buttons -->
-<div class="space-x-2 my-4">
-    <button id="pause-button" class="bg-red-500 text-white px-3 py-1 rounded">Pause</button>
-    <button id="resume-button" class="bg-green-500 text-white px-3 py-1 rounded hidden">Resume</button>
-</div>
-            <button id="toggle-mode-btn"
-                    onclick="toggleDayNight()"
-                    class="bg-blue-500 text-white px-5 py-2 rounded shadow text-base flex items-center gap-3">
-                <span id="mode-icon" class="text-2xl">🌙</span>
-                <span class="text-sm sm:text-base font-semibold">Modus</span>
-            </button>
 
+            <!-- Button Dashboard -->
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-md px-4 py-3 flex flex-wrap gap-2 justify-center sm:justify-start max-w-full">
+                <!-- Play/Pause -->
+                <button onclick="resumeClock()"
+                        title="Hervat simulatie"
+                        class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 text-sm rounded-md shadow-sm">
+                    ▶ Hervat
+                </button>
+                <button onclick="pauseClock()"
+                        title="Pauzeer simulatie"
+                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 text-sm rounded-md shadow-sm">
+                    ⏸ Pauzeer
+                </button>
 
+                <!-- Speed Controls -->
+                <button onclick="accelerateClock(1)"
+                        title="1x snelheid"
+                        class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1.5 text-sm rounded-md shadow-sm">
+                    1x
+                </button>
+                <button onclick="accelerateClock(25)"
+                        title="25x versnellen"
+                        class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1.5 text-sm rounded-md shadow-sm">
+                    25x
+                </button>
+                <button onclick="accelerateClock(1000)"
+                        title="∞ versnelling"
+                        class="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1.5 text-sm rounded-md shadow-sm">
+                    ∞
+                </button>
+
+                <!-- Time Skip -->
+                <button onclick="skipMinutes(1)"
+                        title="Skip 1 minuut"
+                        class="bg-blue-400 hover:bg-blue-500 text-white px-3 py-1.5 text-sm rounded-md shadow-sm">
+                    +1 min
+                </button>
+                <button onclick="skipHours(1)"
+                        title="Skip 1 uur"
+                        class="bg-blue-400 hover:bg-blue-500 text-white px-3 py-1.5 text-sm rounded-md shadow-sm">
+                    +1 uur
+                </button>
+
+                <span id="mode-icon" class="text-2xl">?</span>
+            </div>
         </div>
 
         <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Metropolis Grid</h2>
-
         <table class="table-auto border-collapse border border-gray-300 w-full text-center">
             <tbody>
             @foreach ($slots->chunk(4) as $row)
@@ -125,210 +159,10 @@
         </table>
     </div>
 </div>
+@vite('resources/js/clock.js')
 
 <script>
-    const clockEl      = document.getElementById('clock');
-    const startTimeStr = clockEl.dataset.start || '00:00:00';
-
-    // Convert HH:MM:SS to total seconds
-    function timeStrToSeconds(str) {
-        const [h, m, s] = str.split(':').map(Number);
-        return h * 3600 + m * 60 + s;
-    }
-
-    // Convert total seconds to HH:MM:SS string (24-hour wrap)
-    function secondsToTimeStr(totalSeconds) {
-        totalSeconds = Math.floor(totalSeconds) % (24 * 3600);
-        if (totalSeconds < 0) totalSeconds += 24 * 3600;
-        const h = Math.floor(totalSeconds / 3600);
-        const m = Math.floor((totalSeconds % 3600) / 60);
-        const s = totalSeconds % 60;
-        return `${pad(h)}:${pad(m)}:${pad(s)}`;
-    }
-
-    function pad(num) {
-        return num.toString().padStart(2, '0');
-    }
-
-    // ——— HIER de twee variabelen declareren voordat je ze gebruikt ———
-    let currentSeconds = timeStrToSeconds(startTimeStr);
-    let currentTime    = startTimeStr;
-    let tickSpeed      = 0.5;
-    let interval       = null;
-    let isPaused       = false;
-
-    function tickClock() {
-        currentSeconds += tickSpeed;
-        currentTime     = secondsToTimeStr(currentSeconds);
-        clockEl.innerText = currentTime;
-    }
-
-
-    function startClock() {
-        if (interval) clearInterval(interval);
-        interval = setInterval(tickClock, 1000);
-    }
-
-    function pauseClock() {
-        if (interval) clearInterval(interval);
-        isPaused = true;
-        document.getElementById('pause-button').classList.add('hidden');
-        document.getElementById('resume-button').classList.remove('hidden');
-    }
-
-    function resumeClock() {
-        if (!isPaused) return;
-        isPaused = false;
-        startClock();
-        document.getElementById('pause-button').classList.remove('hidden');
-        document.getElementById('resume-button').classList.add('hidden');
-    }
-
-    // Speed buttons update tickSpeed but do not restart if paused
-    document.querySelectorAll('.speed-button').forEach(button => {
-        button.addEventListener('click', () => {
-            tickSpeed = parseFloat(button.dataset.speed);
-        });
-    });
-
-    document.getElementById('pause-button').addEventListener('click', pauseClock);
-    document.getElementById('resume-button').addEventListener('click', resumeClock);
-
-    startClock();
-
-    function refreshGrid() {
-        fetch("{{ route('events.slot-events') }}?time=" + encodeURIComponent(currentTime))
-            .then(r => {
-                if (!r.ok) {
-                    console.error('Error fetching slot-events:', r.status, r.statusText);
-                    return [];
-                }
-                return r.json();
-            })
-            .then(updateGrid)
-            .catch(err => console.error('Network or JSON error:', err));
-    }
-
-
-    function updateGrid (events) {
-        document.querySelectorAll('.city-slot[data-event-id]').forEach(slot => {
-            slot.removeAttribute('data-event-id');
-            slot.removeAttribute('data-event-name');
-            slot.removeAttribute('data-event-image');
-            slot.querySelector('.event-badge')?.remove();
-        });
-
-        events.forEach(ev => {
-            const slot = document.querySelector(`.city-slot[data-slot-id="${ev.slot_id}"]`);
-            if (!slot) return;
-
-            slot.dataset.eventId   = ev.id;
-            slot.dataset.eventName = ev.name;
-            if (ev.image_path) {
-                slot.dataset.eventImage = ev.image_path.startsWith('http')
-                    ? ev.image_path
-                    : `{{ url('/') }}/${ev.image_path}`;
-            }
-
-        });
-    }
-
-
-
-    function checkAndApplyNightMode() {
-        const hour = parseInt(currentTime.split(':')[0], 10);
-        if (hour >= 0 && hour < 6) {
-            document.body.classList.add('night-mode');
-        } else {
-            document.body.classList.remove('night-mode');
-        }
-    }
-
-    setInterval(() => {
-        tickClock();
-        checkAndApplyNightMode();
-        maybeSaveTime();
-        refreshGrid();
-
-    }, 1000);
-
-    let lastSave = 0;
-
-    function maybeSaveTime() {
-        if (Date.now() - lastSave >= 1000) {
-            saveTime(currentTime);
-            lastSave = Date.now();
-        }
-    }
-
-
-    const csrfToken = document
-        .querySelector('meta[name="csrf-token"]')
-        .getAttribute('content');
-
-    function saveTime(timeArg) {
-        // gebruik timeArg als die aanwezig is, anders de globale variabele
-        const timeToSave = timeArg ?? currentTime;
-
-        fetch(@json(route('clock.save')), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
-            body: JSON.stringify({ time: timeToSave })
-        })
-            .then(r => {
-                if (!r.ok) {
-                    return r.text().then(text => {
-                        console.error('Server error response:', text);
-                        throw new Error(`Save failed: ${r.status}`);
-                    });
-                }
-                return r.json();
-            })
-            .then(data => console.log('Clock saved:', data))
-            .catch(e => console.error('Tijd opslaan mislukt', e));
-    }
-
-
-    function toggleDayNight() {
-        const hour = parseInt(currentTime.split(':')[0]);
-        if (hour >= 6 && hour < 18) {
-            currentTime = '00:00:00'; // Nacht
-        } else {
-            currentTime = '12:00:00'; // Dag
-        }
-        document.getElementById('clock').innerText = currentTime;
-        checkAndApplyNightMode();
-        refreshGrid();
-        saveTime();
-        updateModeIcon();
-    }
-
-    function updateModeIcon() {
-        const icon = document.getElementById('mode-icon');
-
-        // Voeg flip class toe voor animatie
-        icon.classList.add('flipping');
-
-        // Na animatie wissel emoji en verwijder flip class
-        setTimeout(() => {
-            if (document.body.classList.contains('night-mode')) {
-                icon.textContent = '🌞';
-            } else {
-                icon.textContent = '🌙';
-            }
-            icon.classList.remove('flipping');
-        }, 200); // iets korter dan transition zodat het net iets vloeiender voelt
-    }
-
-
-
     document.addEventListener("DOMContentLoaded", () => {
-        checkAndApplyNightMode(); // Initieel checken
-
         const cityCells = document.querySelectorAll('td.city-cell');
         const rows = 3;
         const cols = 4;
