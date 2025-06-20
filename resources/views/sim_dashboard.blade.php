@@ -145,8 +145,8 @@
                 }
 
                 /* =====================================================
-                 | HULPFUNCTIES
-                 ===================================================== */
+                                | HULPFUNCTIES
+                                ===================================================== */
                 const SECS_DAY = 86400;
 
                 const hmsToSec = hms => {
@@ -155,8 +155,14 @@
                 };
 
                 const secToMinTxt = sec => {
-                    const mm = String(Math.floor(sec / 60)).padStart(2, '0');   // alleen minuten
-                    return `${mm} min`;
+                    const hours = Math.floor(sec / 3600);
+                    const minutes = Math.floor((sec % 3600) / 60);
+
+                    if (hours > 0) {
+                        return `${hours}u ${minutes}m`;
+                    } else {
+                        return `${minutes}m`;
+                    }
                 };
 
                 /* =====================================================
@@ -172,12 +178,15 @@
                     try {
                         const resp = await fetch(CURRENT_TIME_ENDPOINT, { cache: 'no-store' });
                         if (!resp.ok) throw new Error(resp.statusText);
-                        const timeStr = (await resp.text()).trim();       // verwacht “HH:MM:SS”
+
+                        const data = await resp.json();      // 👉 JSON parsen
+                        const timeStr = data.time.trim();    // "HH:MM:SS"
+
                         window.currentTime = timeStr;
                         return hmsToSec(timeStr);
                     } catch (err) {
                         console.error('Kon huidige kloktijd niet ophalen:', err);
-                        // Fallback: ga lokaal één seconde vooruit
+                        // fallback…
                         return (currentSimSec + 1) % SECS_DAY;
                     }
                 }

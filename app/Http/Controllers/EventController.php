@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Models\Clock;
-use Illuminate\Support\Facades\Auth;
 
 class EventController extends Controller
 {
@@ -25,7 +24,7 @@ class EventController extends Controller
         Log::info('EventController index method called.');
 
         // Haal simulatie tijd op uit request (voor AJAX calls)
-        $simTime = Clock::where('user_id', Auth::id())->value('time');
+        $simTime = Clock::where('user_id', auth()->id())->value('time');
         Log::info('Simulation time parameter received', ['time' => $simTime]);
 
         // Retrieve all slots that are not disabled
@@ -101,7 +100,7 @@ class EventController extends Controller
             Log::info('Validation passed successfully:', $data);
 
             /* ───── 2. TIJDEN VERWERKEN ─────────────────────────────────── */
-            $simTime = Clock::where('user_id', Auth::id())->value('time');
+            $simTime = Clock::where('user_id', auth()->id())->value('time');
             $today = Carbon::createFromFormat('H:i:s', $simTime)->startOfDay();
 
             $start = Carbon::createFromFormat('H:i', $data['start_time'])
@@ -186,7 +185,7 @@ class EventController extends Controller
             $successMessage = "Event '{$data['event_name']}' succesvol ingesteld voor vakje {$data['slot_id']}!";
 
             Log::info('setEvent completed successfully:', [
-                'event_id' => $event?->id,
+                'event_id' => $event->id,
                 'slot_id' => $data['slot_id'],
                 'message' => $successMessage
             ]);
@@ -259,7 +258,7 @@ class EventController extends Controller
     public function getSlotEvents(Request $request)
     {
         $simTime = $request->query('time')
-            ?: Clock::where('user_id', Auth::id())
+            ?: Clock::where('user_id', auth()->id())
                 ->value('time')
                 ?: now()->format('H:i:s');
 
@@ -660,7 +659,7 @@ class EventController extends Controller
 
     public function getActiveEventsForSimulation(Request $request)
     {
-        $simTime = Clock::where('user_id', Auth::id())->value('time');
+        $simTime = Clock::where('user_id', auth()->id())->value('time');
 
         // Cleanup verlopen events
         $this->cleanupExpiredEvents($simTime);
