@@ -597,7 +597,9 @@ class EventController extends Controller
 
         Slot::with(['event.eventType.effects', 'module'])->get()->each(function ($slot) use (&$items, $now) {
             $event = $slot->event;
-            if (!$event) return;
+            if (!$event) {
+                return;
+            }
 
             $start = Carbon::createFromFormat('H:i:s', $event->start_time)
                 ->setDate($now->year, $now->month, $now->day);
@@ -615,37 +617,39 @@ class EventController extends Controller
                 return;
             }
 
-            // Determine status and appropriate end time for display
-            $status = 'scheduled';
-            $displayEndTime = $end;
-
+            // Bepaal status en welke tijd we gaan aftellen
             if ($now->between($start, $end)) {
-                $status = 'running';
-            } elseif ($event->is_recurring && $now->gt($end)) {
-                // For recurring events that have ended today,
-                // show next occurrence (tomorrow)
-                $status = 'scheduled';
-                $displayEndTime = $start->copy()->addDay();
+                // Event is nu bezig
+                $status      = 'running';
+                $displayTime = $end;
+            } else {
+                // Event is gepland (of recurring ná vandaag)
+                $status      = 'scheduled';
+                $displayTime = $start;
+
+                if ($event->is_recurring && $now->gt($end)) {
+                    // Voor recurring events: show start morgen
+                    $displayTime = $start->copy()->addDay();
+                }
             }
 
             $items[$slot->id] = [
-                'slot_id' => $slot->id,
-                'event_id' => $event->id,
-                'event_name' => $event->name,
-                'description' => $event->description,
-                'start_time' => $event->start_time,
-                'end_time' => $event->end_time,
-                'is_recurring' => (bool)$event->is_recurring,
-                'time_remaining' => $status === 'running'
-                    ? $this->formatRemainingTime($now, $end)
-                    : $this->formatRemainingTime($now, $displayEndTime),
-                'effects' => $this->getEventEffects($event->event_type_id),
-                'status' => $status,
+                'slot_id'        => $slot->id,
+                'event_id'       => $event->id,
+                'event_name'     => $event->name,
+                'description'    => $event->description,
+                'start_time'     => $event->start_time,
+                'end_time'       => $event->end_time,
+                'is_recurring'   => (bool)$event->is_recurring,
+                'time_remaining' => $this->formatRemainingTime($now, $displayTime),
+                'effects'        => $this->getEventEffects($event->event_type_id),
+                'status'         => $status,
             ];
         });
 
         return $items;
     }
+
 
 
     /**
