@@ -615,7 +615,19 @@ class EventController extends Controller
                 return;
             }
 
-            // Check if current time is within the event window
+            // Determine status and appropriate end time for display
+            $status = 'scheduled';
+            $displayEndTime = $end;
+
+            if ($now->between($start, $end)) {
+                $status = 'running';
+            } elseif ($event->is_recurring && $now->gt($end)) {
+                // For recurring events that have ended today,
+                // show next occurrence (tomorrow)
+                $status = 'scheduled';
+                $displayEndTime = $start->copy()->addDay();
+            }
+
             $items[$slot->id] = [
                 'slot_id' => $slot->id,
                 'event_id' => $event->id,
@@ -624,9 +636,11 @@ class EventController extends Controller
                 'start_time' => $event->start_time,
                 'end_time' => $event->end_time,
                 'is_recurring' => (bool)$event->is_recurring,
-                'time_remaining' => $this->formatRemainingTime($now, $end),
+                'time_remaining' => $status === 'running'
+                    ? $this->formatRemainingTime($now, $end)
+                    : $this->formatRemainingTime($now, $displayEndTime),
                 'effects' => $this->getEventEffects($event->event_type_id),
-                'status' => $now->between($start, $end) ? 'running' : 'scheduled',
+                'status' => $status,
             ];
         });
 
@@ -669,5 +683,6 @@ class EventController extends Controller
 
         return response()->json($activeEvents);
     }
+
 
 }
