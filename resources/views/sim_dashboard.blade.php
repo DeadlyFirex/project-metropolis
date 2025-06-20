@@ -9,7 +9,8 @@
                 <button class="bg-blue-500 text-white px-4 py-2 text-sm sm:text-base rounded" id="increaseFontBtn">
                     Tekstgrootte Vergroten
                 </button>
-                <button onclick="downloadDashboardAsPDF()" class="bg-green-600 text-white px-4 py-2 text-sm sm:text-base rounded">
+                <button onclick="downloadDashboardAsPDF()"
+                    class="bg-green-600 text-white px-4 py-2 text-sm sm:text-base rounded">
                     Download als PDF
                 </button>
             </div>
@@ -24,25 +25,31 @@
                 </main>
 
                 <div class="w-full lg:flex-1 flex flex-col gap-6">
-                    <section id="module-library" class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full h-[400px] overflow-y-auto">
+                    <section id="module-library"
+                        class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full h-[400px] overflow-y-auto">
                         @include('components.library', [
-                        'modules' => $modules,
-                        'categories' => $categories,
+                            'modules' => $modules,
+                            'categories' => $categories,
                         ])
                     </section>
 
-                    <section id="effect-view" class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
+                    <section id="effect-view"
+                        class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
                         @include('components.calculated-effects', ['slots' => $slots])
                     </section>
 
-                    <section id="effect-control-view" class="hidden bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
-                        @include('components.effect-control', ['all_modules' => $modules, 'types' => [
-                        'safety' => 'Veiligheid',
-                        'recreation' => 'Recreatie',
-                        'climate' => 'Milieukwaliteit',
-                        'facilities' => 'Voorzieningen',
-                        'infrastructure' => 'Mobiliteit',
-                        ]])
+                    <section id="effect-control-view"
+                        class="hidden bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
+                        @include('components.effect-control', [
+                            'all_modules' => $modules,
+                            'types' => [
+                                'safety' => 'Veiligheid',
+                                'recreation' => 'Recreatie',
+                                'climate' => 'Milieukwaliteit',
+                                'facilities' => 'Voorzieningen',
+                                'infrastructure' => 'Mobiliteit',
+                            ],
+                        ])
                     </section>
                 </div>
             </div>
@@ -55,6 +62,11 @@
                     </div>
                 </div>
             </div>
+            <div id="loading"
+                class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
+                <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+            </div>
+
 
 
             <!-- Floating Button -->
@@ -122,23 +134,45 @@
                         document.getElementById('effect-view')
                     ];
 
-                    for (const element of targets) {
+                    const descriptions = [
+                        "Overzicht van de stadsgrid met alle modules op dit moment.",
+                        "Effectenweergave van de simulatie op dit moment."
+                    ];
+
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(12);
+
+                    for (let i = 0; i < targets.length; i++) {
+                        const element = targets[i];
+                        if (!element) continue;
+
                         const canvas = await html2canvas(element, {
                             scale: 2
                         });
-                        const imgData = canvas.toDataURL('image/png');
 
-                        const ratio = canvas.width / canvas.height;
+                        // ✂️ Snijd witruimte van bovenkant weg
+                        const croppedCanvas = cropTopWhitespace(canvas, 40); // verwijder ± 40px witruimte boven
+
+                        const imgData = croppedCanvas.toDataURL('image/png');
+                        const ratio = croppedCanvas.width / croppedCanvas.height;
                         const maxWidth = pageWidth - padding * 2;
                         let imgWidth = maxWidth;
                         let imgHeight = imgWidth / ratio;
 
-                        if (imgHeight > pageHeight - padding * 2 - 40) {
-                            imgHeight = pageHeight - padding * 2 - 40;
+                        // Bereken beschrijvinghoogte
+                        const lines = pdf.splitTextToSize(descriptions[i], maxWidth);
+                        const lineHeight = 14;
+                        const descriptionHeight = lines.length * lineHeight;
+
+                        // Pas afbeeldinggrootte aan indien nodig
+                        const maxImgHeight = pageHeight - padding * 2 - descriptionHeight - 20;
+                        if (imgHeight > maxImgHeight) {
+                            imgHeight = maxImgHeight;
                             imgWidth = imgHeight * ratio;
                         }
 
-                        if (currentY + imgHeight > pageHeight - padding) {
+                        // Check of alles op de pagina past
+                        if (currentY + descriptionHeight + imgHeight > pageHeight - padding) {
                             addFooter(pdf, pageWidth, pageHeight, pageNumber++);
                             pdf.addPage();
                             currentY = 60;
@@ -149,6 +183,12 @@
                             addHeader(pdf, pageWidth, now);
                         }
 
+                        // ➕ Beschrijving
+                        pdf.setFont('helvetica', 'italic');
+                        pdf.text(lines, padding, currentY);
+                        currentY += descriptionHeight + 6;
+
+                        // ➕ Afbeelding
                         pdf.addImage(imgData, 'PNG', (pageWidth - imgWidth) / 2, currentY, imgWidth, imgHeight);
                         currentY += imgHeight + 20;
                     }
@@ -178,8 +218,17 @@
                     });
                 }
 
+                // ✂️ Snijd witruimte van bovenkant canvas af
+                function cropTopWhitespace(canvas, cropHeight = 40) {
+                    const cropped = document.createElement('canvas');
+                    cropped.width = canvas.width;
+                    cropped.height = canvas.height - cropHeight;
 
+                    const ctx = cropped.getContext('2d');
+                    ctx.drawImage(canvas, 0, cropHeight, canvas.width, cropped.height, 0, 0, canvas.width, cropped.height);
 
+                    return cropped;
+                }
 
                 function updateActiveEvents() {
                     fetch('/events/slot-events')
@@ -189,7 +238,8 @@
                             const noEventsMessage = document.getElementById('noEventsMessage');
 
                             if (Object.keys(data).length === 0) {
-                                eventsList.innerHTML = '<p class="text-gray-500 dark:text-gray-400" id="noEventsMessage">Geen actieve events</p>';
+                                eventsList.innerHTML =
+                                    '<p class="text-gray-500 dark:text-gray-400" id="noEventsMessage">Geen actieve events</p>';
                             } else {
                                 let eventsHtml = '';
                                 for (const [slotId, event] of Object.entries(data)) {
@@ -264,6 +314,4 @@
                     display: none !important;
                 }
             </style>
-
-
 </x-app-layout>

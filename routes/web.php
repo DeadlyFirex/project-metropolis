@@ -30,6 +30,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/slots/{slot}/approve', [SimulationController::class, 'approve'])->name('slots.approve');
     Route::patch('/slots/{slot}/remove-module', [SimulationController::class, 'removeModule'])->name('slots.removeModule');
     Route::post('/simulatie/koppel-module', [SimulationController::class, 'koppelModule']);
+    Route::post('/simulatie/verplaats-module', [SimulationController::class, 'moveModule'])->name('slots.update');
     Route::post('/effects/module/{moduleId}/{type}', [SimulationController::class, 'updateEffect'])->name('effects.update');
 
     // Modulebeheer
@@ -37,6 +38,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/modules', [ModuleHandlerController::class, 'store'])->name('modules.store');
     Route::put('/modules/{id}', [ModuleHandlerController::class, 'update'])->name('modules.update');
     Route::delete('/modules/{module}', [ModuleHandlerController::class, 'destroy'])->name('modules.destroy');
+    Route::post('/modules/bulk-destroy', [ModuleHandlerController::class, 'bulkDestroy'])->name('modules.bulkDestroy');
 
     // Eventbeheer
     Route::prefix('events')->group(function () {
@@ -51,7 +53,7 @@ Route::middleware('auth')->group(function () {
         ->except(['show', 'create', 'edit'])
         ->names(['index' => 'conditions']);
 
-    // Feedback
+    // Feedback (beveiligd)
     Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
     Route::get('/feedback/{feedback}/edit', [FeedbackController::class, 'edit'])->name('feedback.edit');
     Route::patch('/feedback/{feedback}', [FeedbackController::class, 'update'])->name('feedback.update');
