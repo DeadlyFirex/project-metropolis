@@ -30,6 +30,8 @@ $eventAdjacentEffectTotalsByType = []; // Stores adjacent effects originating fr
 $uniqueModules = [];
 $uniqueEventTypes = [];
 
+$uniqueEvents =[];
+
 // Helper to get adjacent slots (mimicking EventController logic directly in Blade)
 $gridWidth = 4;
 $gridHeight = 3;
@@ -95,8 +97,12 @@ foreach ($slots as $slot) {
     // Collect all unique event types and modules
     if ($slot->event && $slot->event->eventType) {
         $eventTypeId = $slot->event->eventType->id;
+        $eventId = $slot->event->id;
         if (!isset($uniqueEventTypes[$eventTypeId])) {
             $uniqueEventTypes[$eventTypeId] = $slot->event->eventType;
+        }
+        if (!isset($uniqueEvents[$eventId])) {
+            $uniqueEvents[$eventId] = $slot->event;
         }
     }
     if ($slot->module) {
@@ -243,6 +249,42 @@ usort($uniqueEventTypes, function($a, $b) {
                     Evenementen Overzicht
                 </td>
             </tr>
+
+@php
+    use Illuminate\Support\Facades\Auth;
+    use App\Models\Clock;
+    use Carbon\Carbon;
+
+    $userId = Auth::id();
+    $clock = Clock::where('user_id', $userId)->first();
+
+    // Default to real current time
+    $currentTime = now();
+
+    // If user has clock data, use it instead
+    if ($clock && $clock->time) {
+        try {
+            $currentTime = Carbon::createFromFormat('H:i:s', $clock->time);
+        } catch (Exception $e) {
+            // fallback already handled
+        }
+    }
+@endphp
+
+@foreach ($uniqueEvents as $event)
+    @php
+        $start = Carbon::createFromFormat('H:i:s', $event->start_time);
+        $end = Carbon::createFromFormat('H:i:s', $event->end_time);
+    @endphp
+
+    @if ($currentTime->between($start, $end))
+        <tr class="bg-blue-50">
+            <td class="px-1 py-1 border border-gray-300 text-left font-semibold" colspan="{{ count($effectTypes) + 2 }}">
+                Evenement Naam: {{ $event->name }}
+            </td>
+        </tr>
+    
+                
             @foreach ($uniqueEventTypes as $eventType)
                 <tr class="bg-blue-50">
                     <td class="px-1 py-1 border border-gray-300 text-left font-semibold" colspan="{{ count($effectTypes) + 2 }}">
@@ -290,7 +332,9 @@ usort($uniqueEventTypes, function($a, $b) {
                     </td>
                 </tr>
             @endforeach
-
+            @endif
+        @endforeach
+        
             {{-- Final Combined Total Row --}}
             <tr class="bg-gray-300">
                 <td class="px-1 py-1 border border-gray-300 text-left">Gecombineerd Totaal</td>
