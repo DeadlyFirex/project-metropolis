@@ -36,6 +36,8 @@ $uniqueEvents =[];
 $gridWidth = 4;
 $gridHeight = 3;
 
+
+
 function getAdjacentSlotsForBlade($slotId, $allSlots, $gridWidth, $gridHeight) {
     $currentSlot = null;
     foreach ($allSlots as $s) {
@@ -181,6 +183,7 @@ foreach ($slots as $slot) {
 }
 
 
+
 // Sort unique modules and event types by name for consistent display
 usort($uniqueModules, function($a, $b) {
     return strcmp($a->name, $b->name);
@@ -283,8 +286,8 @@ usort($uniqueEventTypes, function($a, $b) {
                 Evenement Naam: {{ $event->name }}
             </td>
         </tr>
-    
-                
+
+
             @foreach ($uniqueEventTypes as $eventType)
                 <tr class="bg-blue-50">
                     <td class="px-1 py-1 border border-gray-300 text-left font-semibold" colspan="{{ count($effectTypes) + 2 }}">
@@ -334,7 +337,7 @@ usort($uniqueEventTypes, function($a, $b) {
             @endforeach
             @endif
         @endforeach
-        
+
             {{-- Final Combined Total Row --}}
             <tr class="bg-gray-300">
                 <td class="px-1 py-1 border border-gray-300 text-left">Gecombineerd Totaal</td>

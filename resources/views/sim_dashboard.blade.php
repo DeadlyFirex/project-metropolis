@@ -1,10 +1,9 @@
-@php use Carbon\Carbon; @endphp
 <x-app-layout>
     @if(! is_null($nextExpiration))
         <script>
-            const expiresMs = new Date("{{ Carbon::parse($nextExpiration)->toIso8601String() }}").getTime();
-            const nowMs = Date.now();
-            const delay = expiresMs - nowMs;
+            const expiresMs = new Date("{{ \Carbon\Carbon::parse($nextExpiration)->toIso8601String() }}").getTime();
+            const nowMs     = Date.now();
+            const delay     = expiresMs - nowMs;
 
             if (delay > 0) {
                 setTimeout(() => {
@@ -24,7 +23,7 @@
                     Tekstgrootte Vergroten
                 </button>
                 <button onclick="downloadDashboardAsPDF()"
-                        class="bg-green-600 text-white px-4 py-2 text-sm sm:text-base rounded">
+                    class="bg-green-600 text-white px-4 py-2 text-sm sm:text-base rounded">
                     Download als PDF
                 </button>
             </div>
@@ -40,7 +39,7 @@
 
                 <div class="w-full lg:flex-1 flex flex-col gap-6">
                     <section id="module-library"
-                             class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full h-[400px] overflow-y-auto">
+                        class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full h-[400px] overflow-y-auto">
                         @include('components.library', [
                             'modules' => $modules,
                             'categories' => $categories,
@@ -48,12 +47,12 @@
                     </section>
 
                     <section id="effect-view"
-                             class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
+                        class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
                         @include('components.calculated-effects', ['slots' => $slots, '$clockTime' => $clockTime, '$clockDate' => $clockDate])
                     </section>
 
                     <section id="effect-control-view"
-                             class="hidden bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
+                        class="hidden bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
                         @include('components.effect-control', [
                             'all_modules' => $modules,
                             'types' => [
@@ -77,44 +76,40 @@
                 </div>
             </div>
             <div id="loading"
-                 class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
+                class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
                 <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
             </div>
 
 
+
             <!-- Floating Button -->
-            <button id="open-feedback"
-                    class="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-full shadow-lg z-50">
+            <button id="open-feedback" class="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-full shadow-lg z-50">
                 💬 Feedback
             </button>
 
             <!-- Feedback Sidebar -->
-            <div id="feedback-panel"
-                 class="fixed top-0 right-0 w-full max-w-md h-full bg-white dark:bg-gray-900 shadow-lg transform translate-x-full transition-transform duration-300 z-40 flex flex-col">
+            <div id="feedback-panel" class="fixed top-0 right-0 w-full max-w-md h-full bg-white dark:bg-gray-900 shadow-lg transform translate-x-full transition-transform duration-300 z-40 flex flex-col">
 
                 <div class="p-6 flex-1 flex flex-col overflow-hidden">
                     <!-- Header -->
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Feedback</h2>
                         <button id="close-feedback"
-                                class="text-4xl text-gray-500 hover:text-gray-800 dark:hover:text-white transition-transform duration-200 hover:rotate-90">
+                            class="text-4xl text-gray-500 hover:text-gray-800 dark:hover:text-white transition-transform duration-200 hover:rotate-90">
                             &times;
                         </button>
                     </div>
 
                     <!-- Feedback Form -->
-                    <form id="feedback-form" method="POST" action="{{ route('feedback.store') }}"
-                          data-url="{{ route('feedback.store') }}">
+                    <form id="feedback-form" method="POST" action="{{ route('feedback.store') }}" data-url="{{ route('feedback.store') }}">
                         @csrf
-                        <textarea name="content" required
-                                  class="w-full border rounded p-3 dark:bg-gray-700 dark:text-white mb-3" rows="3"
-                                  placeholder="Wat wil je delen?"></textarea>
+                        <textarea name="content" required class="w-full border rounded p-3 dark:bg-gray-700 dark:text-white mb-3" rows="3" placeholder="Wat wil je delen?"></textarea>
                         <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
                             Verstuur
                         </button>
                     </form>
 
-                    <hr class="my-4 border-gray-300 dark:border-gray-700"/>
+                    <hr class="my-4 border-gray-300 dark:border-gray-700" />
 
                     <!-- Scrollable Feedback List -->
                     <div id="feedback-list" class="flex-1 overflow-y-auto pr-1">
@@ -124,6 +119,8 @@
             </div>
 
 
+
+
             <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -131,16 +128,16 @@
                 /* =====================================================
                  | PDF-EXPORT  (ongewijzigd)
                  ===================================================== */
-                async function downloadDashboardAsPDF() {
-                    const {jsPDF} = window.jspdf;
-                    const pdf = new jsPDF({unit: 'px', format: 'a4'});
+                async function downloadDashboardAsPDF () {
+                    const { jsPDF } = window.jspdf;
+                    const pdf       = new jsPDF({ unit: 'px', format: 'a4' });
 
-                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageWidth  = pdf.internal.pageSize.getWidth();
                     const pageHeight = pdf.internal.pageSize.getHeight();
-                    const padding = 40;
-                    const now = new Date().toLocaleString('nl-NL');
+                    const padding    = 40;
+                    const now        = new Date().toLocaleString('nl-NL');
 
-                    let currentY = 60;
+                    let currentY   = 60;
                     let pageNumber = 1;
 
                     const targets = [
@@ -171,8 +168,8 @@
                         const ratio = croppedCanvas.width / croppedCanvas.height;
 
                         const maxWidth = pageWidth - padding * 2;
-                        let imgWidth = maxWidth;
-                        let imgHeight = imgWidth / ratio;
+                        let imgWidth   = maxWidth;
+                        let imgHeight  = imgWidth / ratio;
 
                         // Bereken beschrijvinghoogte
                         const lines = pdf.splitTextToSize(descriptions[i], maxWidth);
@@ -210,7 +207,7 @@
                     pdf.save('simulatie-grid-en-effecten.pdf');
                 }
 
-                function addHeader(pdf, w, now) {
+                function addHeader (pdf, w, now) {
                     pdf.setFontSize(16);
                     pdf.setFont('helvetica', 'bold');
                     pdf.text('Simulatie Dashboard', 40, 30);
@@ -222,14 +219,11 @@
                     pdf.setDrawColor(150);
                     pdf.line(40, 50, w - 40, 50);
                 }
-
-                function addFooter(pdf, w, h, p) {
+                function addFooter (pdf, w, h, p) {
                     pdf.setFontSize(9);
                     pdf.setTextColor(150);
-                    pdf.text(`Pagina ${p}`, w / 2, h - 10, {align: 'center'});
+                    pdf.text(`Pagina ${p}`, w / 2, h - 10, { align: 'center' });
                 }
-
-
                 /* =====================================================
                                 | HULPFUNCTIES
                                 ===================================================== */
@@ -260,9 +254,9 @@
                 /* =====================================================
                  | HUIDIGE TIJD OPHALEN
                  ===================================================== */
-                async function fetchCurrentSimSec() {
+                async function fetchCurrentSimSec () {
                     try {
-                        const resp = await fetch(CURRENT_TIME_ENDPOINT, {cache: 'no-store'});
+                        const resp = await fetch(CURRENT_TIME_ENDPOINT, { cache: 'no-store' });
                         if (!resp.ok) throw new Error(resp.statusText);
 
                         const data = await resp.json();      // 👉 JSON parsen
@@ -280,11 +274,11 @@
                 /* =====================================================
                  | SECONDE-TIK (UPDATE COUNTDOWN)
                  ===================================================== */
-                async function tickClock() {
+                async function tickClock () {
                     currentSimSec = await fetchCurrentSimSec();
 
                     document.querySelectorAll('[data-end-sec]').forEach(span => {
-                        let end = Number(span.dataset.endSec);
+                        let end  = Number(span.dataset.endSec);
                         let diff = end - currentSimSec;
                         if (diff < 0) diff += SECS_DAY;
                         span.textContent = secToMinTxt(diff);
@@ -294,11 +288,11 @@
                 /* =====================================================
                  | EVENT-LIJST OPHALEN & TONEN
                  ===================================================== */
-                function updateActiveEvents() {
-                    fetch('/events/slot-events?time=' + window.currentTime, {cache: 'no-store'})
+                function updateActiveEvents () {
+                    fetch('/events/slot-events?time=' + window.currentTime, { cache: 'no-store' })
                         .then(r => r.json())
                         .then(data => {
-                            const box = document.getElementById('activeEventsList');
+                            const box  = document.getElementById('activeEventsList');
                             const list = Array.isArray(data) ? data : Object.values(data);
 
                             if (list.length === 0) {
@@ -314,8 +308,8 @@
 
                                 // 2) bereken begin- én eind-seconden
                                 const startSec = hmsToSec(ev.start_time);
-                                const endSec = hmsToSec(ev.end_time);
-                                let nowSec = currentSimSec;
+                                const endSec   = hmsToSec(ev.end_time);
+                                let nowSec     = currentSimSec;
 
                                 // 3) wrap rond middernacht
                                 if (endSec < startSec) {
@@ -325,12 +319,7 @@
                                 }
 
                                 // 4) sla events over waar we niet in het tijdslot zitten
-                                setInterval(() => { 
-                                    if (nowSec < startSec || nowSec > endSec) return;
-                                // Your code to execute during the interval goes here
-                                    console.log("Event should be in active events.");
-                                    }, 2000); // Run every 1000ms (2.5 second)
-
+                                if (nowSec < startSec || nowSec > endSec) return;
 
                                 // 5) nu pas de HTML bouwen
                                 const diff = endSec - nowSec;
@@ -364,6 +353,7 @@
                         .catch(err => console.error('Error fetching events:', err));
                 }
 
+
                 /* =====================================================
                  | INIT
                  ===================================================== */
@@ -375,7 +365,9 @@
                     setInterval(tickClock, 1000);            // countdown elke seconde up-to-date
                 });
 
+
             </script>
+
 
 
             <style>

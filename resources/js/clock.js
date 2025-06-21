@@ -48,7 +48,7 @@ class SimulationClock {
 
         this.updateClockDisplay();
         this.updateInterval(this.interval);
-        this.#instance = this;
+        SimulationClock.#instance = this;
     }
 
     pad = num => String(num).padStart(2, '0');
