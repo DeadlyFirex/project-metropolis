@@ -86,7 +86,15 @@ async function updateActiveEvents() {
         }
 
         box.innerHTML = active.map(ev => {
-            const diff = ev.endSec - currentSimSec;
+            let startSec = hmsToSec(ev.start_time);
+            let endSec = hmsToSec(ev.end_time);
+
+            // Corrigeer dagovergang
+            if (endSec < startSec) endSec += SECS_DAY;
+
+            let diff = endSec - currentSimSec;
+            if (diff < 0) diff += SECS_DAY;
+
             return `
             <div class="flex items-center justify-between p-3 mb-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
                 <div class="flex items-center space-x-4">
@@ -94,7 +102,7 @@ async function updateActiveEvents() {
                     <div>
                         <span class="font-medium text-gray-800 dark:text-gray-200">${ev.name}</span>
                         <div class="text-sm text-gray-600 dark:text-gray-400">
-                            Nog <span class="time-left" data-end-sec="${ev.endSec}">${secToMinTxt(diff)}</span> resterend
+                            Nog <span class="time-left" data-end-sec="${endSec}">${secToMinTxt(diff)}</span> resterend
                             ${ev.is_recurring ? '<span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Terugkerend</span>' : ''}
                         </div>
                     </div>

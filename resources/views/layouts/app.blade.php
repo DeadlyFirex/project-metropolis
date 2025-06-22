@@ -54,12 +54,12 @@
             applyFontScale(currentScale);
 
             // Update button label
-            button.textContent = currentScale > normalScale ? 'Tekstgrootte Verkleinen' : 'Tekstgrootte Vergroten';
+            button.textContent = currentScale > normalScale ? 'aA' : 'Aa';
 
             button.addEventListener('click', () => {
                 currentScale = currentScale === normalScale ? increasedScale : normalScale;
-                button.textContent = currentScale === normalScale ? 'Tekstgrootte Vergroten' :
-                    'Tekstgrootte Verkleinen';
+                button.textContent = currentScale === normalScale ? 'aA' :
+                    'Aa';
 
                 applyFontScale(currentScale);
             });
