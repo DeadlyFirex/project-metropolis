@@ -83,22 +83,27 @@ function bindInlineEditEvents(feedbackIndexUrl) {
     document.querySelectorAll('.feedback-edit-form').forEach(form => {
         form.addEventListener('submit', async e => {
             e.preventDefault();
+
             const content = form.querySelector('textarea').value.trim();
-            const url = form.action;
+            if (! content) return;
+
+            const url  = form.action;
             const csrf = document.querySelector('meta[name="csrf-token"]').content;
-            if (!content) return;
 
             try {
+                // fire the PATCH off and completely ignore its body
                 await fetch(url, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrf
+                        'X-CSRF-TOKEN':   csrf
                     },
                     body: JSON.stringify({ content })
                 });
 
+                // *then* reload the list via your GET-partial helper
                 loadFeedbackList(feedbackIndexUrl);
+
             } catch (err) {
                 console.error('Could not update feedback:', err);
             }
@@ -112,7 +117,11 @@ function bindInlineEditEvents(feedbackIndexUrl) {
 
         deleteBtn.addEventListener('click', async e => {
             e.preventDefault();
-            const url = form.action;
+
+            // 🐞 fallback als form.action leeg is
+            const id  = form.dataset.id;
+            const url = form.action || `/feedback/${id}`;
+
             const csrf = document.querySelector('meta[name="csrf-token"]').content;
 
             try {
@@ -140,17 +149,21 @@ async function loadFeedbackList(url) {
     if (!url || !container) return;
 
     try {
-        const response = await fetch(url);
-        const html = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const newList = doc.querySelector('#feedback-list');
-
-        if (newList) {
-            container.innerHTML = newList.innerHTML;
-            bindInlineEditEvents(url);
+        const response = await fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        });
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}`);
         }
+
+        const html = await response.text();
+        // Direct de returned partial in de sidebar plaatsen
+        container.innerHTML = html;
+        bindInlineEditEvents(url);
+
     } catch (err) {
         console.error('Could not load feedback list:', err);
     }
+
 }

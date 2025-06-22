@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Clock;
 use App\Models\Feedback;
+use Carbon\Carbon;
 
 
 class SimulationController extends Controller
@@ -211,5 +212,65 @@ class SimulationController extends Controller
         $to->save();
 
         return response()->json(['message' => 'Module verplaatst.']);
+    }
+
+    public function getEffectsHtml(Request $request)
+    {
+        try {
+            // 1) Ophalen simTime en datum
+            $simTime   = $request->input('time', now()->format('H:i:s'));
+            $clockDate = Clock::where('user_id', Auth::id())
+                ->value('date')
+                ?? now()->format('Y-m-d');
+
+            // Parseen naar één Carbon‐object voor vergelijking
+            $currentDateTime = Carbon::parse("{$clockDate} {$simTime}");
+
+            // 2) Slots laden incl. module‐effects en eventuele event‐effects
+            $slots = Slot::with(['module.effects', 'event.eventType.effects'])
+                ->get();
+
+            // 3) Inactieve events eruit filteren door de 'event' relatie op null te zetten
+            foreach ($slots as $slot) {
+                if ($slot->event) {
+                    $starts = Carbon::parse($slot->event->start_time);
+                    $ends   = $slot->event->end_time
+                        ? Carbon::parse($slot->event->end_time)
+                        : null;
+
+                    // als event nog niet begonnen is, of al beëindigd
+                    if ($starts->gt($currentDateTime) ||
+                        ($ends && $ends->lt($currentDateTime))
+                    ) {
+                        // rela­tie kapotmaken = valt terug op module.effects in je view
+                        $slot->setRelation('event', null);
+                    }
+                }
+            }
+
+            // 4) View renderen – in je Blade kun je nu eenvoudig checken:
+            //    @if($slot->event) … event.effects … @else … module.effects … @endif
+            $html = view('components.calculated-effects', compact(
+                'slots',
+                'simTime',
+                'clockDate'
+            ))->render();
+
+            return response($html, 200, [
+                'Content-Type'  => 'text/html',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in getEffectsHtml: '.$e->getMessage(), [
+                'trace'        => $e->getTraceAsString(),
+                'request_data' => $request->all(),
+            ]);
+
+            return response(
+                '<div class="text-red-500">Error loading effects</div>',
+                500
+            );
+        }
     }
 }

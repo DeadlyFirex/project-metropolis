@@ -126,8 +126,8 @@
 
             <script>
                 /* =====================================================
-                 | PDF-EXPORT  (ongewijzigd)
-                 ===================================================== */
+                                | PDF-EXPORT  (ongewijzigd)
+                                ===================================================== */
                 async function downloadDashboardAsPDF () {
                     const { jsPDF } = window.jspdf;
                     const pdf       = new jsPDF({ unit: 'px', format: 'a4' });
@@ -145,46 +145,20 @@
                         document.getElementById('effect-view')
                     ];
 
-                    const descriptions = [
-                        "Overzicht van de stadsgrid met alle modules op dit moment.",
-                        "Effectenweergave van de simulatie op dit moment."
-                    ];
+                    for (const el of targets) {
+                        const canvas  = await html2canvas(el, { scale: 2 });
+                        const imgData = canvas.toDataURL('image/png');
 
-                    pdf.setFont('helvetica', 'normal');
-                    pdf.setFontSize(12);
-
-                    for (let i = 0; i < targets.length; i++) {
-                        const element = targets[i];
-                        if (!element) continue;
-
-                        const canvas = await html2canvas(element, {
-                            scale: 2
-                        });
-
-                        // ✂️ Snijd witruimte van bovenkant weg
-                        const croppedCanvas = cropTopWhitespace(canvas, 40); // verwijder ± 40px witruimte boven
-
-                        const imgData = croppedCanvas.toDataURL('image/png');
-                        const ratio = croppedCanvas.width / croppedCanvas.height;
-
+                        const ratio    = canvas.width / canvas.height;
                         const maxWidth = pageWidth - padding * 2;
                         let imgWidth   = maxWidth;
                         let imgHeight  = imgWidth / ratio;
 
-                        // Bereken beschrijvinghoogte
-                        const lines = pdf.splitTextToSize(descriptions[i], maxWidth);
-                        const lineHeight = 14;
-                        const descriptionHeight = lines.length * lineHeight;
-
-                        // Pas afbeeldinggrootte aan indien nodig
-                        const maxImgHeight = pageHeight - padding * 2 - descriptionHeight - 20;
-                        if (imgHeight > maxImgHeight) {
-                            imgHeight = maxImgHeight;
-                            imgWidth = imgHeight * ratio;
+                        if (imgHeight > pageHeight - padding * 2 - 40) {
+                            imgHeight = pageHeight - padding * 2 - 40;
+                            imgWidth  = imgHeight * ratio;
                         }
-
-                        // Check of alles op de pagina past
-                        if (currentY + descriptionHeight + imgHeight > pageHeight - padding) {
+                        if (currentY + imgHeight > pageHeight - padding) {
                             addFooter(pdf, pageWidth, pageHeight, pageNumber++);
                             pdf.addPage();
                             currentY = 60;
@@ -193,14 +167,12 @@
                         if (pageNumber === 1 && currentY === 60) {
                             addHeader(pdf, pageWidth, now);
                         }
-
-                        // ➕ Beschrijving
-                        pdf.setFont('helvetica', 'italic');
-                        pdf.text(lines, padding, currentY);
-                        currentY += descriptionHeight + 6;
-
-                        // ➕ Afbeelding
-                        pdf.addImage(imgData, 'PNG', (pageWidth - imgWidth) / 2, currentY, imgWidth, imgHeight);
+                        pdf.addImage(imgData, 'PNG',
+                            (pageWidth - imgWidth) / 2,
+                            currentY,
+                            imgWidth,
+                            imgHeight
+                        );
                         currentY += imgHeight + 20;
                     }
                     addFooter(pdf, pageWidth, pageHeight, pageNumber);
@@ -224,145 +196,154 @@
                     pdf.setTextColor(150);
                     pdf.text(`Pagina ${p}`, w / 2, h - 10, { align: 'center' });
                 }
-                /* =====================================================
-                                | HULPFUNCTIES
-                                ===================================================== */
-                const SECS_DAY = 86400;
 
+                const SECS_DAY = 86400;
+                let currentSimSec = 0;                              // simulatie-seconden (0-86399)
+                let prevActiveIds = new Set();                      // track actieve slot IDs
+                const CURRENT_TIME_ENDPOINT = '/user-clock/current';
+
+                // Zet een "HH:MM:SS" string om naar seconden
                 const hmsToSec = hms => {
                     const [h, m, s] = hms.split(':').map(Number);
                     return h * 3600 + m * 60 + s;
                 };
 
+                // Geef een timer-tekst weer in uren/minuten
                 const secToMinTxt = sec => {
                     const hours = Math.floor(sec / 3600);
                     const minutes = Math.floor((sec % 3600) / 60);
-
-                    if (hours > 0) {
-                        return `${hours}u ${minutes}m`;
-                    } else {
-                        return `${minutes}m`;
-                    }
+                    return hours > 0 ? `${hours}u ${minutes}m` : `${minutes}m`;
                 };
 
-                /* =====================================================
-                 | VARIABELEN
-                 ===================================================== */
-                let currentSimSec = 0;                                // simulatie-seconden (0-86399)
-                const CURRENT_TIME_ENDPOINT = '/user-clock/current';  // route uit de controller
-
-                /* =====================================================
-                 | HUIDIGE TIJD OPHALEN
-                 ===================================================== */
-                async function fetchCurrentSimSec () {
+                // Haal huidige simulatie-tijd op
+                async function fetchCurrentSimSec() {
                     try {
                         const resp = await fetch(CURRENT_TIME_ENDPOINT, { cache: 'no-store' });
                         if (!resp.ok) throw new Error(resp.statusText);
 
-                        const data = await resp.json();      // 👉 JSON parsen
-                        const timeStr = data.time.trim();    // "HH:MM:SS"
-
+                        const data = await resp.json();         // JSON parsen
+                        const timeStr = data.time.trim();       // "HH:MM:SS"
                         window.currentTime = timeStr;
+                        console.log(`Current time fetched: ${timeStr}`);
                         return hmsToSec(timeStr);
                     } catch (err) {
                         console.error('Kon huidige kloktijd niet ophalen:', err);
-                        // fallback…
-                        return (currentSimSec + 1) % SECS_DAY;
+                        // fallback: simuleer door 1 seconde door te tellen
+                        const fallback = (currentSimSec + 1) % SECS_DAY;
+                        console.log(`Using fallback time: ${secToMinTxt(fallback)}`);
+                        return fallback;
                     }
                 }
 
-                /* =====================================================
-                 | SECONDE-TIK (UPDATE COUNTDOWN)
-                 ===================================================== */
-                async function tickClock () {
+                // Update de countdown-teksten per seconde
+                async function tickClock() {
+                    console.log('tickClock called');
                     currentSimSec = await fetchCurrentSimSec();
 
                     document.querySelectorAll('[data-end-sec]').forEach(span => {
-                        let end  = Number(span.dataset.endSec);
+                        let end = Number(span.dataset.endSec);
                         let diff = end - currentSimSec;
                         if (diff < 0) diff += SECS_DAY;
                         span.textContent = secToMinTxt(diff);
                     });
                 }
 
-                /* =====================================================
-                 | EVENT-LIJST OPHALEN & TONEN
-                 ===================================================== */
-                function updateActiveEvents () {
-                    fetch('/events/slot-events?time=' + window.currentTime, { cache: 'no-store' })
-                        .then(r => r.json())
-                        .then(data => {
-                            const box  = document.getElementById('activeEventsList');
-                            const list = Array.isArray(data) ? data : Object.values(data);
+                // Haal events op en render alleen bij overgang in/uit actief
+                async function updateActiveEvents() {
+                    console.log('updateActiveEvents called');
+                    try {
+                        const resp = await fetch('/events/slot-events?time=' + window.currentTime, { cache: 'no-store' });
+                        if (!resp.ok) throw new Error(resp.statusText);
 
-                            if (list.length === 0) {
-                                box.innerHTML =
-                                    '<p class="text-gray-500 dark:text-gray-400">Geen actieve events</p>';
-                                return;
+                        const data = await resp.json();
+                        const rawList = Array.isArray(data) ? data : Object.values(data);
+                        const toShow = [];
+
+                        rawList.forEach(ev => {
+                            if (ev.name?.includes('(Aangrenzend)')) return;
+
+                            let startSec = hmsToSec(ev.start_time);
+                            let endSec   = hmsToSec(ev.end_time);
+                            let nowSec   = currentSimSec;
+
+                            // wrap rond middernacht
+                            if (endSec < startSec) {
+                                if (nowSec < startSec) nowSec += SECS_DAY;
+                                endSec += SECS_DAY;
                             }
 
-                            let html = '';
-                            list.forEach(ev => {
-                                // 1) filter naam “(Aangrenzend)”
-                                if (ev.name?.includes('(Aangrenzend)')) return;
+                            // alleen events waar we in het tijdslot zitten
+                            if (nowSec >= startSec && nowSec <= endSec) {
+                                toShow.push({ ...ev, startSec, endSec });
+                            }
+                        });
 
-                                // 2) bereken begin- én eind-seconden
-                                const startSec = hmsToSec(ev.start_time);
-                                const endSec   = hmsToSec(ev.end_time);
-                                let nowSec     = currentSimSec;
+                        // bepaal nieuwe set actieve slot IDs
+                        const newActiveIds = new Set(toShow.map(ev => ev.slot_id));
+                        const sameSize = newActiveIds.size === prevActiveIds.size;
+                        const sameContent = [...newActiveIds].every(id => prevActiveIds.has(id));
 
-                                // 3) wrap rond middernacht
-                                if (endSec < startSec) {
-                                    // bijvoorbeeld start 23:00, eind 01:00 → treat als 23→25h
-                                    if (nowSec < startSec) nowSec += SECS_DAY;
-                                    endSec += SECS_DAY;
-                                }
+                        // alleen bij overgang: niet eerder en niet later
+                        if (sameSize && sameContent) return;
 
-                                // 4) sla events over waar we niet in het tijdslot zitten
-                                if (nowSec < startSec || nowSec > endSec) return;
+                        // update prevActiveIds
+                        prevActiveIds = newActiveIds;
 
-                                // 5) nu pas de HTML bouwen
-                                const diff = endSec - nowSec;
-                                html += `
-<div class="flex items-center justify-between p-3 mb-2 bg-yellow-50 dark:bg-yellow-900/20
-            border border-yellow-200 dark:border-yellow-700 rounded-lg">
-  <div class="flex items-center space-x-4">
-    <div class="bg-yellow-500 text-white px-2 py-1 rounded text-sm font-medium">
-      Vakje ${ev.slot_id}
-    </div>
-    <div>
-      <span class="font-medium text-gray-800 dark:text-gray-200">${ev.name}</span>
-      <div class="text-sm text-gray-600 dark:text-gray-400">
-        Nog <span class="time-left" data-end-sec="${endSec}">${secToMinTxt(diff)}</span> resterend
-        ${ev.is_recurring
-                                    ? '<span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Terugkerend</span>'
-                                    : ''}
+                        // bouw HTML voor actieve events
+                        const box = document.getElementById('activeEventsList');
+                        if (toShow.length === 0) {
+                            box.innerHTML = '<p class="text-gray-500 dark:text-gray-400">Geen actieve events</p>';
+                            return;
+                        }
+
+                        let html = '';
+                        toShow.forEach(ev => {
+                            const nowSec = currentSimSec;
+                            let diff = ev.endSec - nowSec;
+                            html += `
+  <div class="flex items-center justify-between p-3 mb-2 bg-yellow-50 dark:bg-yellow-900/20
+              border border-yellow-200 dark:border-yellow-700 rounded-lg">
+    <div class="flex items-center space-x-4">
+      <div class="bg-yellow-500 text-white px-2 py-1 rounded text-sm font-medium">
+        Vakje ${ev.slot_id}
+      </div>
+      <div>
+        <span class="font-medium text-gray-800 dark:text-gray-200">${ev.name}</span>
+        <div class="text-sm text-gray-600 dark:text-gray-400">
+          Nog <span class="time-left" data-end-sec="${ev.endSec}">${secToMinTxt(diff)}</span> resterend
+          ${ev.is_recurring
+                                ? '<span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Terugkerend</span>'
+                                : ''}
+        </div>
       </div>
     </div>
-  </div>
-  <div class="flex items-center space-x-2">
-    <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse" title="Actief"></div>
-    <a href="/events?time=${window.currentTime}"
-       class="text-blue-600 hover:text-blue-800 text-sm">Beheren</a>
-  </div>
-</div>`;
-                            });
+    <div class="flex items-center space-x-2">
+      <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse" title="Actief"></div>
+      <a href="/events?time=${window.currentTime}"
+         class="text-blue-600 hover:text-blue-800 text-sm">Beheren</a>
+    </div>
+  </div>`;
+                        });
 
-                            box.innerHTML = html || '<p class="text-gray-500 dark:text-gray-400">Geen actieve events</p>';
-                        })
-                        .catch(err => console.error('Error fetching events:', err));
+                        box.innerHTML = html;
+
+                    } catch (err) {
+                        console.error('Error fetching events:', err);
+                    }
                 }
 
-
-                /* =====================================================
-                 | INIT
-                 ===================================================== */
+                // INIT: start klok & event-checks
                 document.addEventListener('DOMContentLoaded', async () => {
-                    currentSimSec = await fetchCurrentSimSec();  // startwaarde ophalen
+                    currentSimSec = await fetchCurrentSimSec();  // startwaarde
 
-                    updateActiveEvents();                    // meteen tonen
-                    setInterval(updateActiveEvents, 60000);  // lijst elke minuut vernieuwen
-                    setInterval(tickClock, 1000);            // countdown elke seconde up-to-date
+                    // init prevActiveIds voor eerste check
+                    await updateActiveEvents();                   // meteen check en render
+
+                    setInterval(tickClock, 1000);                // countdown elke seconde
+                    console.log('Scheduled tickClock every 1 second');
+
+                    setInterval(updateActiveEvents, 1000);      // check overgang elke seconde
+                    console.log('Scheduled updateActiveEvents every 1 second');
                 });
 
 
