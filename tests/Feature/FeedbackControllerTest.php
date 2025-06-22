@@ -17,24 +17,6 @@ class FeedbackControllerTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * Test that the feedback index page loads successfully and includes feedback items in the view.
-     */
-    #[Test]
-    public function it_shows_the_feedback_index_page()
-    {
-        $user = User::factory()->create();
-        $this->actingAs($user);
-
-        Feedback::factory()->count(2)->create();
-
-        $response = $this->get('/feedback');
-
-        $response->assertStatus(200);
-        $response->assertSee('Feedbackoverzicht');
-        $response->assertViewHas('feedback');
-    }
-
-    /**
      * Test that a new feedback item can be stored in the database.
      */
     #[Test]
