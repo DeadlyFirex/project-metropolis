@@ -128,16 +128,21 @@
                 /* =====================================================
                                 | PDF-EXPORT  (ongewijzigd)
                                 ===================================================== */
-                async function downloadDashboardAsPDF () {
-                    const { jsPDF } = window.jspdf;
-                    const pdf       = new jsPDF({ unit: 'px', format: 'a4' });
+                async function downloadDashboardAsPDF() {
+                    const {
+                        jsPDF
+                    } = window.jspdf;
+                    const pdf = new jsPDF({
+                        unit: 'px',
+                        format: 'a4'
+                    });
 
-                    const pageWidth  = pdf.internal.pageSize.getWidth();
+                    const pageWidth = pdf.internal.pageSize.getWidth();
                     const pageHeight = pdf.internal.pageSize.getHeight();
-                    const padding    = 40;
-                    const now        = new Date().toLocaleString('nl-NL');
+                    const padding = 40;
+                    const now = new Date().toLocaleString('nl-NL');
 
-                    let currentY   = 60;
+                    let currentY = 60;
                     let pageNumber = 1;
 
                     const targets = [
@@ -145,41 +150,70 @@
                         document.getElementById('effect-view')
                     ];
 
-                    for (const el of targets) {
-                        const canvas  = await html2canvas(el, { scale: 2 });
-                        const imgData = canvas.toDataURL('image/png');
+                    const descriptions = [
+                        "Overzicht van de stadsgrid met alle modules op dit moment.",
+                        "Effectenweergave van de simulatie op dit moment."
+                    ];
 
-                        const ratio    = canvas.width / canvas.height;
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(12);
+
+                    for (let i = 0; i < targets.length; i++) {
+                        const element = targets[i];
+                        if (!element) continue;
+
+                        const canvas = await html2canvas(element, {
+                            scale: 2
+                        });
+
+                        // ✂️ Snijd witruimte van bovenkant weg
+                        const croppedCanvas = cropTopWhitespace(canvas, 40); // verwijder ± 40px witruimte boven
+
+                        const imgData = croppedCanvas.toDataURL('image/png');
+                        const ratio = croppedCanvas.width / croppedCanvas.height;
                         const maxWidth = pageWidth - padding * 2;
-                        let imgWidth   = maxWidth;
-                        let imgHeight  = imgWidth / ratio;
+                        let imgWidth = maxWidth;
+                        let imgHeight = imgWidth / ratio;
 
-                        if (imgHeight > pageHeight - padding * 2 - 40) {
-                            imgHeight = pageHeight - padding * 2 - 40;
-                            imgWidth  = imgHeight * ratio;
+                        // Bereken beschrijvinghoogte
+                        const lines = pdf.splitTextToSize(descriptions[i], maxWidth);
+                        const lineHeight = 14;
+                        const descriptionHeight = lines.length * lineHeight;
+
+                        // Pas afbeeldinggrootte aan indien nodig
+                        const maxImgHeight = pageHeight - padding * 2 - descriptionHeight - 20;
+                        if (imgHeight > maxImgHeight) {
+                            imgHeight = maxImgHeight;
+                            imgWidth = imgHeight * ratio;
                         }
-                        if (currentY + imgHeight > pageHeight - padding) {
+
+                        // Check of alles op de pagina past
+                        if (currentY + descriptionHeight + imgHeight > pageHeight - padding) {
                             addFooter(pdf, pageWidth, pageHeight, pageNumber++);
                             pdf.addPage();
                             currentY = 60;
                             addHeader(pdf, pageWidth, now);
                         }
+
                         if (pageNumber === 1 && currentY === 60) {
                             addHeader(pdf, pageWidth, now);
                         }
-                        pdf.addImage(imgData, 'PNG',
-                            (pageWidth - imgWidth) / 2,
-                            currentY,
-                            imgWidth,
-                            imgHeight
-                        );
+
+                        // ➕ Beschrijving
+                        pdf.setFont('helvetica', 'italic');
+                        pdf.text(lines, padding, currentY);
+                        currentY += descriptionHeight + 6;
+
+                        // ➕ Afbeelding
+                        pdf.addImage(imgData, 'PNG', (pageWidth - imgWidth) / 2, currentY, imgWidth, imgHeight);
                         currentY += imgHeight + 20;
                     }
+
                     addFooter(pdf, pageWidth, pageHeight, pageNumber);
                     pdf.save('simulatie-grid-en-effecten.pdf');
                 }
 
-                function addHeader (pdf, w, now) {
+                function addHeader(pdf, pageWidth, now) {
                     pdf.setFontSize(16);
                     pdf.setFont('helvetica', 'bold');
                     pdf.text('Simulatie Dashboard', 40, 30);
@@ -189,13 +223,29 @@
                     pdf.text(`Gegenereerd op: ${now}`, 40, 45);
 
                     pdf.setDrawColor(150);
-                    pdf.line(40, 50, w - 40, 50);
+                    pdf.line(40, 50, pageWidth - 40, 50);
                 }
-                function addFooter (pdf, w, h, p) {
+
+                function addFooter(pdf, pageWidth, pageHeight, pageNumber) {
                     pdf.setFontSize(9);
                     pdf.setTextColor(150);
-                    pdf.text(`Pagina ${p}`, w / 2, h - 10, { align: 'center' });
+                    pdf.text(`Pagina ${pageNumber}`, pageWidth / 2, pageHeight - 10, {
+                        align: 'center'
+                    });
                 }
+
+                // ✂️ Snijd witruimte van bovenkant canvas af
+                function cropTopWhitespace(canvas, cropHeight = 40) {
+                    const cropped = document.createElement('canvas');
+                    cropped.width = canvas.width;
+                    cropped.height = canvas.height - cropHeight;
+
+                    const ctx = cropped.getContext('2d');
+                    ctx.drawImage(canvas, 0, cropHeight, canvas.width, cropped.height, 0, 0, canvas.width, cropped.height);
+
+                    return cropped;
+                }
+
 
                 const SECS_DAY = 86400;
                 let currentSimSec = 0;                              // simulatie-seconden (0-86399)
