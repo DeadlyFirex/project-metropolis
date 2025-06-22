@@ -1,8 +1,15 @@
+// Grab relevant elements
 const searchInput = document.getElementById('search');
 const suggestionBox = document.getElementById('search-suggestions');
 const cards = document.querySelectorAll('.module-card');
 const emptyMsg = document.getElementById('no-matches-message');
 
+/**
+ * Initializes the module library search functionality.
+ * - Applies an initial filter if the input has content.
+ * - Adds an input listener to filter modules as the user types.
+ * - Hides the suggestion box when clicking outside of it.
+ */
 export function initLibrarySearch() {
     filterModules();
 
@@ -14,6 +21,7 @@ export function initLibrarySearch() {
         const suggestionBox = document.getElementById('suggestionBox');
         const searchInput = document.getElementById('searchInput');
 
+        // Hide suggestion box if clicking outside of it
         if (suggestionBox && searchInput) {
             if (!suggestionBox.contains(e.target) && e.target !== searchInput) {
                 suggestionBox.classList.add('hidden');
@@ -22,6 +30,12 @@ export function initLibrarySearch() {
     });
 }
 
+/**
+ * Filters visible module cards based on the user's input.
+ * - Hides cards that don’t match the search term.
+ * - Displays autocomplete suggestions based on module name or category.
+ * - Shows a 'no matches' message if nothing is visible.
+ */
 function filterModules() {
     const query = searchInput.value.trim().toLowerCase();
     suggestionBox.innerHTML = '';
@@ -33,9 +47,10 @@ function filterModules() {
         const category = (card.dataset.category || '').toLowerCase();
         const match = name.startsWith(query) || category.startsWith(query);
 
-
+        // Show or hide the card
         card.style.display = match ? 'flex' : 'none';
 
+        // Collect unique suggestions
         if (match) {
             visibleCount++;
             if (name.startsWith(query)) suggestions.add(card.dataset.name);
@@ -43,6 +58,7 @@ function filterModules() {
         }
     });
 
+    // Show suggestion list
     if (query && suggestions.size > 0) {
         suggestionBox.classList.remove('hidden');
         suggestions.forEach(text => {
@@ -60,6 +76,7 @@ function filterModules() {
         suggestionBox.classList.add('hidden');
     }
 
+    // Show 'no results' message if applicable
     if (emptyMsg) {
         emptyMsg.style.display = visibleCount === 0 ? 'block' : 'none';
     }
