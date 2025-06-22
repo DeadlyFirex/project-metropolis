@@ -250,7 +250,9 @@
                 const SECS_DAY = 86400;
                 let currentSimSec = 0;                              // simulatie-seconden (0-86399)
                 let prevActiveIds = new Set();                      // track actieve slot IDs
+
                 const CURRENT_TIME_ENDPOINT = '/user-clock/current';
+                const EFFECTS_ENDPOINT      = '/dashboard/effects';
 
                 // Zet een "HH:MM:SS" string om naar seconden
                 const hmsToSec = hms => {
@@ -271,7 +273,7 @@
                         const resp = await fetch(CURRENT_TIME_ENDPOINT, { cache: 'no-store' });
                         if (!resp.ok) throw new Error(resp.statusText);
 
-                        const data = await resp.json();         // JSON parsen
+                        const data = await resp.json();
                         const timeStr = data.time.trim();       // "HH:MM:SS"
                         window.currentTime = timeStr;
                         console.log(`Current time fetched: ${timeStr}`);
@@ -287,7 +289,7 @@
 
                 // Update de countdown-teksten per seconde
                 async function tickClock() {
-                    console.log('tickClock called');
+                    // console.log('tickClock called');
                     currentSimSec = await fetchCurrentSimSec();
 
                     document.querySelectorAll('[data-end-sec]').forEach(span => {
@@ -300,7 +302,7 @@
 
                 // Haal events op en render alleen bij overgang in/uit actief
                 async function updateActiveEvents() {
-                    console.log('updateActiveEvents called');
+                    // console.log('updateActiveEvents called');
                     try {
                         const resp = await fetch('/events/slot-events?time=' + window.currentTime, { cache: 'no-store' });
                         if (!resp.ok) throw new Error(resp.statusText);
@@ -328,18 +330,14 @@
                             }
                         });
 
-                        // bepaal nieuwe set actieve slot IDs
                         const newActiveIds = new Set(toShow.map(ev => ev.slot_id));
-                        const sameSize = newActiveIds.size === prevActiveIds.size;
+                        const sameSize    = newActiveIds.size === prevActiveIds.size;
                         const sameContent = [...newActiveIds].every(id => prevActiveIds.has(id));
 
-                        // alleen bij overgang: niet eerder en niet later
                         if (sameSize && sameContent) return;
 
-                        // update prevActiveIds
                         prevActiveIds = newActiveIds;
 
-                        // bouw HTML voor actieve events
                         const box = document.getElementById('activeEventsList');
                         if (toShow.length === 0) {
                             box.innerHTML = '<p class="text-gray-500 dark:text-gray-400">Geen actieve events</p>';
@@ -348,31 +346,30 @@
 
                         let html = '';
                         toShow.forEach(ev => {
-                            const nowSec = currentSimSec;
-                            let diff = ev.endSec - nowSec;
+                            let diff = ev.endSec - currentSimSec;
                             html += `
-  <div class="flex items-center justify-between p-3 mb-2 bg-yellow-50 dark:bg-yellow-900/20
-              border border-yellow-200 dark:border-yellow-700 rounded-lg">
-    <div class="flex items-center space-x-4">
-      <div class="bg-yellow-500 text-white px-2 py-1 rounded text-sm font-medium">
-        Vakje ${ev.slot_id}
-      </div>
-      <div>
-        <span class="font-medium text-gray-800 dark:text-gray-200">${ev.name}</span>
-        <div class="text-sm text-gray-600 dark:text-gray-400">
-          Nog <span class="time-left" data-end-sec="${ev.endSec}">${secToMinTxt(diff)}</span> resterend
-          ${ev.is_recurring
+<div class="flex items-center justify-between p-3 mb-2 bg-yellow-50 dark:bg-yellow-900/20
+            border border-yellow-200 dark:border-yellow-700 rounded-lg">
+  <div class="flex items-center space-x-4">
+    <div class="bg-yellow-500 text-white px-2 py-1 rounded text-sm font-medium">
+      Vakje ${ev.slot_id}
+    </div>
+    <div>
+      <span class="font-medium text-gray-800 dark:text-gray-200">${ev.name}</span>
+      <div class="text-sm text-gray-600 dark:text-gray-400">
+        Nog <span class="time-left" data-end-sec="${ev.endSec}">${secToMinTxt(diff)}</span> resterend
+        ${ev.is_recurring
                                 ? '<span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Terugkerend</span>'
                                 : ''}
-        </div>
       </div>
     </div>
-    <div class="flex items-center space-x-2">
-      <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse" title="Actief"></div>
-      <a href="/events?time=${window.currentTime}"
-         class="text-blue-600 hover:text-blue-800 text-sm">Beheren</a>
-    </div>
-  </div>`;
+  </div>
+  <div class="flex items-center space-x-2">
+    <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse" title="Actief"></div>
+    <a href="/events?time=${window.currentTime}"
+       class="text-blue-600 hover:text-blue-800 text-sm">Beheren</a>
+  </div>
+</div>`;
                         });
 
                         box.innerHTML = html;
@@ -382,18 +379,34 @@
                     }
                 }
 
-                // INIT: start klok & event-checks
+                // Haal de berekende effecten op en render bij elke tick
+                async function updateCalculatedEffects() {
+                    // console.log('updateCalculatedEffects called');
+                    try {
+                        const resp = await fetch(EFFECTS_ENDPOINT + '?time=' + window.currentTime, { cache: 'no-store' });
+                        if (!resp.ok) throw new Error(resp.statusText);
+                        const html = await resp.text();
+                        document.getElementById('effect-view').innerHTML = html;
+                    } catch (err) {
+                        console.error('Failed to reload calculated effects:', err);
+                    }
+                }
+
+                // INIT: start klok-, events- en effects-checks
                 document.addEventListener('DOMContentLoaded', async () => {
                     currentSimSec = await fetchCurrentSimSec();  // startwaarde
 
-                    // init prevActiveIds voor eerste check
-                    await updateActiveEvents();                   // meteen check en render
+                    await updateActiveEvents();      // eerste check events
+                    await updateCalculatedEffects(); // eerste render effects
 
-                    setInterval(tickClock, 1000);                // countdown elke seconde
+                    setInterval(tickClock, 1000);
                     console.log('Scheduled tickClock every 1 second');
 
-                    setInterval(updateActiveEvents, 1000);      // check overgang elke seconde
+                    setInterval(updateActiveEvents, 1000);
                     console.log('Scheduled updateActiveEvents every 1 second');
+
+                    setInterval(updateCalculatedEffects, 1000);
+                    console.log('Scheduled updateCalculatedEffects every 1 second');
                 });
 
 
