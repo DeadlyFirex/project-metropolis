@@ -9,11 +9,20 @@ let selectedModuleId = null;
 let selectedSlotId = null;
 let currentMode = null;
 
+/**
+ * Initializes the drag-and-drop system.
+ * - Detects screen size and switches between mobile/desktop mode.
+ * - Listens to window resize and applies debounce.
+ */
 export function initModuleDragAndDrop() {
     handleResizeMode();
     window.addEventListener('resize', debounce(handleResizeMode, 150));
 }
 
+/**
+ * Utility to limit how often a function executes after rapid calls.
+ * Useful for window resize performance.
+ */
 function debounce(fn, delay) {
     let timeout;
     return () => {
@@ -22,6 +31,9 @@ function debounce(fn, delay) {
     };
 }
 
+/**
+ * Returns all draggable cards and droppable slots from the DOM.
+ */
 function getElements() {
     return {
         moduleCards: document.querySelectorAll('.module-card'),
@@ -29,6 +41,12 @@ function getElements() {
     };
 }
 
+/**
+ * Enables desktop drag-and-drop functionality.
+ * - Makes cards draggable.
+ * - Allows modules to be dragged from library or grid.
+ * - Prevents changes in approved slots.
+ */
 function enableDesktopMode() {
     currentMode = 'desktop';
     const { moduleCards, slots } = getElements();
@@ -50,7 +68,7 @@ function enableDesktopMode() {
     slots.forEach(slot => {
         slot.classList.remove('selected');
 
-        // Enable drag from placed modules
+        // Make already placed modules draggable
         const card = slot.querySelector('[data-module-id]');
         if (card) {
             card.setAttribute('draggable', 'true');
@@ -73,7 +91,7 @@ function enableDesktopMode() {
             });
         }
 
-        // Setup drop area
+        // Drop handling
         slot.addEventListener('dragover', e => {
             e.preventDefault();
             slot.classList.add('drag-over');
@@ -107,6 +125,11 @@ function enableDesktopMode() {
     });
 }
 
+/**
+ * Enables mobile-friendly module placement:
+ * - Tap a module, then tap a slot.
+ * - Or tap a slot, then pick a module from popup.
+ */
 function enableMobileMode() {
     currentMode = 'mobile';
     const { moduleCards, slots } = getElements();
@@ -143,6 +166,10 @@ function enableMobileMode() {
     });
 }
 
+/**
+ * Displays an inline module picker above the selected slot.
+ * Used only in mobile mode.
+ */
 function showModulePicker(slot) {
     removeInlineModulePickers();
     const picker = document.createElement('div');
@@ -184,6 +211,10 @@ function showModulePicker(slot) {
     picker.style.left = `${Math.min(rect.left + window.scrollX, window.innerWidth - 220)}px`;
 }
 
+/**
+ * Determines whether to use mobile or desktop interaction mode.
+ * Re-initializes all event listeners if needed.
+ */
 function handleResizeMode() {
     const isMobile = window.innerWidth <= 605;
     const newMode = isMobile ? 'mobile' : 'desktop';
@@ -197,6 +228,10 @@ function handleResizeMode() {
     }
 }
 
+/**
+ * Clears any active selections and inline pickers.
+ * Used after placing a module.
+ */
 function resetSelection() {
     selectedSlotId = null;
     selectedModuleId = null;

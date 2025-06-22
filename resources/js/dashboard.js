@@ -6,33 +6,45 @@ import { hmsToSec, secToMinTxt, setsAreEqual, SECS_DAY } from './utils/time.js';
 
 let currentSimSec = null;
 let prevActiveIds = new Set();
+
+// Fetch endpoint URLs from meta tags
 const endpoints = {
     currentTime: document.querySelector('meta[name="clock-current-url"]')?.getAttribute('content'),
     effects: document.querySelector('meta[name="dashboard-effects-url"]')?.getAttribute('content'),
     events: document.querySelector('meta[name="slot-events-url"]')?.getAttribute('content'),
 };
 
+// Initialize everything once DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
     setupUI();
 
     currentSimSec = await updateClock();
 
+    // Keep the dashboard in sync with server state
     setInterval(updateUI, 1000);
     setInterval(updateActiveEvents, 1000);
     setInterval(updateCalculatedEffects, 1000);
 
+    // Init module behavior, search, and feedback panel
     initModuleDragAndDrop();
     initLibrarySearch();
     initFeedback();
 });
 
+/**
+ * Sets up UI interactions like PDF export button.
+ */
 function setupUI() {
     const pdfBtn = document.getElementsByName('downloadPdfBtn')[0];
     if (pdfBtn) pdfBtn.addEventListener('click', downloadDashboardAsPDF);
 }
 
+/**
+ * Updates all timer countdowns (e.g. remaining time for events).
+ */
 async function updateUI() {
     currentSimSec = await updateClock();
+
     document.querySelectorAll('[data-end-sec]').forEach(span => {
         const end = Number(span.dataset.endSec);
         let diff = end - currentSimSec;
@@ -41,6 +53,10 @@ async function updateUI() {
     });
 }
 
+/**
+ * Fetches the current simulation time from the backend.
+ * If it fails, simulates time by incrementing the previous value.
+ */
 async function updateClock() {
     try {
         const resp = await fetch(endpoints.currentTime, { cache: 'no-store' });
@@ -53,12 +69,17 @@ async function updateClock() {
     }
 }
 
+/**
+ * Updates the list of currently active events based on simulation time.
+ * Highlights active slots, updates UI only if the active set changes.
+ */
 async function updateActiveEvents() {
     try {
         const resp = await fetch(`${endpoints.events}?time=${window.currentTime}`, { cache: 'no-store' });
         const data = await resp.json();
         const events = Array.isArray(data) ? data : Object.values(data);
 
+        // Filter only primary (non-adjacent) events
         const active = events.filter(ev => {
             if (ev.name?.includes('(Aangrenzend)')) return false;
 
@@ -80,16 +101,18 @@ async function updateActiveEvents() {
         prevActiveIds = newIds;
         const box = document.getElementById('activeEventsList');
 
+        // Display "no active events" message
         if (!active.length) {
             box.innerHTML = '<p class="text-gray-500 dark:text-gray-400">Geen actieve events</p>';
             return;
         }
 
+        // Render list of active events
         box.innerHTML = active.map(ev => {
             let startSec = hmsToSec(ev.start_time);
             let endSec = hmsToSec(ev.end_time);
 
-            // Corrigeer dagovergang
+            // Handle day wrap
             if (endSec < startSec) endSec += SECS_DAY;
 
             let diff = endSec - currentSimSec;
@@ -118,6 +141,10 @@ async function updateActiveEvents() {
     }
 }
 
+/**
+ * Reloads the calculated effects panel from the server.
+ * Called every second to stay synced with changes.
+ */
 async function updateCalculatedEffects() {
     try {
         const resp = await fetch(`${endpoints.effects}?time=${window.currentTime}`, { cache: 'no-store' });
