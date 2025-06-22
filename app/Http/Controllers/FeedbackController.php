@@ -39,20 +39,23 @@ class FeedbackController extends Controller
     }
 
 
-    public function update(Request $request, Feedback $feedbackModel)
-    {
-        $request->validate(['content'=>'required|string|max:2000']);
-        $feedbackModel->update(['content'=>$request->content]);
+    public function update(Request $request, Feedback $feedback)
+{
+    $data = $request->isJson() ? $request->json()->all() : $request->all();
 
-        if ($request->ajax()) {
-            // haal wél de volledige lijst, en geef hem door als 'feedback'
-            $allFeedback = Feedback::latest()->get();
-            return view('components.feedback.list', ['feedback' => $allFeedback]);
-        }
+    $validated = validator($data, [
+        'content' => 'required|string|max:2000',
+    ])->validate();
 
-        return redirect()->route('feedback.index')
-            ->with('success','Feedback bijgewerkt.');
+    $feedback->update(['content' => $validated['content']]);
+
+    if ($request->ajax()) {
+        $feedback = Feedback::latest()->get();
+        return view('components.feedback.list', compact('feedback'));
     }
+
+    return redirect()->route('feedback.index')->with('success', 'Feedback bijgewerkt.');
+}
 
     public function destroy(Feedback $feedback)
     {
