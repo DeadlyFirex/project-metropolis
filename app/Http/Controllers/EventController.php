@@ -586,70 +586,92 @@ class EventController extends Controller
                 :                    $diff->i.' minuten');
     }
 
+    /**
+     * Geeft per slot het gekoppelde event terug voor weergave in het dashboard.
+     * Resultaat‑array heeft als sleutel de slot_id zodat de Blade‑view direct
+     *    @foreach ($activeEvents as $slotId => $event) ...
+     * kan gebruiken. Zowel lopende (running) als geplande (scheduled) events
+     * worden teruggegeven; de view beslist wat ze toont.
+     */
     public function getSlotEventsForDashboard(?string $simTime = null): array
     {
-        // Gebruik altijd de simulatie tijd als die beschikbaar is
+        // 1) Huidige (simulatie)tijd bepalen
         $currentTime = $simTime ?? date('H:i:s');
         $now = Carbon::createFromFormat('H:i:s', $currentTime)
             ->setDate(Carbon::today()->year, Carbon::today()->month, Carbon::today()->day);
 
+        // 2) Container – items per slot‑id
         $items = [];
 
-        Slot::with(['event.eventType.effects', 'module'])->get()->each(function ($slot) use (&$items, $now) {
-            $event = $slot->event;
-            if (!$event) {
-                return;
-            }
-
-            $start = Carbon::createFromFormat('H:i:s', $event->start_time)
-                ->setDate($now->year, $now->month, $now->day);
-
-            $end = Carbon::createFromFormat('H:i:s', $event->end_time)
-                ->setDate($now->year, $now->month, $now->day);
-
-            // Handle overnight events
-            if ($end->lte($start)) {
-                $end->addDay();
-            }
-
-            // For non-recurring events: skip if expired
-            if (!$event->is_recurring && $now->gt($end)) {
-                return;
-            }
-
-            // Bepaal status en welke tijd we gaan aftellen
-            if ($now->between($start, $end)) {
-                // Event is nu bezig
-                $status      = 'running';
-                $displayTime = $end;
-            } else {
-                // Event is gepland (of recurring ná vandaag)
-                $status      = 'scheduled';
-                $displayTime = $start;
-
-                if ($event->is_recurring && $now->gt($end)) {
-                    // Voor recurring events: show start morgen
-                    $displayTime = $start->copy()->addDay();
+        // 3) Loop over alle slots met hun gekoppelde event & module
+        Slot::with(['event.eventType.effects', 'module'])
+            ->get()
+            ->each(function ($slot) use (&$items, $now) {
+                /** @var \App\Models\Event|null $event */
+                $event = $slot->event;
+                if (!$event) {
+                    return; // slot zonder event
                 }
-            }
 
-            $items[$slot->id] = [
-                'slot_id'        => $slot->id,
-                'event_id'       => $event->id,
-                'event_name'     => $event->name,
-                'description'    => $event->description,
-                'start_time'     => $event->start_time,
-                'end_time'       => $event->end_time,
-                'is_recurring'   => (bool)$event->is_recurring,
-                'time_remaining' => $this->formatRemainingTime($now, $displayTime),
-                'effects'        => $this->getEventEffects($event->event_type_id),
-                'status'         => $status,
-            ];
-        });
+                /**
+                 * 4) Start & End op vandaag mappen.
+                 *    ‑ Indien end <= start → overnight (b.v. 23:00‑01:00).
+                 */
+                $start = Carbon::createFromFormat('H:i:s', $event->start_time)
+                    ->setDate($now->year, $now->month, $now->day);
 
+                $end = Carbon::createFromFormat('H:i:s', $event->end_time)
+                    ->setDate($now->year, $now->month, $now->day);
+
+                if ($end->lte($start)) {
+                    $end->addDay(); // overnight
+                }
+
+                /**
+                 * 5) Als het event (non‑recurring) voorbij lijkt, schuif het naar morgen
+                 *    i.p.v. het te negeren — hiermee wordt voorkomen dat een event dat
+                 *    vóór de huidige simulatietijd ligt (02:00 wanneer nu 20:24 is)
+                 *    meteen wordt weggefilterd.
+                 */
+                if (!$event->is_recurring && $now->gt($end)) {
+                    $start->addDay();
+                    $end->addDay();
+                }
+
+                /**
+                 * 6) Status & display‑moment berekenen
+                 */
+                if ($now->between($start, $end)) {
+                    $status      = 'running';
+                    $displayTime = $end;
+                } else {
+                    $status      = 'scheduled';
+                    $displayTime = $start;
+
+                    // Recurring events van eerder vandaag pas morgen tonen
+                    if ($event->is_recurring && $now->gt($end)) {
+                        $displayTime = $start->copy()->addDay();
+                    }
+                }
+
+                // 7) Opslaan (key = slot‑id)
+                $items[$slot->id] = [
+                    'slot_id'        => $slot->id,
+                    'event_id'       => $event->id,
+                    'event_name'     => $event->name,
+                    'description'    => $event->description,
+                    'start_time'     => $event->start_time,
+                    'end_time'       => $event->end_time,
+                    'is_recurring'   => (bool) $event->is_recurring,
+                    'time_remaining' => $this->formatRemainingTime($now, $displayTime),
+                    'effects'        => $this->getEventEffects($event->event_type_id),
+                    'status'         => $status, // running | scheduled
+                ];
+            });
+
+        // 8) Alles teruggeven (geen filter/her‑indexering)
         return $items;
     }
-
 
 
     /**

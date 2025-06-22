@@ -55,7 +55,7 @@ Route::middleware('auth')->group(function () {
         ->names([
             'index' => 'conditions',
         ]);
-  
+
     Route::post('/simulatie/koppel-module', [SimulationController::class, 'koppelModule']);
     Route::patch('/slots/{slot}/remove-module', [SimulationController::class, 'removeModule'])->name('slots.removeModule');
     Route::post('/effects/module/{moduleId}/{type}', [SimulationController::class, 'updateEffect'])->name('effects.update');
@@ -94,6 +94,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/user-clock/current', [ClockController::class, 'current'])
         ->name('clock.current');
 });
+
+Route::get('/dashboard/effects', [SimulationController::class, 'getEffectsHtml'])->name('dashboard.effects.html');
 
 
 // ========== Auth scaffolding ==========

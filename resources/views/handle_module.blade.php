@@ -51,60 +51,61 @@
         <div class="overflow-x-auto">
             <table class="min-w-[700px] w-full text-sm text-left border border-gray-300 rounded-lg shadow-sm">
                 <thead class="bg-gray-100">
-                    <tr>
-                        <th class="px-4 py-3">
-                            <input type="checkbox" id="selectAll" />
-                        </th>
-                        <td class="px-4 text-gray-800 break-words">
-                            <div class="my-2 max-w-md">
-                                <button id="deleteSelectedBtn"
+                <!-- Eerste rij met checkbox + knop, de knop spreidt zich uit over de overige 5 kolommen -->
+                <tr>
+                    <th class="px-4 py-3">
+                        <input type="checkbox" id="selectAll" />
+                    </th>
+                    <th colspan="5" class="px-4 py-3 text-gray-800">
+                        <div class="my-2 max-w-md">
+                            <button id="deleteSelectedBtn"
                                     class="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-md shadow-md transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                                     disabled>
-                                    Verwijder Geselecteerde Modules
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-
-                        <th class="px-4 py-3 font-medium text-gray-700 min-w-[120px]">Naam</th>
-                        <th class="px-4 py-3 font-medium text-gray-700 min-w-[200px]">Beschrijving</th>
-                        <th class="px-4 py-3 font-medium text-gray-700 min-w-[120px]">Categorie</th>
-                        <th class="px-4 py-3 font-medium text-gray-700 min-w-[120px]">Afbeelding</th>
-                        <th class="px-4 py-3 font-medium text-gray-700 min-w-[160px]">Acties</th>
-                    </tr>
+                                Verwijder Geselecteerde Modules
+                            </button>
+                        </div>
+                    </th>
+                </tr>
+                <!-- Tweede rij met kolomkoppen -->
+                <tr>
+                    <th class="px-4 py-3 font-medium text-gray-700 min-w-[120px]">Naam</th>
+                    <th class="px-4 py-3 font-medium text-gray-700 min-w-[200px]">Beschrijving</th>
+                    <th class="px-4 py-3 font-medium text-gray-700 min-w-[120px]">Categorie</th>
+                    <th class="px-4 py-3 font-medium text-gray-700 min-w-[120px]">Afbeelding</th>
+                    <th class="px-4 py-3 font-medium text-gray-700 min-w-[160px]">Acties</th>
+                </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach ($modules as $module)
-                        <tr>
-                            <td class="px-4 py-3">
-                                <input type="checkbox" class="module-checkbox" value="{{ $module->id }}" />
-                            </td>
-                            <td class="px-4 py-3 text-gray-800 break-words">{{ $module->name }}</td>
-                            <td class="px-4 py-3 text-gray-600 break-words">{{ $module->description }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $module->category }}</td>
-                            <td class="px-4 py-3">
-                                <img src="{{ asset('storage/' . $module->image_path) }}" alt="{{ $module->name }}"
-                                    class="w-16 h-16 object-contain rounded-md shadow mx-auto">
-                            </td>
-                            <td class="px-4 py-3 text-gray-600 space-y-2">
-                                <button
-                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow transition duration-200"
-                                    onclick="openEditModal({{ $module->id }})">
-                                    Module Wijzigen
-                                </button>
-                                <form action="{{ route('modules.destroy', $module->id) }}" method="POST"
-                                    onsubmit="return confirm('Weet je zeker dat je deze module wilt verwijderen?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
+                @foreach ($modules as $module)
+                    <tr>
+                        <td class="px-4 py-3">
+                            <input type="checkbox" class="module-checkbox" value="{{ $module->id }}" />
+                        </td>
+                        <td class="px-4 py-3 text-gray-800 break-words">{{ $module->name }}</td>
+                        <td class="px-4 py-3 text-gray-600 break-words">{{ $module->description }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ $module->category }}</td>
+                        <td class="px-4 py-3">
+                            <img src="{{ asset('storage/' . $module->image_path) }}" alt="{{ $module->name }}"
+                                 class="w-16 h-16 object-contain rounded-md shadow mx-auto">
+                        </td>
+                        <td class="px-4 py-3 text-gray-600 space-y-2">
+                            <button
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow transition duration-200"
+                                onclick="openEditModal({{ $module->id }})">
+                                Module Wijzigen
+                            </button>
+                            <form action="{{ route('modules.destroy', $module->id) }}" method="POST"
+                                  onsubmit="return confirm('Weet je zeker dat je deze module wilt verwijderen?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
                                         class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md text-sm">
-                                        Verwijderen
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
+                                    Verwijderen
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                @endforeach
                 </tbody>
             </table>
         </div>

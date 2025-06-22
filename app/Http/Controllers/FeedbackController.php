@@ -40,11 +40,22 @@ class FeedbackController extends Controller
 
 
     public function update(Request $request, Feedback $feedback)
-    {
-        $request->validate(['content' => 'required|string|max:2000']);
-        $feedback->update(['content' => $request->content]);
-        return redirect()->route('feedback.index')->with('success', 'Feedback bijgewerkt.');
+{
+    $data = $request->isJson() ? $request->json()->all() : $request->all();
+
+    $validated = validator($data, [
+        'content' => 'required|string|max:2000',
+    ])->validate();
+
+    $feedback->update(['content' => $validated['content']]);
+
+    if ($request->ajax()) {
+        $feedback = Feedback::latest()->get();
+        return view('components.feedback.list', compact('feedback'));
     }
+
+    return redirect()->route('feedback.index')->with('success', 'Feedback bijgewerkt.');
+}
 
     public function destroy(Feedback $feedback)
     {
@@ -60,6 +71,12 @@ class FeedbackController extends Controller
         Feedback::create([
             'content' => $request->input('content'),
         ]);
+
+        if ($request->ajax()) {
+            // geef alleen de lijst-partial terug
+            $feedback = Feedback::latest()->get();
+            return view('components.feedback.list', compact('feedback'));
+        }
 
         return back()->with('success', 'Bedankt voor je feedback!');
     }
