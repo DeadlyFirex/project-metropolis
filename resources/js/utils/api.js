@@ -1,9 +1,14 @@
 import { showLoading, hideLoading } from './dom.js';
 
+// Fetch meta content for CSRF protection and endpoint URLs
 const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content;
 const attachUrl = document.querySelector('meta[name="attach-module-url"]')?.content;
 const moveUrl = document.querySelector('meta[name="move-module-url"]')?.content;
 
+/**
+ * Sends a request to attach a module to a specific slot.
+ * Shows a loading indicator and handles various error responses.
+ */
 export async function attachModule(moduleId, slotId) {
     showLoading();
     try {
@@ -29,6 +34,10 @@ export async function attachModule(moduleId, slotId) {
     }
 }
 
+/**
+ * Sends a request to move a module from one slot to another.
+ * Shows a loading indicator and reloads the page on success.
+ */
 export async function moveModule(moduleId, fromSlotId, toSlotId) {
     showLoading();
     try {

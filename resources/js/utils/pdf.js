@@ -1,6 +1,10 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
+/**
+ * Captures selected dashboard sections and generates a PDF report.
+ * Includes headers, footers, and descriptions for each section.
+ */
 export async function downloadDashboardAsPDF() {
     console.log("Generating PDF...");
     const pdf = new jsPDF({ unit: 'px', format: 'a4' });
@@ -12,6 +16,7 @@ export async function downloadDashboardAsPDF() {
     let currentY = 60;
     let pageNumber = 1;
 
+    // Define which sections to include in the PDF
     const targets = [
         document.getElementById('city-grid'),
         document.getElementById('effect-view'),
@@ -26,6 +31,7 @@ export async function downloadDashboardAsPDF() {
         const element = targets[i];
         if (!element) continue;
 
+        // Capture the element as canvas, crop unnecessary top space
         const canvas = await html2canvas(element, { scale: 2 });
         const croppedCanvas = cropTopWhitespace(canvas, 40);
 
@@ -35,16 +41,19 @@ export async function downloadDashboardAsPDF() {
         let imgWidth = maxWidth;
         let imgHeight = imgWidth / ratio;
 
+        // Calculate description block height
         const lines = pdf.splitTextToSize(descriptions[i], maxWidth);
         const lineHeight = 14;
         const descriptionHeight = lines.length * lineHeight;
 
+        // Ensure image fits within page bounds
         const maxImgHeight = pageHeight - padding * 2 - descriptionHeight - 20;
         if (imgHeight > maxImgHeight) {
             imgHeight = maxImgHeight;
             imgWidth = imgHeight * ratio;
         }
 
+        // Start new page if needed
         if (currentY + descriptionHeight + imgHeight > pageHeight - padding) {
             addFooter(pdf, pageWidth, pageHeight, pageNumber++);
             pdf.addPage();
@@ -52,23 +61,30 @@ export async function downloadDashboardAsPDF() {
             addHeader(pdf, pageWidth, now);
         }
 
+        // Add header on first page
         if (pageNumber === 1 && currentY === 60) {
             addHeader(pdf, pageWidth, now);
         }
 
+        // Draw description text
         pdf.setFont('helvetica', 'italic');
         pdf.setFontSize(12);
         pdf.text(lines, padding, currentY);
         currentY += descriptionHeight + 6;
 
+        // Draw captured image
         pdf.addImage(imgData, 'PNG', (pageWidth - imgWidth) / 2, currentY, imgWidth, imgHeight);
         currentY += imgHeight + 20;
     }
 
+    // Finalize PDF with footer and save
     addFooter(pdf, pageWidth, pageHeight, pageNumber);
     pdf.save('simulatie-grid-en-effecten.pdf');
 }
 
+/**
+ * Adds a header to the current page with title and timestamp.
+ */
 function addHeader(pdf, pageWidth, now) {
     pdf.setFontSize(16);
     pdf.setFont('helvetica', 'bold');
@@ -80,12 +96,19 @@ function addHeader(pdf, pageWidth, now) {
     pdf.line(40, 50, pageWidth - 40, 50);
 }
 
+/**
+ * Adds a footer to the current page with the page number.
+ */
 function addFooter(pdf, pageWidth, pageHeight, pageNumber) {
     pdf.setFontSize(9);
     pdf.setTextColor(150);
     pdf.text(`Pagina ${pageNumber}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
 }
 
+/**
+ * Crops white space from the top of a canvas.
+ * Used to remove unnecessary margins before adding to PDF.
+ */
 function cropTopWhitespace(canvas, cropHeight = 40) {
     const cropped = document.createElement('canvas');
     cropped.width = canvas.width;
