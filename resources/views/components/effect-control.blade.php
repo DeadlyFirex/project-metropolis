@@ -65,47 +65,75 @@
 {{-- <script src="{{ asset('js/effect-control.js') }}"></script> --}}
 
 <script>
-    // Wait until the DOM is fully loaded
     document.addEventListener("DOMContentLoaded", () => {
-        // Get references to key UI elements
         const backBtn = document.getElementById("back-to-calculated-effects");
         const effectView = document.getElementById("effect-view");
         const controlView = document.getElementById("effect-control-view");
 
-        // If all elements exist, set up click handler for the "back" button
         if (backBtn && effectView && controlView) {
             backBtn.addEventListener("click", () => {
-                // Hide the control view
                 controlView.classList.add("hidden");
-                // Show the main effect view
                 effectView.classList.remove("hidden");
             });
         }
 
-        // Add click event listeners to all effect-adjust buttons
         document.querySelectorAll('button[data-action="effect-adjust"]').forEach(button => {
-            button.addEventListener('click', () => {
-                // Get data attributes from the clicked button
+            button.addEventListener('click', async () => {
                 const moduleId = button.getAttribute('data-module-id');
                 const effectType = button.getAttribute('data-effect-type');
                 const delta = parseInt(button.getAttribute('data-delta'), 10);
 
-                // Find the corresponding span element that displays the effect value
                 const span = document.querySelector(
                     `span.effect-value[data-module="${moduleId}"][data-type="${effectType}"]`
                 );
                 if (!span) return;
 
-                // Get the current value from the span, defaulting to 0
                 let currentValue = parseInt(span.textContent.replace('+', '')) || 0;
                 const newValue = currentValue + delta;
 
-                // Check if the new value is within the allowed range (-5 to 5)
                 if (newValue > 5 || newValue < -5) {
                     alert('Waarde moet tussen -5 en 5 blijven.');
-                    return; // Stop further processing if limit is exceeded
+                    return;
                 }
 
+                // Stuur update naar server
+                try {
+                    const response = await fetch(
+                        `/effects/module/${moduleId}/${effectType}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector(
+                                    'meta[name="csrf-token"]').getAttribute(
+                                    'content')
+                            },
+                            body: JSON.stringify({
+                                value: newValue
+                            })
+                        });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        alert('Fout bij opslaan: ' + (errorData.error || 'Onbekende fout'));
+                        return;
+                    }
+
+                    // Update de waarde in de UI
+                    span.textContent = newValue > 0 ? '+' + newValue : newValue;
+                    span.classList.remove('text-green-600', 'text-red-600',
+                    'text-gray-700');
+
+                    if (newValue > 0) {
+                        span.classList.add('text-green-600');
+                    } else if (newValue < 0) {
+                        span.classList.add('text-red-600');
+                    } else {
+                        span.classList.add('text-gray-700');
+                    }
+
+                } catch (error) {
+                    alert('Netwerkfout: ' + error.message);
+                }
             });
         });
     });
