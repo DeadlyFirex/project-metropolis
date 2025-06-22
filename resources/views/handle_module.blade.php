@@ -38,7 +38,7 @@
     @endif
 
     <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center mx-4 sm:mx-8 mt-6">
-        <button onclick="window.location.href='{{ route('simulatiedashboard') }}';"
+        <button onclick="window.location.href='{{ route('simulatie.dashboard') }}';"
             class="bg-green-700 hover:bg-green-900 text-white px-4 py-2 rounded w-full sm:w-auto">
             Simulatie Dashboard
         </button>

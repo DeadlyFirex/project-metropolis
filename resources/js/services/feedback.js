@@ -5,13 +5,14 @@
  * - Re-loading the feedback list without page refresh
  * - Making sure edit/delete buttons keep working
  */
-export function initFeedback() {
-    const openBtn = document.getElementById('open-feedback');
-    const closeBtn = document.getElementById('close-feedback');
-    const panel = document.getElementById('feedback-panel');
-    const feedbackForm = document.getElementById('feedback-form');
-    const feedbackIndexUrl = document.querySelector('meta[name="feedback-index-url"]')?.content;
 
+const openBtn = document.getElementById('open-feedback');
+const closeBtn = document.getElementById('close-feedback');
+const panel = document.getElementById('feedback-panel');
+const feedbackForm = document.getElementById('feedback-form');
+const feedbackIndexUrl = document.querySelector('meta[name="feedback-index-url"]')?.content;
+
+export function initFeedback() {
     // Open and close the sidebar
     if (openBtn && closeBtn && panel) {
         openBtn.addEventListener('click', () => {

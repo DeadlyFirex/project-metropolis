@@ -23,7 +23,7 @@
     </div>
 
     {{-- Filter op categorie --}}
-    <form method="GET" action="{{ route('simulatiedashboard') }}" class="mb-4 text-left">
+    <form method="GET" action="{{ route('simulatie.dashboard') }}" class="mb-4 text-left">
         <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Filter op categorie:</label>
         <select name="category" id="category" onchange="this.form.submit()" class="border px-2 py-1 rounded w-full">
             <option value="">Alle categorieën</option>

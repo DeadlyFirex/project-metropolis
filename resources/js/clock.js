@@ -5,8 +5,6 @@
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes|MDN Classes}
  */
 class SimulationClock {
-    static #instance = null;
-
     #intervalId = null;
     #lastSave = 0;
     #saveInterval = 2500;
@@ -31,10 +29,6 @@ class SimulationClock {
         initialDate = null,
         tickRate = 1000
     } = {}) {
-        if (SimulationClock.#instance) {
-            return SimulationClock.#instance;
-        }
-
         this.clockEl = document.querySelector(clockSelector);
         this.dateEl = document.querySelector(dateSelector);
         this.modeIcon = document.querySelector(modeIconSelector);
@@ -48,7 +42,6 @@ class SimulationClock {
 
         this.updateClockDisplay();
         this.updateInterval(this.interval);
-        SimulationClock.#instance = this;
     }
 
     pad = num => String(num).padStart(2, '0');

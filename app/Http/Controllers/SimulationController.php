@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Event;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
-use App\Models\Module;
-use App\Models\Slot;
-use App\Models\Effect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Event;
+use App\Models\Module;
+use App\Models\Slot;
+use App\Models\Effect;
 use App\Models\Clock;
 use App\Models\Feedback;
-use Carbon\Carbon;
 
 
 class SimulationController extends Controller
