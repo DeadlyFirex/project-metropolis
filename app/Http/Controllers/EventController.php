@@ -247,7 +247,7 @@ class EventController extends Controller
         $event->delete();
         Log::info('Event deleted:', ['event_id' => $event->id, 'event_name' => $event->name]);
 
-        return redirect()->back()->with('success', 'Event for slot ' . $request->slot_id . ' has been reset to normal!');
+        return redirect()->back()->with('success', 'Evenement voor slot ' . $request->slot_id . ' is teruggezet naar normaal!');
     }
 
     /**
