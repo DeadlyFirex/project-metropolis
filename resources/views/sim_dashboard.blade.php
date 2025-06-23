@@ -1,5 +1,26 @@
+@php use Carbon\Carbon; @endphp
 <x-app-layout>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="clock-current-url" content="{{ route('clock.current') }}">
+    <meta name="dashboard-effects-url" content="{{ route('simulatie.effects') }}">
+    <meta name="slot-events-url" content="{{ route('events.slot-events') }}">
+    <meta name="attach-module-url" content="{{ route('slots.link') }}">
+    <meta name="move-module-url" content="{{ route('slots.move') }}">
+    @if(! is_null($nextExpiration))
+        <script>
+            const expiresMs = new Date("{{ Carbon::parse($nextExpiration)->toIso8601String() }}").getTime();
+            const nowMs = Date.now();
+            const delay = expiresMs - nowMs;
+
+            if (delay > 0) {
+                setTimeout(() => {
+                    window.location.reload();
+                }, delay);
+            }
+        </script>
+    @endif
     <x-slot name="header">
+        <meta name="feedback-index-url" content="{{ route('feedback.index') }}">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ __('Simulatie Dashboard') }}
@@ -8,7 +29,7 @@
                 <button class="bg-blue-500 text-white px-4 py-2 text-sm sm:text-base rounded" id="increaseFontBtn">
                     Tekstgrootte Vergroten
                 </button>
-                <button onclick="downloadDashboardAsPDF()" class="bg-green-600 text-white px-4 py-2 text-sm sm:text-base rounded">
+                <button name="downloadPdfBtn" class="bg-green-600 text-white px-4 py-2 text-sm sm:text-base rounded">
                     Download als PDF
                 </button>
             </div>
@@ -23,25 +44,31 @@
                 </main>
 
                 <div class="w-full lg:flex-1 flex flex-col gap-6">
-                    <section id="module-library" class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full h-[400px] overflow-y-auto">
+                    <section id="module-library"
+                             class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full h-[400px] overflow-y-auto">
                         @include('components.library', [
-                        'modules' => $modules,
-                        'categories' => $categories,
+                            'modules' => $modules,
+                            'categories' => $categories,
                         ])
                     </section>
 
-                    <section id="effect-view" class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
-                        @include('components.calculated-effects', ['slots' => $slots])
+                    <section id="effect-view"
+                             class="bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
+                        @include('components.calculated-effects', ['slots' => $slots, '$clockTime' => $clockTime, '$clockDate' => $clockDate])
                     </section>
 
-                    <section id="effect-control-view" class="hidden bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
-                        @include('components.effect-control', ['all_modules' => $modules, 'types' => [
-                        'safety' => 'Veiligheid',
-                        'recreation' => 'Recreatie',
-                        'climate' => 'Milieukwaliteit',
-                        'facilities' => 'Voorzieningen',
-                        'infrastructure' => 'Mobiliteit',
-                        ]])
+                    <section id="effect-control-view"
+                             class="hidden bg-white dark:bg-gray-900 px-4 py-6 rounded-2xl shadow w-full overflow-x-auto">
+                        @include('components.effect-control', [
+                            'all_modules' => $modules,
+                            'types' => [
+                                'safety' => 'Veiligheid',
+                                'recreation' => 'Recreatie',
+                                'climate' => 'Milieukwaliteit',
+                                'facilities' => 'Voorzieningen',
+                                'infrastructure' => 'Mobiliteit',
+                            ],
+                        ])
                     </section>
                 </div>
             </div>
@@ -54,173 +81,52 @@
                     </div>
                 </div>
             </div>
+            <div id="loading"
+                 class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
+                <div class="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+            </div>
 
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+            <!-- Floating Button -->
+            <button id="open-feedback"
+                    class="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-full shadow-lg z-50">
+                💬 Feedback
+            </button>
 
-            <script>
-                async function downloadDashboardAsPDF() {
-                    const {
-                        jsPDF
-                    } = window.jspdf;
-                    const pdf = new jsPDF({
-                        unit: 'px',
-                        format: 'a4'
-                    });
+            <!-- Feedback Sidebar -->
+            <div id="feedback-panel"
+                 class="fixed top-0 right-0 w-full max-w-md h-full bg-white dark:bg-gray-900 shadow-lg transform translate-x-full transition-transform duration-300 z-40 flex flex-col">
 
-                    const pageWidth = pdf.internal.pageSize.getWidth();
-                    const pageHeight = pdf.internal.pageSize.getHeight();
-                    const padding = 40;
-                    const now = new Date().toLocaleString('nl-NL');
+                <div class="p-6 flex-1 flex flex-col overflow-hidden">
+                    <!-- Header -->
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Feedback</h2>
+                        <button id="close-feedback"
+                                class="text-4xl text-gray-500 hover:text-gray-800 dark:hover:text-white transition-transform duration-200 hover:rotate-90">
+                            &times;
+                        </button>
+                    </div>
 
-                    let currentY = 60;
-                    let pageNumber = 1;
+                    <!-- Feedback Form -->
+                    <form id="feedback-form" method="POST" action="{{ route('feedback.store') }}"
+                          data-url="{{ route('feedback.store') }}">
+                        @csrf
+                        <textarea name="content" required
+                                  class="w-full border rounded p-3 dark:bg-gray-700 dark:text-white mb-3" rows="3"
+                                  placeholder="Wat wil je delen?"></textarea>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            Verstuur
+                        </button>
+                    </form>
 
-                    const targets = [
-                        document.getElementById('city-grid'),
-                        document.getElementById('effect-view')
-                    ];
+                    <hr class="my-4 border-gray-300 dark:border-gray-700"/>
 
-                    for (const element of targets) {
-                        const canvas = await html2canvas(element, {
-                            scale: 2
-                        });
-                        const imgData = canvas.toDataURL('image/png');
-
-                        const ratio = canvas.width / canvas.height;
-                        const maxWidth = pageWidth - padding * 2;
-                        let imgWidth = maxWidth;
-                        let imgHeight = imgWidth / ratio;
-
-                        if (imgHeight > pageHeight - padding * 2 - 40) {
-                            imgHeight = pageHeight - padding * 2 - 40;
-                            imgWidth = imgHeight * ratio;
-                        }
-
-                        if (currentY + imgHeight > pageHeight - padding) {
-                            addFooter(pdf, pageWidth, pageHeight, pageNumber++);
-                            pdf.addPage();
-                            currentY = 60;
-                            addHeader(pdf, pageWidth, now);
-                        }
-
-                        if (pageNumber === 1 && currentY === 60) {
-                            addHeader(pdf, pageWidth, now);
-                        }
-
-                        pdf.addImage(imgData, 'PNG', (pageWidth - imgWidth) / 2, currentY, imgWidth, imgHeight);
-                        currentY += imgHeight + 20;
-                    }
-
-                    addFooter(pdf, pageWidth, pageHeight, pageNumber);
-                    pdf.save('simulatie-grid-en-effecten.pdf');
-                }
-
-                function addHeader(pdf, pageWidth, now) {
-                    pdf.setFontSize(16);
-                    pdf.setFont('helvetica', 'bold');
-                    pdf.text('Simulatie Dashboard', 40, 30);
-
-                    pdf.setFontSize(10);
-                    pdf.setFont('helvetica', 'normal');
-                    pdf.text(`Gegenereerd op: ${now}`, 40, 45);
-
-                    pdf.setDrawColor(150);
-                    pdf.line(40, 50, pageWidth - 40, 50);
-                }
-
-                function addFooter(pdf, pageWidth, pageHeight, pageNumber) {
-                    pdf.setFontSize(9);
-                    pdf.setTextColor(150);
-                    pdf.text(`Pagina ${pageNumber}`, pageWidth / 2, pageHeight - 10, {
-                        align: 'center'
-                    });
-                }
-
-
-
-
-                function updateActiveEvents() {
-                    fetch('/events/slot-events')
-                        .then(response => response.json())
-                        .then(data => {
-                            const eventsList = document.getElementById('activeEventsList');
-                            const noEventsMessage = document.getElementById('noEventsMessage');
-
-                            if (Object.keys(data).length === 0) {
-                                eventsList.innerHTML = '<p class="text-gray-500 dark:text-gray-400" id="noEventsMessage">Geen actieve events</p>';
-                            } else {
-                                let eventsHtml = '';
-                                for (const [slotId, event] of Object.entries(data)) {
-                                    if (event.event_name && event.event_name.includes('(Aangrenzend)')) {
-                                        continue;
-                                    }
-                                    eventsHtml += `
-                                <div class="flex items-center justify-between p-3 mb-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
-                                    <div class="flex items-center space-x-4">
-                                        <div class="bg-yellow-500 text-white px-2 py-1 rounded text-sm font-medium">
-                                            Vakje ${slotId}
-                                        </div>
-                                        <div>
-                                            <span class="font-medium text-gray-800 dark:text-gray-200">${event.event_name}</span>
-                                            <div class="text-sm text-gray-600 dark:text-gray-400">
-                                                Nog ${event.time_remaining} resterend
-                                                ${event.is_recurring ? '<span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Terugkerend</span>' : ''}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center space-x-2">
-                                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse" title="Actief"></div>
-                                        <a href="/events" class="text-blue-600 hover:text-blue-800 text-sm">
-                                            Beheren
-                                        </a>
-                                    </div>
-                                </div>
-                            `;
-                                }
-                                eventsList.innerHTML = eventsHtml;
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error fetching events:', error);
-                        });
-                }
-
-                document.addEventListener('DOMContentLoaded', function() {
-                    updateActiveEvents();
-                    setInterval(updateActiveEvents, 30000);
-                });
-            </script>
-
-            <style>
-                .slot-with-event {
-                    position: relative;
-                    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.5) !important;
-                }
-
-                .slot-with-event::after {
-                    content: '⚡';
-                    position: absolute;
-                    top: -8px;
-                    right: -8px;
-                    background: #f59e0b;
-                    color: white;
-                    border-radius: 50%;
-                    width: 20px;
-                    height: 20px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 12px;
-                    z-index: 10;
-                }
-
-                [x-cloak] {
-                    display: none !important;
-                }
-
-                .pdf-hide {
-                    display: none !important;
-                }
-            </style>
+                    <!-- Scrollable Feedback List -->
+                    <div id="feedback-list" class="flex-1 overflow-y-auto pr-1">
+                        @include('components.feedback.list', ['feedback' => $feedback])
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </x-app-layout>
+@vite('resources/js/dashboard.js')

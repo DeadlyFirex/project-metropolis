@@ -15,10 +15,15 @@ class Event extends Model
         'description',
         'start_time',
         'end_time',
-        'recurring',
-        'recurring_interval',
+        'is_recurring',
         'event_type_id',
+        'slot_id',
     ];
+
+    protected $casts = [
+        'is_recurring' => 'boolean',
+    ];
+
 
     public function eventType()
     {

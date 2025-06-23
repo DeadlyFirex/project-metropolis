@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use App\Models\Slot;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use App\Models\Clock;
 
 class EventController extends Controller
 {
@@ -16,9 +19,13 @@ class EventController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
         Log::info('EventController index method called.');
+
+        // Haal simulatie tijd op uit request (voor AJAX calls)
+        $simTime = Clock::where('user_id', auth()->id())->value('time');
+        Log::info('Simulation time parameter received', ['time' => $simTime]);
 
         // Retrieve all slots that are not disabled
         $slots = Slot::whereHas('module', function ($query) {
@@ -29,97 +36,182 @@ class EventController extends Controller
         $event_types = $this->getAvailableEvents();
         Log::debug('Available event types fetched:', $event_types);
 
-        $activeEvents = $this->getActiveSlotEvents();
+        // FIXED: Altijd cleanup doen, ook bij simulatie tijd
+        $this->cleanupExpiredEvents($simTime);
+
+        // Fetch all events for management, regardless of active status
+        // We'll order them for better readability, e.g., by start_time
+        $allEvents = Event::with('slot')->orderBy('start_time')->get()->groupBy('slot_id');
+        Log::debug('All events fetched for dashboard:', $allEvents->toArray());
+
+
+        // FIXED: Gebruik simulatie tijd consistent
+        $activeEvents = $this->getSlotEventsForDashboard($simTime);
         Log::debug('Active events fetched for dashboard:', $activeEvents);
 
         $event_type_modules = EventType::pluck('module_id', 'name');
         Log::debug('Event type modules fetched:', $event_type_modules->toArray());
 
-        return view('event_dashboard', compact('event_types',
-            'slots', 'activeEvents', 'event_type_modules'));
+        return view('event_dashboard', compact(
+            'slots',
+            'event_types',
+            'activeEvents',
+            'allEvents', // Pass all events to the view
+            'event_type_modules'
+        ));
     }
 
     /**
-     * Set an event for a specific slot.
+     * Koppel één event aan één slot.
      *
-     * @param Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function setEvent(Request $request)
     {
-        Log::info('setEvent method called with request data:', $request->all());
+        // Debug: Log alle binnenkomende request data
+        Log::info('setEvent method called with data:', $request->all());
 
-        $validatedData = $request->validate([
-            'event_name' => 'required|string|max:255',
-            'event_description' => 'nullable|string|max:1000',
-            'event_type' => 'required|string',
-            'slot_id' => 'required|exists:slots,id',
-            'duration' => 'required|integer|min:1',
-            'duration_unit' => 'required|string|in:minutes,hours,days',
-            'is_recurring' => 'nullable|boolean',
-            'recurring_interval' => 'nullable|integer|min:1',
-            'recurring_unit' => 'nullable|string|in:minutes,hours,days'
-        ]);
-
-        Log::debug('Request validated successfully.');
-
-        $startTime = now();
-        $endTime = $this->calculateEndTime($startTime, (int)$request->duration, (string)$request->duration_unit);
-        Log::debug('Calculated event times:', ['start_time' => $startTime, 'end_time' => $endTime]);
-
-        $recurringNext = null;
-
-        if ($request->boolean('is_recurring') && $request->filled('recurring_interval')) {
-            $recurringInterval = (int)$request->recurring_interval;
-            $recurringUnit = (string)$request->recurring_unit;
-
-            $tempRecurringTime = $startTime->copy();
-            $recurringNext = match ($recurringUnit) {
-                'hours' => $tempRecurringTime->addHours($recurringInterval),
-                'days' => $tempRecurringTime->addDays($recurringInterval),
-                default => $tempRecurringTime->addMinutes($recurringInterval),
-            };
-            Log::debug('Recurring event details (next occurrence calculated but not stored):', [
-                'interval' => $recurringInterval,
-                'unit' => $recurringUnit,
-                'next_end_time' => $this->calculateEndTime($recurringNext, (int)$request->duration, (string)$request->duration_unit)
+        try {
+            /* ───── 1. VALIDATIE ─────────────────────────────────────────── */
+            $data = $request->validate([
+                'event_name'        => 'required|string|max:255',
+                'event_description' => 'nullable|string|max:255',
+                'event_type'        => [
+                    'required',
+                    'string',
+                    Rule::exists('event_types', 'name'),
+                ],
+                'slot_id'      => [
+                    'required',
+                    'integer',
+                    Rule::exists('slots', 'id'),
+                    function ($attribute, $value, $fail) {
+                        if (Slot::where('id', $value)->whereNotNull('event_id')->exists()) {
+                            $fail('Dit vakje heeft al een event. Verwijder het eerst.');
+                        }
+                    },
+                ],
+                'start_time'   => 'required|date_format:H:i',
+                'end_time'     => 'required|date_format:H:i|after:start_time',
+                'is_recurring' => 'sometimes|boolean',
             ]);
-        } else {
-            Log::debug('Event is not recurring.');
+
+            Log::info('Validation passed successfully:', $data);
+
+            /* ───── 2. TIJDEN VERWERKEN ─────────────────────────────────── */
+            $simTime = Clock::where('user_id', auth()->id())->value('time');
+            $today = Carbon::createFromFormat('H:i:s', $simTime)->startOfDay();
+
+            $start = Carbon::createFromFormat('H:i', $data['start_time'])
+                ->setDate($today->year, $today->month, $today->day);
+
+            $end = Carbon::createFromFormat('H:i', $data['end_time'])
+                ->setDate($today->year, $today->month, $today->day);
+
+            // Als eindtijd voor starttijd ligt, loopt event over middernacht
+            if ($end->lte($start)) {
+                $end->addDay();
+            }
+
+            // Voor niet-terugkerende events: als eindtijd in verleden ligt, schuif naar morgen
+            $isRecurring = $request->boolean('is_recurring');
+            $now = Carbon::createFromFormat('H:i:s', $simTime);
+            if (!$isRecurring && $end->lte($now)) {
+                $start->addDay();
+                $end->addDay();
+            }
+
+            /* ───── 3. EVENT-TYPE OPHALEN ───────────────────────────────── */
+            $eventType = EventType::where('name', $data['event_type'])->first();
+
+            if (!$eventType) {
+                Log::error('EventType not found:', ['event_type' => $data['event_type']]);
+                return back()->withErrors(['event_type' => 'Geselecteerd event type bestaat niet.'])
+                    ->withInput();
+            }
+
+            Log::info('EventType found:', ['id' => $eventType->id, 'name' => $eventType->name]);
+
+            /* ───── 4. DATABASE TRANSACTIE ─────────────────────────────── */
+            $event = null;
+
+            DB::transaction(function () use ($data, $start, $end, $eventType, $isRecurring, &$event) {
+                // Slot ophalen en vergrendelen
+                $slot = Slot::lockForUpdate()->find($data['slot_id']);
+
+                if (!$slot) {
+                    throw new \Exception("Slot {$data['slot_id']} niet gevonden");
+                }
+
+                // Dubbel-check: heeft slot inmiddels een event gekregen?
+                if ($slot->event_id) {
+                    throw new \Exception("Slot {$data['slot_id']} heeft inmiddels al een event");
+                }
+
+                Log::info('Slot found and locked:', ['slot_id' => $slot->id]);
+
+                // Event aanmaken
+                $eventData = [
+                    'name'          => $data['event_name'],
+                    'description'   => $data['event_description'] ?? '',
+                    'start_time'    => $start->format('H:i:s'),
+                    'end_time'      => $end->format('H:i:s'),
+                    'is_recurring'  => $isRecurring,
+                    'event_type_id' => $eventType->id,
+                    'slot_id'       => $slot->id,
+                ];
+
+                Log::info('Creating event with data:', $eventData);
+
+                $event = Event::create($eventData);
+
+                if (!$event) {
+                    throw new \Exception('Event kon niet worden aangemaakt');
+                }
+
+                Log::info('Event created successfully:', ['event_id' => $event->id]);
+
+                // Slot bijwerken met event_id
+                $slot->update(['event_id' => $event->id]);
+
+                Log::info('Slot updated with event_id:', [
+                    'slot_id' => $slot->id,
+                    'event_id' => $event->id
+                ]);
+            });
+
+            /* ───── 5. SUCCESS RESPONSE ─────────────────────────────────── */
+            $successMessage = "Event '{$data['event_name']}' succesvol ingesteld voor vakje {$data['slot_id']}!";
+
+            Log::info('setEvent completed successfully:', [
+                'event_id' => $event->id,
+                'slot_id' => $data['slot_id'],
+                'message' => $successMessage
+            ]);
+
+            return back()->with('success', $successMessage);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation failed in setEvent:', [
+                'errors' => $e->errors(),
+                'input' => $request->all()
+            ]);
+
+            return back()->withErrors($e->errors())->withInput();
+
+        } catch (\Exception $e) {
+            Log::error('Error in setEvent:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'input' => $request->all()
+            ]);
+
+            return back()->withErrors(['general' => 'Er is een fout opgetreden bij het instellen van het event: ' . $e->getMessage()])
+                ->withInput();
         }
-
-        $eventType = EventType::where('name', $request->event_type)->first();
-        if (!$eventType) {
-            Log::error('EventType not found for name: ' . $request->event_type);
-            return redirect()->back()->with('error', 'Selected event type not found!');
-        }
-        Log::debug('EventType found:', ['id' => $eventType->id, 'name' => $eventType->name]);
-
-        $new_event = new Event([
-            'name' => $request->event_name,
-            'description' => $request->event_description,
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-            'is_recurring' => $request->boolean('is_recurring'),
-            'recurring_interval' => $request->filled('recurring_interval') ? (int) $request->recurring_interval : null,
-            'event_type_id' => $eventType->id,
-            'slot_id' => $request->slot_id,
-        ]);
-        $new_event->save();
-        Log::info('New event created and saved:', $new_event->toArray());
-
-        $slot = Slot::find($request->slot_id);
-        if (!$slot) {
-            Log::error('Slot not found during event assignment for ID: ' . $request->slot_id);
-            $new_event->delete();
-            return redirect()->back()->with('error', 'Slot not found during event assignment!');
-        }
-        $slot->event_id = $new_event->id;
-        $slot->save();
-        Log::info('Slot updated with new event_id:', ['slot_id' => $slot->id, 'event_id' => $new_event->id]);
-
-        return redirect()->back()->with('success', 'Event successfully set for slot ' . $request->slot_id . '!');
     }
+
 
     /**
      * Reset the event for a specific slot.
@@ -155,7 +247,7 @@ class EventController extends Controller
         $event->delete();
         Log::info('Event deleted:', ['event_id' => $event->id, 'event_name' => $event->name]);
 
-        return redirect()->back()->with('success', 'Event for slot ' . $request->slot_id . ' has been reset to normal!');
+        return redirect()->back()->with('success', 'Evenement voor slot ' . $request->slot_id . ' is teruggezet naar normaal!');
     }
 
     /**
@@ -163,76 +255,120 @@ class EventController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getSlotEvents()
+    public function getSlotEvents(Request $request)
     {
-        Log::info('getSlotEvents API endpoint called.');
-        $activeEvents = $this->getActiveSlotEvents();
-        Log::debug('Data sent to frontend via getSlotEvents:', $activeEvents);
-        return response()->json($activeEvents);
+        $simTime = $request->query('time')
+            ?: Clock::where('user_id', auth()->id())
+                ->value('time')
+                ?: now()->format('H:i:s');
+
+        if (preg_match('/^\d{2}:\d{2}$/', $simTime)) {
+            $simTime .= ':00';
+        }
+
+        $nowSec = $this->timeToSeconds($simTime);
+
+        $active = Event::whereHas('slot')->get()
+            ->filter(function($event) use ($nowSec) {
+            $startSec = $this->timeToSeconds($event->start_time);
+            $endSec = $this->timeToSeconds($event->end_time);
+
+            if ($endSec <= $startSec) $endSec += 24 * 3600;
+
+            $nowAdj = $nowSec;
+            if ($nowAdj < $startSec) $nowAdj += 24 * 3600;
+
+            // Skip expired non-recurring events
+            if (!$event->is_recurring && $nowAdj > $endSec) {
+                return false;
+            }
+
+            return ($nowAdj >= $startSec && $nowAdj <= $endSec);
+        })->load(['eventType', 'slot'])
+            ->values();
+
+        return response()->json($active);
     }
+
 
     /**
      * Retrieves all active slot events with their details.
      *
      * @return array
      */
-    private function getActiveSlotEvents()
+    private function getActiveSlotEvents(?string $simTime = null): array
     {
+        // Gebruik simulatie tijd of val terug op echte tijd
+        $now = $simTime ?
+            Carbon::createFromFormat('H:i:s', $simTime)->setDate(Carbon::today()->year, Carbon::today()->month, Carbon::today()->day) :
+            now();
+
         $activeEvents = [];
-        $now = now();
-        $processedEvents = [];
+        $processed    = [];
 
         $slots = Slot::with(['event.eventType.effects'])->get()->fresh();
 
         foreach ($slots as $slot) {
             $event = $slot->event;
-            if (!$event || in_array($event->id, $processedEvents)) {
+            if (!$event || in_array($event->id, $processed)) continue;
+
+            // Vandaag start/eind baseren op opgeslagen tijden
+            $start = Carbon::parse($event->start_time)
+                ->setDate($now->year, $now->month, $now->day);
+
+            $end = Carbon::parse($event->end_time)
+                ->setDate($now->year, $now->month, $now->day);
+
+            if ($end->lte($start)) $end->addDay();
+
+            // Eenmalig event voorbij? skip
+            if (!$event->is_recurring && $now->gt($end)) {
+                $processed[] = $event->id;
                 continue;
             }
 
-            if ($event->end_time && Carbon::parse($event->end_time)->isFuture()) {
-                // Hoofd-evenement
-                $eventEffects = $this->getEventEffects($event->event_type_id);
-                $timeRemaining = $this->getRemainingTime($now, Carbon::parse($event->end_time));
+            // Is klok tussen start & end?
+            if ($now->between($start, $end)) {
+                $timeRemaining = $this->formatRemainingTime($now, $end);
+                $effects       = $this->getEventEffects($event->event_type_id);
 
                 $activeEvents[$slot->id] = [
-                    'slot_id' => $slot->id,
-                    'event_id' => $event->id,
-                    'event_name' => $event->name,
-                    'description' => $event->description,
-                    'start_time' => $event->start_time,
-                    'end_time' => $event->end_time,
-                    'is_recurring' => (bool)$event->is_recurring,
+                    'slot_id'        => $slot->id,
+                    'event_id'       => $event->id,
+                    'event_name'     => $event->name,
+                    'description'    => $event->description,
+                    'start_time'     => $event->start_time,
+                    'end_time'       => $event->end_time,
+                    'is_recurring'   => (bool) $event->is_recurring,
                     'time_remaining' => $timeRemaining,
-                    'effects' => $eventEffects,
-                    'is_primary' => true
+                    'effects'        => $effects,
+                    'is_primary'     => true,
                 ];
 
-                $adjacentSlots = $this->getAdjacentSlots($slot->id);
-                foreach ($adjacentSlots as $adjacentSlot) {
-                    if (!isset($activeEvents[$adjacentSlot->id])) {
-                        $adjacentEffects = $this->getAdjacentEventEffects($event->event_type_id);
+                // Adjacent vakjes
+                foreach ($this->getAdjacentSlots($slot->id) as $adjacent) {
+                    if (isset($activeEvents[$adjacent->id])) continue;
 
-                        if (!empty($adjacentEffects)) {
-                            $activeEvents[$adjacentSlot->id] = [
-                                'slot_id' => $adjacentSlot->id,
-                                'event_id' => $event->id,
-                                'event_name' => $event->name . ' (Aangrenzend)',
-                                'description' => 'Aangrenzend effect van ' . $event->name,
-                                'start_time' => $event->start_time,
-                                'end_time' => $event->end_time,
-                                'is_recurring' => (bool)$event->is_recurring,
-                                'time_remaining' => $timeRemaining,
-                                'effects' => $adjacentEffects,
-                                'is_primary' => false,
-                                'source_slot_id' => $slot->id // Voor referentie
-                            ];
-                        }
-                    }
+                    $adjacentEffects = $this->getAdjacentEventEffects($event->event_type_id);
+                    if (empty($adjacentEffects)) continue;
+
+                    $activeEvents[$adjacent->id] = [
+                        'slot_id'        => $adjacent->id,
+                        'event_id'       => $event->id,
+                        'event_name'     => $event->name . ' (Aangrenzend)',
+                        'description'    => 'Aangrenzend effect van ' . $event->name,
+                        'start_time'     => $event->start_time,
+                        'end_time'       => $event->end_time,
+                        'is_recurring'   => (bool) $event->is_recurring,
+                        'time_remaining' => $timeRemaining,
+                        'effects'        => $adjacentEffects,
+                        'is_primary'     => false,
+                        'source_slot_id' => $slot->id,
+                    ];
                 }
-
-                $processedEvents[] = $event->id;
             }
+
+            $processed[] = $event->id;
         }
 
         return $activeEvents;
@@ -399,4 +535,180 @@ class EventController extends Controller
 
         return array_filter($effects, fn($value) => $value !== 0);
     }
+
+    /**
+     * Clean up expired events and reschedule recurring ones so that the next occurrence is always in the future.
+     */
+    private function cleanupExpiredEvents(?string $simTime = null): void
+    {
+        $currentTimeStr = $simTime ?? date('H:i:s');
+        $nowSec = $this->timeToSeconds($currentTimeStr);
+
+        Event::all()->each(function (Event $event) use ($nowSec) {
+            $startTime = is_string($event->start_time) ? $event->start_time : $event->start_time->format('H:i:s');
+            $endTime = is_string($event->end_time) ? $event->end_time : $event->end_time->format('H:i:s');
+
+            $startSec = $this->timeToSeconds($startTime);
+            $endSec = $this->timeToSeconds($endTime);
+
+            if ($endSec <= $startSec) {
+                $endSec += 24 * 3600;
+            }
+
+            // For non-recurring events: delete if expired
+            if (!$event->is_recurring && $endSec <= $nowSec) {
+                Slot::where('event_id', $event->id)->update(['event_id' => null]);
+                $event->delete();
+                Log::info("Expired non-recurring event deleted: {$event->id}");
+            }
+            // For recurring events: shift to next day if expired
+            elseif ($event->is_recurring && $endSec <= $nowSec) {
+                $newStartSec = ($startSec + 24 * 3600) % (24 * 3600);
+                $newEndSec = ($endSec + 24 * 3600) % (24 * 3600);
+
+                $event->start_time = gmdate('H:i:s', $newStartSec);
+                $event->end_time = gmdate('H:i:s', $newEndSec);
+                $event->save();
+
+                Log::info("Recurring event rescheduled: {$event->id} to {$event->start_time}-{$event->end_time}");
+            }
+        });
+    }
+
+
+
+    /* ---------- formatRemainingTime() ---------- */
+    private function formatRemainingTime(Carbon $now, Carbon $end): string
+    {
+        $diff = $now->diff($end);
+        return $diff->days  > 0 ? $diff->days.' dag(en), '.$diff->h.' uur'
+            : ($diff->h    > 0 ? $diff->h.' uur, '.$diff->i.' min'
+                :                    $diff->i.' minuten');
+    }
+
+    /**
+     * Geeft per slot het gekoppelde event terug voor weergave in het dashboard.
+     * Resultaat‑array heeft als sleutel de slot_id zodat de Blade‑view direct
+     *    @foreach ($activeEvents as $slotId => $event) ...
+     * kan gebruiken. Zowel lopende (running) als geplande (scheduled) events
+     * worden teruggegeven; de view beslist wat ze toont.
+     */
+    public function getSlotEventsForDashboard(?string $simTime = null): array
+    {
+        // 1) Huidige (simulatie)tijd bepalen
+        $currentTime = $simTime ?? date('H:i:s');
+        $now = Carbon::createFromFormat('H:i:s', $currentTime)
+            ->setDate(Carbon::today()->year, Carbon::today()->month, Carbon::today()->day);
+
+        // 2) Container – items per slot‑id
+        $items = [];
+
+        // 3) Loop over alle slots met hun gekoppelde event & module
+        Slot::with(['event.eventType.effects', 'module'])
+            ->get()
+            ->each(function ($slot) use (&$items, $now) {
+                /** @var \App\Models\Event|null $event */
+                $event = $slot->event;
+                if (!$event) {
+                    return; // slot zonder event
+                }
+
+                /**
+                 * 4) Start & End op vandaag mappen.
+                 *    ‑ Indien end <= start → overnight (b.v. 23:00‑01:00).
+                 */
+                $start = Carbon::createFromFormat('H:i:s', $event->start_time)
+                    ->setDate($now->year, $now->month, $now->day);
+
+                $end = Carbon::createFromFormat('H:i:s', $event->end_time)
+                    ->setDate($now->year, $now->month, $now->day);
+
+                if ($end->lte($start)) {
+                    $end->addDay(); // overnight
+                }
+
+                /**
+                 * 5) Als het event (non‑recurring) voorbij lijkt, schuif het naar morgen
+                 *    i.p.v. het te negeren — hiermee wordt voorkomen dat een event dat
+                 *    vóór de huidige simulatietijd ligt (02:00 wanneer nu 20:24 is)
+                 *    meteen wordt weggefilterd.
+                 */
+                if (!$event->is_recurring && $now->gt($end)) {
+                    $start->addDay();
+                    $end->addDay();
+                }
+
+                /**
+                 * 6) Status & display‑moment berekenen
+                 */
+                if ($now->between($start, $end)) {
+                    $status      = 'running';
+                    $displayTime = $end;
+                } else {
+                    $status      = 'scheduled';
+                    $displayTime = $start;
+
+                    // Recurring events van eerder vandaag pas morgen tonen
+                    if ($event->is_recurring && $now->gt($end)) {
+                        $displayTime = $start->copy()->addDay();
+                    }
+                }
+
+                // 7) Opslaan (key = slot‑id)
+                $items[$slot->id] = [
+                    'slot_id'        => $slot->id,
+                    'event_id'       => $event->id,
+                    'event_name'     => $event->name,
+                    'description'    => $event->description,
+                    'start_time'     => $event->start_time,
+                    'end_time'       => $event->end_time,
+                    'is_recurring'   => (bool) $event->is_recurring,
+                    'time_remaining' => $this->formatRemainingTime($now, $displayTime),
+                    'effects'        => $this->getEventEffects($event->event_type_id),
+                    'status'         => $status, // running | scheduled
+                ];
+            });
+
+        // 8) Alles teruggeven (geen filter/her‑indexering)
+        return $items;
+    }
+
+
+    /**
+     * Zet "HH:MM:SS" om naar seconden sinds middernacht.
+     */
+    private function timeToSeconds(string $time): int
+    {
+        [$h, $m, $s] = explode(':', $time);
+        return ((int)$h * 3600) + ((int)$m * 60) + (int)$s;
+    }
+
+    /**
+     * Formatteer een aantal seconden als "X uur, Y min" of "Z minuten".
+     */
+    private function formatRemainingTimeSec(int $seconds): string
+    {
+        $h = intdiv($seconds, 3600);
+        $m = intdiv($seconds % 3600, 60);
+
+        if ($h > 0) {
+            return "{$h} uur, {$m} min";
+        }
+        return "{$m} minuten";
+    }
+
+    public function getActiveEventsForSimulation(Request $request)
+    {
+        $simTime = Clock::where('user_id', auth()->id())->value('time');
+
+        // Cleanup verlopen events
+        $this->cleanupExpiredEvents($simTime);
+
+        // Haal actieve events op
+        $activeEvents = $this->getSlotEventsForDashboard($simTime);
+
+        return response()->json($activeEvents);
+    }
+
+
 }
