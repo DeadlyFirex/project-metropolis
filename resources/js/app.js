@@ -9,6 +9,7 @@ import './effect-control.js';
 import './effect-flash.js';
 import './openModule.js';
 import './feedback.js';
+import './clock.js';
 
 import { initLibrarySearch } from './library-search.js';
 import { initFeedback } from './feedback';

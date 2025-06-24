@@ -173,5 +173,4 @@
     @endif
 
     {{-- Load the corresponding JavaScript file via Vite --}}
-    @vite(['resources/js/openModule.js'])
 </x-app-layout>
