@@ -196,7 +196,7 @@ usort($uniqueEventTypes, function($a, $b) {
 <div class="py-2 px-2" id="effect-view">
     <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2 text-left">Effecten op de grid</h2>
     <div class="mt-2 mb-4">
-        <button
+        <button onclick="switchEffects()"
             id="swap-to-effect-control"
             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
             Effecten beheren
@@ -365,16 +365,11 @@ usort($uniqueEventTypes, function($a, $b) {
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const swapBtn = document.getElementById("swap-to-effect-control");
+    function switchEffects() {
         const viewPanel = document.getElementById("effect-view");
         const controlPanel = document.getElementById("effect-control-view");
+        viewPanel.classList.add("hidden");
+        controlPanel.classList.remove("hidden");
+    }
 
-        if (swapBtn && viewPanel && controlPanel) {
-            swapBtn.addEventListener("click", () => {
-                viewPanel.classList.add("hidden");
-                controlPanel.classList.remove("hidden");
-            });
-        }
-    });
 </script>
